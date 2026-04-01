@@ -316,7 +316,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
 | Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity |
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
-| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement |
+| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass |
 | Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity |
 | Pass Assignment | Built | Admin assigns passes with payment method and paid status tracking |
 | Attendance Tracking | Built | Admin marks attendance per session, auto-deducts from best active pass (FIFO) |

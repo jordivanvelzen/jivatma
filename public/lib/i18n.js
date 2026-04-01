@@ -61,6 +61,9 @@ const translations = {
     'schedule.bookingCancelled': 'Reserva cancelada.',
     'schedule.spots': 'plazas',
     'schedule.onlineLink': 'Enlace en línea:',
+    'schedule.noPass': 'Sin pase',
+    'schedule.noPassBanner': 'No tienes un pase activo. Necesitas un pase para reservar clases. Contacta a tu instructora para obtener uno.',
+    'schedule.viewPasses': 'Ver mis pases',
 
     // Passes
     'passes.title': 'Mis Pases',
@@ -254,6 +257,9 @@ const translations = {
     'schedule.bookingCancelled': 'Booking cancelled.',
     'schedule.spots': 'spots',
     'schedule.onlineLink': 'Online link:',
+    'schedule.noPass': 'No pass',
+    'schedule.noPassBanner': 'You don\'t have an active pass. You need a pass to book classes. Contact your instructor to get one.',
+    'schedule.viewPasses': 'View my passes',
 
     // Passes
     'passes.title': 'My Passes',

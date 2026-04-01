@@ -9,6 +9,16 @@ export async function renderSchedule() {
   const userId = session.user.id;
   const today = new Date().toISOString().split('T')[0];
 
+  // Check if user has an active pass
+  const { data: activePasses } = await sb
+    .from('user_passes')
+    .select('id')
+    .eq('user_id', userId)
+    .gte('expires_at', today)
+    .or('classes_remaining.gt.0,classes_remaining.is.null')
+    .limit(1);
+  const hasActivePass = activePasses && activePasses.length > 0;
+
   // Get sign-up window
   const { data: windowSetting } = await sb
     .from('settings')
@@ -84,12 +94,20 @@ export async function renderSchedule() {
     const booked = bookingCounts[s.id] || 0;
     const spotsLeft = cap - booked;
     const sessionWithCap = { ...s, capacity: cap };
-    return renderClassCard(sessionWithCap, bookingMap[s.id], spotsLeft);
+    return renderClassCard(sessionWithCap, bookingMap[s.id], spotsLeft, hasActivePass);
   }).join('');
+
+  const noPassBanner = !hasActivePass ? `
+    <div class="no-pass-banner">
+      <p>${t('schedule.noPassBanner')}</p>
+      <a href="#/my-passes" class="btn btn-secondary btn-sm">${t('schedule.viewPasses')}</a>
+    </div>
+  ` : '';
 
   app.innerHTML = `
     <div class="page">
       <h2>${t('schedule.title')}</h2>
+      ${noPassBanner}
       ${meetingLink ? `<p class="meeting-link-note">${t('schedule.onlineLink')} <a href="${meetingLink}" target="_blank">${meetingLink}</a></p>` : ''}
       <div class="class-list">${cards}</div>
     </div>
