@@ -25,11 +25,18 @@ export function renderPassCard(pass, passType) {
     : status === 'expired' ? t('passes.expired')
     : t('passes.usedUp');
 
+  const unpaidLabel = (!pass.is_paid && status === 'active')
+    ? `<span class="pass-badge pass-badge-unpaid">${t('passes.payAtClass')}</span>`
+    : '';
+
   return `
     <div class="pass-card pass-${status}">
       <div class="pass-kind">${kindLabel}</div>
       <div class="pass-detail">${detail}</div>
-      <span class="pass-badge">${statusLabel}</span>
+      <div class="pass-badges">
+        <span class="pass-badge">${statusLabel}</span>
+        ${unpaidLabel}
+      </div>
     </div>
   `;
 }

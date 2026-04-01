@@ -100,7 +100,7 @@ export async function renderSchedule() {
   const noPassBanner = !hasActivePass ? `
     <div class="no-pass-banner">
       <p>${t('schedule.noPassBanner')}</p>
-      <a href="#/my-passes" class="btn btn-secondary btn-sm">${t('schedule.viewPasses')}</a>
+      <a href="#/my-passes" class="btn btn-primary btn-sm">${t('schedule.getPasses')}</a>
     </div>
   ` : '';
 

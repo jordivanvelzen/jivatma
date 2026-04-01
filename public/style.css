@@ -240,9 +240,29 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
   font-weight: 600;
   text-transform: uppercase;
 }
+.pass-badges { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
 .pass-active .pass-badge { background: var(--green-bg); color: var(--green); }
 .pass-expired .pass-badge { background: var(--gray-light); color: var(--gray); }
 .pass-used-up .pass-badge { background: #fdebd0; color: var(--orange); }
+.pass-badge-unpaid { background: #fff3cd !important; color: #856404 !important; }
+
+.pass-type-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.pass-type-info { flex: 1; min-width: 0; }
+.pass-type-detail { color: var(--gray); font-size: 0.85rem; margin-top: 0.2rem; }
+.pass-type-note { font-size: 0.8rem; color: var(--green); margin-top: 0.3rem; }
+.pass-type-contact { font-size: 0.8rem; color: var(--gray); white-space: nowrap; }
+.section-label { font-weight: 600; font-size: 0.9rem; color: var(--gray-dark); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .class-card {
   background: var(--white);

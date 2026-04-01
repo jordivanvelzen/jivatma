@@ -184,6 +184,7 @@ All endpoints are Vercel serverless functions.
 | DELETE | `/api/bookings` | User | Cancel a booking (`{ session_id }`) — soft delete via `cancelled_at` |
 | GET | `/api/me` | User | Get own profile (default), passes (`?action=passes`), or attendance (`?action=attendance`) |
 | PATCH | `/api/me` | User | Update own profile (`{ full_name, phone }`) |
+| POST | `/api/me/select-pass` | User | Self-select a single-class pass (`{ pass_type_id }`) — creates unpaid pass, pay at class |
 | GET | `/api/admin/users` | Admin | List all user profiles |
 | PATCH | `/api/admin/users` | Admin | Update any user profile (`{ id, ...updates }`) |
 | GET | `/api/admin/passes` | Admin | List all user passes (optionally `?user_id=...`) |
@@ -227,7 +228,7 @@ Configured in `vercel.json`:
 |---|---|---|
 | `#/dashboard` | `pages/dashboard.js` | Home: active passes, upcoming bookings, recent attendance |
 | `#/schedule` | `pages/schedule.js` | Browse upcoming classes within sign-up window, book/cancel. Shows spots remaining, meeting link for online classes |
-| `#/my-passes` | `pages/my-passes.js` | All passes (active, expired, used up) with status badges |
+| `#/my-passes` | `pages/my-passes.js` | All passes (active, expired, used up) with status badges. Shows available pass types; students can self-select single-class passes (pay at class) |
 | `#/my-attendance` | `pages/my-attendance.js` | Attendance history table (date, time, class type) |
 | `#/profile` | `pages/profile.js` | Edit name/phone, change password |
 
@@ -316,7 +317,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
 | Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity |
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
-| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass |
+| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
 | Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity |
 | Pass Assignment | Built | Admin assigns passes with payment method and paid status tracking |
 | Attendance Tracking | Built | Admin marks attendance per session, auto-deducts from best active pass (FIFO) |
