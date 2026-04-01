@@ -18,6 +18,7 @@ const translations = {
     'nav.logout': 'Cerrar sesión',
     'nav.studentView': 'Vista Alumno',
     'nav.adminView': 'Vista Admin',
+    'nav.requests': 'Solicitudes',
 
     // Auth
     'auth.login': 'Iniciar sesión',
@@ -62,7 +63,7 @@ const translations = {
     'schedule.spots': 'plazas',
     'schedule.onlineLink': 'Enlace en línea:',
     'schedule.noPass': 'Sin pase',
-    'schedule.noPassBanner': 'No tienes un pase activo. Ve a Mis Pases para seleccionar una clase individual o contacta a tu instructora para un pase.',
+    'schedule.noPassBanner': 'No tienes un pase activo. Ve a Mis Pases para solicitar uno.',
     'schedule.getPasses': 'Obtener un pase',
 
     // Passes
@@ -80,12 +81,38 @@ const translations = {
     'passes.yourPasses': 'Tus Pases',
     'passes.availableTypes': 'Pases Disponibles',
     'passes.validFor': '{days} días de validez',
-    'passes.singleNote': 'Selecciona y reserva una clase. Pagas al llegar.',
-    'passes.selectSingle': 'Seleccionar',
+    'passes.howItWorks': '1. Solicita tu pase y realiza el pago. 2. Claudia verificará el pago y aprobará tu pase.',
+    'passes.payDigital': 'Pagar digital',
+    'passes.payCash': 'Pagar en clase',
+    'passes.methodTransfer': 'Transferencia',
+    'passes.methodOther': 'Otro método digital',
     'passes.alreadySelected': 'Ya seleccionado',
-    'passes.singleSelected': '¡Clase individual seleccionada! Ya puedes reservar una clase.',
+    'passes.cashSingleSelected': '¡Clase individual reservada! Ya puedes inscribirte a una clase. Paga en efectivo al llegar.',
     'passes.alreadyHasSingle': 'Ya tienes una clase individual activa.',
-    'passes.contactInstructor': 'Contacta a tu instructora',
+
+    // Requests
+    'requests.title': 'Solicitudes de Pase',
+    'requests.request': 'Solicitar',
+    'requests.pending': 'Pendiente',
+    'requests.approved': 'Aprobado',
+    'requests.rejected': 'Rechazado',
+    'requests.requestSent': '¡Solicitud enviada! Realiza el pago y Claudia aprobará tu pase.',
+    'requests.alreadyPending': 'Ya tienes una solicitud pendiente para este pase.',
+    'requests.yourRequests': 'Tus Solicitudes',
+    'requests.pendingNote': 'Realiza el pago y Claudia aprobará tu pase cuando lo reciba.',
+    'requests.noRequests': 'No hay solicitudes pendientes.',
+    'requests.approve': 'Aprobar',
+    'requests.reject': 'Rechazar',
+    'requests.passApproved': '¡Solicitud aprobada y pase asignado!',
+    'requests.passRejected': 'Solicitud rechazada.',
+
+    // Onboarding
+    'onboarding.title': '¡Bienvenido/a a Jivatma!',
+    'onboarding.step1': 'Solicita un pase',
+    'onboarding.step1Link': 'Ir a Mis Pases',
+    'onboarding.step2': 'Reserva tu primera clase',
+    'onboarding.step2Link': 'Ver Clases',
+    'onboarding.dismiss': 'Descartar',
 
     // Attendance history
     'attendance.title': 'Historial de Asistencia',
@@ -111,6 +138,8 @@ const translations = {
     'admin.noExpiring': 'No hay pases por vencer en los próximos 7 días.',
     'admin.expiresOn': 'vence el {date}',
     'admin.classesRemaining': '{n} clase(s) restante(s)',
+    'admin.pendingRequests': 'Solicitudes Pendientes',
+    'admin.pendingRequestsCount': '{n} solicitud(es) pendiente(s) — clic para revisar',
     'admin.quickActions': 'Acciones Rápidas',
     'admin.markAttendance': 'Registrar Asistencia',
     'admin.manageUsers': 'Gestionar Usuarios',
@@ -224,6 +253,7 @@ const translations = {
     'nav.logout': 'Logout',
     'nav.studentView': 'Student View',
     'nav.adminView': 'Admin View',
+    'nav.requests': 'Requests',
 
     // Auth
     'auth.login': 'Log in',
@@ -268,7 +298,7 @@ const translations = {
     'schedule.spots': 'spots',
     'schedule.onlineLink': 'Online link:',
     'schedule.noPass': 'No pass',
-    'schedule.noPassBanner': 'You don\'t have an active pass. Go to My Passes to select a single class or contact your instructor for a pass.',
+    'schedule.noPassBanner': 'You don\'t have an active pass. Go to My Passes to request one.',
     'schedule.getPasses': 'Get a pass',
 
     // Passes
@@ -286,12 +316,38 @@ const translations = {
     'passes.yourPasses': 'Your Passes',
     'passes.availableTypes': 'Available Passes',
     'passes.validFor': '{days} days validity',
-    'passes.singleNote': 'Select and book one class. Pay when you arrive.',
-    'passes.selectSingle': 'Select',
+    'passes.howItWorks': '1. Request your pass and make the payment. 2. Claudia will verify the payment and approve your pass.',
+    'passes.payDigital': 'Pay digitally',
+    'passes.payCash': 'Pay cash at class',
+    'passes.methodTransfer': 'Bank transfer',
+    'passes.methodOther': 'Other digital method',
     'passes.alreadySelected': 'Already selected',
-    'passes.singleSelected': 'Single class selected! You can now book a class.',
+    'passes.cashSingleSelected': 'Single class reserved! You can now sign up for a class. Pay cash when you arrive.',
     'passes.alreadyHasSingle': 'You already have an active single class pass.',
-    'passes.contactInstructor': 'Contact your instructor',
+
+    // Requests
+    'requests.title': 'Pass Requests',
+    'requests.request': 'Request',
+    'requests.pending': 'Pending',
+    'requests.approved': 'Approved',
+    'requests.rejected': 'Rejected',
+    'requests.requestSent': 'Request sent! Make the payment and Claudia will approve your pass.',
+    'requests.alreadyPending': 'You already have a pending request for this pass.',
+    'requests.yourRequests': 'Your Requests',
+    'requests.pendingNote': 'Make the payment and Claudia will approve your pass once she receives it.',
+    'requests.noRequests': 'No pending requests.',
+    'requests.approve': 'Approve',
+    'requests.reject': 'Reject',
+    'requests.passApproved': 'Request approved and pass assigned!',
+    'requests.passRejected': 'Request rejected.',
+
+    // Onboarding
+    'onboarding.title': 'Welcome to Jivatma!',
+    'onboarding.step1': 'Request a pass',
+    'onboarding.step1Link': 'Go to My Passes',
+    'onboarding.step2': 'Book your first class',
+    'onboarding.step2Link': 'Browse Classes',
+    'onboarding.dismiss': 'Dismiss',
 
     // Attendance history
     'attendance.title': 'Attendance History',
@@ -317,6 +373,8 @@ const translations = {
     'admin.noExpiring': 'No passes expiring within 7 days.',
     'admin.expiresOn': 'expires {date}',
     'admin.classesRemaining': '{n} class(es) remaining',
+    'admin.pendingRequests': 'Pending Requests',
+    'admin.pendingRequestsCount': '{n} pending request(s) — click to review',
     'admin.quickActions': 'Quick Actions',
     'admin.markAttendance': 'Mark Attendance',
     'admin.manageUsers': 'Manage Users',

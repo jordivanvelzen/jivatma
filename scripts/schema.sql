@@ -49,7 +49,7 @@ CREATE TABLE pass_types (
   class_count    INT,              -- NULL for unlimited, 1 for single, 10 for multi
   validity_days  INT NOT NULL,     -- 1 for single, 90 for 10-class, 30 for monthly
   price          NUMERIC(8,2) NOT NULL,
-  currency       TEXT NOT NULL DEFAULT 'EUR',
+  currency       TEXT NOT NULL DEFAULT 'MXN',
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -122,6 +122,21 @@ CREATE TABLE attendance (
   pass_id        INT REFERENCES user_passes(id) ON DELETE SET NULL,
   checked_in_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(session_id, user_id)
+);
+
+-- ============================================================
+-- PASS REQUESTS (student requests a pass, admin approves/rejects)
+-- ============================================================
+CREATE TABLE pass_requests (
+  id            SERIAL PRIMARY KEY,
+  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  pass_type_id  INT NOT NULL REFERENCES pass_types(id),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('transfer', 'cash', 'other')),
+  status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  admin_notes   TEXT,
+  reviewed_by   UUID REFERENCES profiles(id),
+  reviewed_at   TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
@@ -229,6 +244,21 @@ CREATE POLICY "Users can cancel own bookings"
 
 CREATE POLICY "Admins can view all bookings"
   ON bookings FOR ALL
+  USING (is_admin());
+
+-- PASS REQUESTS
+ALTER TABLE pass_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own requests"
+  ON pass_requests FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create own requests"
+  ON pass_requests FOR INSERT
+  WITH CHECK (user_id = auth.uid() AND status = 'pending');
+
+CREATE POLICY "Admins full access requests"
+  ON pass_requests FOR ALL
   USING (is_admin());
 
 -- ATTENDANCE

@@ -34,15 +34,49 @@ export async function renderDashboard() {
     .order('checked_in_at', { ascending: false })
     .limit(5);
 
+  // Fetch pass requests (for onboarding check)
+  const { data: passRequests } = await sb
+    .from('pass_requests')
+    .select('id')
+    .eq('user_id', userId)
+    .limit(1);
+
   const activePasses = (passes || []).filter(p =>
     p.pass_types.kind === 'unlimited' || p.classes_remaining > 0
   );
 
   const locale = getLocale();
 
+  // Onboarding: check if user is new (no passes/requests and no bookings)
+  const dismissed = localStorage.getItem(`jivatma_onboarding_dismissed_${userId}`);
+  const step1Done = (passes?.length > 0) || (passRequests?.length > 0);
+  const step2Done = (bookings?.length > 0) || (attendance?.length > 0);
+  const showOnboarding = !dismissed && (!step1Done || !step2Done);
+
+  const onboardingHtml = showOnboarding ? `
+    <div class="onboarding-card" id="onboarding">
+      <h3>${t('onboarding.title')}</h3>
+      <div class="onboarding-steps">
+        <div class="onboarding-step ${step1Done ? 'done' : ''}">
+          <span class="step-check">${step1Done ? '\u2713' : '1'}</span>
+          <span>${t('onboarding.step1')}</span>
+          ${!step1Done ? `<a href="#/my-passes" class="btn btn-primary btn-sm">${t('onboarding.step1Link')}</a>` : ''}
+        </div>
+        <div class="onboarding-step ${step2Done ? 'done' : ''}">
+          <span class="step-check">${step2Done ? '\u2713' : '2'}</span>
+          <span>${t('onboarding.step2')}</span>
+          ${!step2Done ? `<a href="#/schedule" class="btn btn-primary btn-sm">${t('onboarding.step2Link')}</a>` : ''}
+        </div>
+      </div>
+      <button id="dismiss-onboarding" class="btn-link muted">${t('onboarding.dismiss')}</button>
+    </div>
+  ` : '';
+
   app.innerHTML = `
     <div class="page">
       <h2>${t('dash.welcome')}</h2>
+
+      ${onboardingHtml}
 
       <section class="section">
         <h3>${t('dash.yourPasses')}</h3>
@@ -77,4 +111,10 @@ export async function renderDashboard() {
       </section>
     </div>
   `;
+
+  // Dismiss onboarding
+  document.getElementById('dismiss-onboarding')?.addEventListener('click', () => {
+    localStorage.setItem(`jivatma_onboarding_dismissed_${userId}`, 'true');
+    document.getElementById('onboarding')?.remove();
+  });
 }

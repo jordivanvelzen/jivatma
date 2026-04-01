@@ -25,6 +25,12 @@ export async function renderAdminDashboard() {
     .lte('expires_at', weekStr)
     .order('expires_at', { ascending: true });
 
+  // Pending pass requests
+  const { count: pendingRequestCount } = await sb
+    .from('pass_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+
   // Passes with few classes left (1-2 remaining on multi passes)
   const { data: lowPasses } = await sb
     .from('user_passes')
@@ -72,6 +78,15 @@ export async function renderAdminDashboard() {
             </ul>`
         }
       </section>
+
+      ${pendingRequestCount > 0 ? `
+      <section class="section">
+        <h3>${t('admin.pendingRequests')}</h3>
+        <a href="#/admin/requests" class="alert-item-link">
+          <div class="alert-item">${t('admin.pendingRequestsCount', { n: pendingRequestCount })}</div>
+        </a>
+      </section>
+      ` : ''}
 
       <section class="section">
         <h3>${t('admin.quickActions')}</h3>

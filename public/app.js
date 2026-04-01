@@ -19,6 +19,7 @@ import { renderAdminUserDetail } from './pages/admin/user-detail.js';
 import { renderAdminPassTypes } from './pages/admin/pass-types.js';
 import { renderAdminSchedule } from './pages/admin/schedule.js';
 import { renderAdminSettings } from './pages/admin/settings.js';
+import { renderAdminPassRequests } from './pages/admin/pass-requests.js';
 
 // Auth guard: redirect to login if not logged in
 async function requireAuth(renderFn, params) {
@@ -83,6 +84,7 @@ route('/admin/users/:id', (p) => requireAdmin(renderAdminUserDetail, p));
 route('/admin/passes', (p) => requireAdmin(renderAdminPassTypes, p));
 route('/admin/schedule', (p) => requireAdmin(renderAdminSchedule, p));
 route('/admin/settings', (p) => requireAdmin(renderAdminSettings, p));
+route('/admin/requests', (p) => requireAdmin(renderAdminPassRequests, p));
 
 // Default route
 route('/', async () => {

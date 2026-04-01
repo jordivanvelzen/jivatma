@@ -261,7 +261,84 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 .pass-type-info { flex: 1; min-width: 0; }
 .pass-type-detail { color: var(--gray); font-size: 0.85rem; margin-top: 0.2rem; }
 .pass-type-note { font-size: 0.8rem; color: var(--green); margin-top: 0.3rem; }
-.pass-type-contact { font-size: 0.8rem; color: var(--gray); white-space: nowrap; }
+.pass-type-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.pass-type-request-group { display: flex; gap: 0.4rem; align-items: center; }
+.pass-type-request-group select { padding: 0.3rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--gray-light); font-size: 0.8rem; }
+.pass-instructions { font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+/* Request cards (student view) */
+.request-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.request-card.request-pending { border-left: 4px solid var(--orange); }
+.request-card.request-rejected { border-left: 4px solid var(--red); opacity: 0.7; }
+.request-info { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.request-date { color: var(--gray); font-size: 0.8rem; }
+
+/* Admin request cards */
+.request-admin-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.request-admin-info { flex: 1; min-width: 0; }
+.request-admin-name { font-weight: 600; }
+.request-admin-detail { color: var(--gray); font-size: 0.85rem; margin-top: 0.2rem; }
+.request-admin-date { color: var(--gray); font-size: 0.8rem; margin-top: 0.1rem; }
+.request-admin-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+
+.alert-item-link { text-decoration: none; display: block; }
+.alert-item-link .alert-item { color: var(--orange); cursor: pointer; }
+.alert-item-link .alert-item:hover { text-decoration: underline; }
+
+/* Onboarding card */
+.onboarding-card {
+  background: var(--green-bg);
+  border: 2px solid var(--green-light);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.onboarding-card h3 { margin-bottom: 0.75rem; color: var(--green); }
+.onboarding-steps { display: flex; flex-direction: column; gap: 0.75rem; }
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+.onboarding-step.done { opacity: 0.5; }
+.onboarding-step.done span:first-child { color: var(--green); }
+.step-check {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.onboarding-step.done .step-check { background: var(--green); }
+#dismiss-onboarding { margin-top: 0.75rem; font-size: 0.8rem; }
 .section-label { font-weight: 600; font-size: 0.9rem; color: var(--gray-dark); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .class-card {

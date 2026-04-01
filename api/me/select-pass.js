@@ -1,6 +1,10 @@
 import { verifyUser } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 
+/**
+ * Self-select a single-class pass to pay with cash at class.
+ * Creates an unpaid user_passes entry immediately (no admin approval needed).
+ */
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -10,7 +14,7 @@ export default async function handler(req, res) {
   const { pass_type_id } = req.body;
   if (!pass_type_id) return res.status(400).json({ error: 'pass_type_id required' });
 
-  // Only allow self-selection of single-class passes
+  // Only allow single-class passes for cash-at-class flow
   const { data: passType } = await supabase
     .from('pass_types')
     .select('*')
@@ -19,7 +23,7 @@ export default async function handler(req, res) {
     .single();
 
   if (!passType) return res.status(404).json({ error: 'Pass type not found' });
-  if (passType.kind !== 'single') return res.status(400).json({ error: 'Only single-class passes can be self-selected' });
+  if (passType.kind !== 'single') return res.status(400).json({ error: 'Only single-class passes can use pay-at-class' });
 
   // Prevent duplicates: check if user already has an active unpaid single pass
   const today = new Date().toISOString().split('T')[0];

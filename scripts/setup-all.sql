@@ -10,6 +10,7 @@ DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS protect_master_admin() CASCADE;
 DROP FUNCTION IF EXISTS is_master_admin(TEXT) CASCADE;
 DROP FUNCTION IF EXISTS is_admin() CASCADE;
+DROP TABLE IF EXISTS pass_requests CASCADE;
 DROP TABLE IF EXISTS attendance CASCADE;
 DROP TABLE IF EXISTS bookings CASCADE;
 DROP TABLE IF EXISTS class_sessions CASCADE;
@@ -82,7 +83,7 @@ CREATE TABLE pass_types (
   class_count    INT,
   validity_days  INT NOT NULL,
   price          NUMERIC(8,2) NOT NULL,
-  currency       TEXT NOT NULL DEFAULT 'EUR',
+  currency       TEXT NOT NULL DEFAULT 'MXN',
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -158,6 +159,21 @@ CREATE TABLE attendance (
 );
 
 -- ============================================================
+-- PASS REQUESTS (student requests a pass, admin approves/rejects)
+-- ============================================================
+CREATE TABLE pass_requests (
+  id            SERIAL PRIMARY KEY,
+  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  pass_type_id  INT NOT NULL REFERENCES pass_types(id),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('transfer', 'cash', 'other')),
+  status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  admin_notes   TEXT,
+  reviewed_by   UUID REFERENCES profiles(id),
+  reviewed_at   TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
 -- SETTINGS
 -- ============================================================
 CREATE TABLE settings (
@@ -206,6 +222,11 @@ CREATE POLICY "Admins full access bookings" ON bookings FOR ALL USING (is_admin(
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own attendance" ON attendance FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Admins full access attendance" ON attendance FOR ALL USING (is_admin());
+
+ALTER TABLE pass_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own requests" ON pass_requests FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can create own requests" ON pass_requests FOR INSERT WITH CHECK (user_id = auth.uid() AND status = 'pending');
+CREATE POLICY "Admins full access requests" ON pass_requests FOR ALL USING (is_admin());
 
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read settings" ON settings FOR SELECT USING (auth.uid() IS NOT NULL);

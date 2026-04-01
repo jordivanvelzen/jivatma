@@ -84,8 +84,8 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `kind` | TEXT | `'single'`, `'multi'`, or `'unlimited'` |
 | `class_count` | INT | NULL for unlimited, 1 for single, N for multi |
 | `validity_days` | INT | Days the pass is valid after purchase |
-| `price` | NUMERIC(8,2) | In EUR |
-| `currency` | TEXT | Default `'EUR'` |
+| `price` | NUMERIC(8,2) | In MXN |
+| `currency` | TEXT | Default `'MXN'` |
 | `is_active` | BOOLEAN | Soft delete |
 | `created_at` | TIMESTAMPTZ | |
 
@@ -128,6 +128,19 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `notes` | TEXT | |
 | `created_at` | TIMESTAMPTZ | |
 | | | UNIQUE(`template_id`, `date`) |
+
+**`pass_requests`** — Student pass requests (admin approves/rejects)
+| Column | Type | Notes |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `user_id` | UUID FK | → `profiles(id)` |
+| `pass_type_id` | INT FK | → `pass_types(id)` |
+| `payment_method` | TEXT | `'transfer'`, `'cash'`, or `'other'` |
+| `status` | TEXT | `'pending'`, `'approved'`, or `'rejected'` |
+| `admin_notes` | TEXT | Optional admin note |
+| `reviewed_by` | UUID FK | → `profiles(id)` (admin who reviewed) |
+| `reviewed_at` | TIMESTAMPTZ | |
+| `created_at` | TIMESTAMPTZ | |
 
 **`bookings`** — Student sign-ups for sessions
 | Column | Type | Notes |
@@ -182,9 +195,12 @@ All endpoints are Vercel serverless functions.
 | GET | `/api/bookings` | User | List user's active bookings (with session data) |
 | POST | `/api/bookings` | User | Book a session (`{ session_id }`) — validates capacity, window, duplicates |
 | DELETE | `/api/bookings` | User | Cancel a booking (`{ session_id }`) — soft delete via `cancelled_at` |
-| GET | `/api/me` | User | Get own profile (default), passes (`?action=passes`), or attendance (`?action=attendance`) |
+| GET | `/api/me` | User | Get own profile (default), passes (`?action=passes`), attendance (`?action=attendance`), or requests (`?action=requests`) |
 | PATCH | `/api/me` | User | Update own profile (`{ full_name, phone }`) |
-| POST | `/api/me/select-pass` | User | Self-select a single-class pass (`{ pass_type_id }`) — creates unpaid pass, pay at class |
+| POST | `/api/me/request-pass` | User | Request any pass type (`{ pass_type_id, payment_method }`) — creates pending request for admin approval |
+| POST | `/api/me/select-pass` | User | Self-select a single-class pass for cash payment (`{ pass_type_id }`) — creates unpaid pass immediately, pay at class |
+| GET | `/api/admin/pass-requests` | Admin | List pending pass requests (optionally `?status=all`) |
+| PATCH | `/api/admin/pass-requests` | Admin | Approve or reject a request (`{ id, action: 'approve'|'reject' }`) — approve creates `user_passes` entry |
 | GET | `/api/admin/users` | Admin | List all user profiles |
 | PATCH | `/api/admin/users` | Admin | Update any user profile (`{ id, ...updates }`) |
 | GET | `/api/admin/passes` | Admin | List all user passes (optionally `?user_id=...`) |
@@ -226,9 +242,9 @@ Configured in `vercel.json`:
 
 | Route | File | Description |
 |---|---|---|
-| `#/dashboard` | `pages/dashboard.js` | Home: active passes, upcoming bookings, recent attendance |
+| `#/dashboard` | `pages/dashboard.js` | Home: active passes, upcoming bookings, recent attendance. New user onboarding guide (request a pass → book a class) |
 | `#/schedule` | `pages/schedule.js` | Browse upcoming classes within sign-up window, book/cancel. Shows spots remaining, meeting link for online classes |
-| `#/my-passes` | `pages/my-passes.js` | All passes (active, expired, used up) with status badges. Shows available pass types; students can self-select single-class passes (pay at class) |
+| `#/my-passes` | `pages/my-passes.js` | All passes (active, expired, used up) with status badges. Shows available pass types; students can request any pass (digital payment) or self-select single-class passes (pay cash at class). Shows pending/rejected requests |
 | `#/my-attendance` | `pages/my-attendance.js` | Attendance history table (date, time, class type) |
 | `#/profile` | `pages/profile.js` | Edit name/phone, change password |
 
@@ -236,7 +252,8 @@ Configured in `vercel.json`:
 
 | Route | File | Description |
 |---|---|---|
-| `#/admin` | `pages/admin/index.js` | Dashboard: today's classes, expiring passes alerts, low-class-count alerts, quick action links |
+| `#/admin` | `pages/admin/index.js` | Dashboard: today's classes, pending pass requests count, expiring passes alerts, low-class-count alerts, quick action links |
+| `#/admin/requests` | `pages/admin/pass-requests.js` | Pass request queue: view pending requests, approve (creates pass) or reject |
 | `#/admin/class` | `pages/admin/class.js` | Attendance marking: date picker, session selector, checkbox list of booked students + walk-ins, saves via API |
 | `#/admin/users` | `pages/admin/users.js` | User list table (name, role, view link) |
 | `#/admin/users/:id` | `pages/admin/user-detail.js` | User detail: role toggle, assign pass form, pass history, recent attendance |
@@ -304,7 +321,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 - Frontend is vanilla JS — no framework, no bundler, no build step
 - Pages render into `#app` via `innerHTML` with template literals
 - CSS in `public/style.css` — mobile-first, BEM-lite class naming
-- All monetary values in EUR
+- All monetary values in MXN (Mexican Pesos, displayed as `$`)
 - Dates handled as `YYYY-MM-DD` strings, times as `HH:MM` (from TIME columns)
 - Spanish is the primary language; all user-facing strings go through `t()` for i18n
 
@@ -317,13 +334,15 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
 | Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity |
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
-| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
-| Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity |
-| Pass Assignment | Built | Admin assigns passes with payment method and paid status tracking |
+| Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass |
+| Pass Management | Built | Three types (single, multi, unlimited) with pricing in MXN and validity |
+| Pass Request System | Built | Students request passes from My Passes page. Digital payments create pending requests for admin approval. Single-class cash passes are instant (unpaid, pay at class). Admin queue at `#/admin/requests` |
+| Pass Assignment | Built | Admin assigns passes directly or approves requests. Payment method and paid status tracking |
 | Attendance Tracking | Built | Admin marks attendance per session, auto-deducts from best active pass (FIFO) |
 | Attendance Undo | Built | Removing attendance reverses pass deduction |
-| Student Dashboard | Built | Active passes, upcoming bookings, recent attendance |
-| Admin Dashboard | Built | Today's classes, expiring pass alerts, low-class alerts, quick actions |
+| Student Dashboard | Built | Active passes, upcoming bookings, recent attendance. New user onboarding guide |
+| Admin Dashboard | Built | Today's classes, pending pass requests count, expiring pass alerts, low-class alerts, quick actions |
+| New User Onboarding | Built | Dashboard shows step-by-step guide for new users: 1. Request a pass, 2. Book a class. Auto-hides once steps are complete, dismissible via localStorage |
 | User Management | Built | View all users, user detail, toggle admin role, assign passes |
 | Studio Settings | Built | Location, meeting link, sign-up window, default capacity |
 | Bilingual UI (ES/EN) | Built | Full Spanish/English with toggle, persisted via cookie |

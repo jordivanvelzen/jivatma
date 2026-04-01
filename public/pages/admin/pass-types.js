@@ -22,7 +22,7 @@ export async function renderAdminPassTypes() {
               <td>${pt.kind === 'single' ? t('passes.singleClass') : pt.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count }) : t('passes.unlimited')}</td>
               <td>${pt.class_count ?? '\u221E'}</td>
               <td>${pt.validity_days}</td>
-              <td>\u20AC${parseFloat(pt.price).toFixed(2)}</td>
+              <td>$${parseFloat(pt.price).toFixed(2)}</td>
               <td>${pt.is_active ? '\u2713' : '\u2717'}</td>
               <td>
                 <button class="btn btn-small toggle-active" data-id="${pt.id}" data-active="${pt.is_active}">
@@ -52,7 +52,7 @@ export async function renderAdminPassTypes() {
           <label>${t('admin.validDays')}
             <input type="number" id="pt-days" required min="1" value="30" />
           </label>
-          <label>${t('admin.price')} (\u20AC)
+          <label>${t('admin.price')} ($)
             <input type="number" id="pt-price" required min="0" step="0.01" />
           </label>
         </div>

@@ -35,6 +35,7 @@ export async function renderNav() {
           <a href="#/admin/class">${t('nav.attendance')}</a>
           <a href="#/admin/users">${t('nav.users')}</a>
           <a href="#/admin/passes">${t('nav.passes')}</a>
+          <a href="#/admin/requests">${t('nav.requests')}</a>
           <a href="#/admin/schedule">${t('nav.schedule')}</a>
           <a href="#/admin/settings">${t('nav.settings')}</a>
         ` : `
