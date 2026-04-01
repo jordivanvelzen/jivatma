@@ -3,11 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#4a6741" />
   <title>Jivatma</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Jivatma</h1>
-  <script src="/app.js"></script>
+  <nav id="nav" class="nav hidden"></nav>
+  <main id="app"></main>
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Supabase client (loaded from CDN, no build step needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- App modules -->
+  <script type="module" src="/lib/supabase.js"></script>
+  <script type="module" src="/lib/api.js"></script>
+  <script type="module" src="/lib/router.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

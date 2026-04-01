@@ -1,0 +1,36 @@
+import { sb } from '../lib/supabase.js';
+import { showToast } from '../components/toast.js';
+import { t, toggleLang } from '../lib/i18n.js';
+
+export async function renderForgotPassword() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="auth-page">
+      <h1>${t('auth.resetPassword')}</h1>
+      <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+      <form id="forgot-form" class="auth-form">
+        <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
+        <button type="submit" class="btn btn-primary">${t('auth.sendResetLink')}</button>
+      </form>
+      <p class="auth-links"><a href="#/login">${t('auth.backToLogin')}</a></p>
+    </div>
+  `;
+
+  document.getElementById('lang-toggle').addEventListener('click', () => toggleLang());
+
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/#/reset-password',
+    });
+
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+
+    showToast(t('auth.checkEmailReset'), 'success');
+  });
+}

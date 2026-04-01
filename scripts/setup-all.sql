@@ -1,8 +1,26 @@
--- Jivatma — Full Supabase schema
--- Run in the Supabase SQL Editor to initialize
+-- Jivatma — Complete database setup
+-- Run this ONCE in Supabase SQL Editor: https://supabase.com/dashboard/project/rrqvnrolqollitlhpvjw/sql/new
 
 -- ============================================================
--- PROFILES (extends auth.users)
+-- CLEAN SLATE (drop if exists)
+-- ============================================================
+DROP TRIGGER IF EXISTS protect_master_admin_trigger ON profiles;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS protect_master_admin() CASCADE;
+DROP FUNCTION IF EXISTS is_master_admin(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS is_admin() CASCADE;
+DROP TABLE IF EXISTS attendance CASCADE;
+DROP TABLE IF EXISTS bookings CASCADE;
+DROP TABLE IF EXISTS class_sessions CASCADE;
+DROP TABLE IF EXISTS class_templates CASCADE;
+DROP TABLE IF EXISTS user_passes CASCADE;
+DROP TABLE IF EXISTS pass_types CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS profiles CASCADE;
+
+-- ============================================================
+-- PROFILES
 -- ============================================================
 CREATE TABLE profiles (
   id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -12,8 +30,7 @@ CREATE TABLE profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Master admin emails (hardcoded)
--- These users are always set to admin on signup and cannot be demoted
+-- Master admin check
 CREATE OR REPLACE FUNCTION is_master_admin(email TEXT)
 RETURNS BOOLEAN AS $$
   SELECT email = ANY(ARRAY[
@@ -22,7 +39,7 @@ RETURNS BOOLEAN AS $$
   ]);
 $$ LANGUAGE sql IMMUTABLE;
 
--- Auto-create profile on signup (master admins get admin role automatically)
+-- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -40,14 +57,30 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
+-- Prevent demoting master admins
+CREATE OR REPLACE FUNCTION protect_master_admin()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM auth.users WHERE id = OLD.id AND is_master_admin(email))
+     AND NEW.role <> 'admin' THEN
+    RAISE EXCEPTION 'Cannot demote a master admin';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER protect_master_admin_trigger
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_master_admin();
+
 -- ============================================================
--- PASS TYPES (configured by admin)
+-- PASS TYPES
 -- ============================================================
 CREATE TABLE pass_types (
   id             SERIAL PRIMARY KEY,
   kind           TEXT NOT NULL CHECK (kind IN ('single', 'multi', 'unlimited')),
-  class_count    INT,              -- NULL for unlimited, 1 for single, 10 for multi
-  validity_days  INT NOT NULL,     -- 1 for single, 90 for 10-class, 30 for monthly
+  class_count    INT,
+  validity_days  INT NOT NULL,
   price          NUMERIC(8,2) NOT NULL,
   currency       TEXT NOT NULL DEFAULT 'EUR',
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
@@ -55,13 +88,13 @@ CREATE TABLE pass_types (
 );
 
 -- ============================================================
--- USER PASSES (purchased / assigned by admin)
+-- USER PASSES
 -- ============================================================
 CREATE TABLE user_passes (
   id                SERIAL PRIMARY KEY,
   user_id           UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   pass_type_id      INT NOT NULL REFERENCES pass_types(id),
-  classes_remaining INT,            -- NULL for unlimited
+  classes_remaining INT,
   starts_at         DATE NOT NULL DEFAULT CURRENT_DATE,
   expires_at        DATE NOT NULL,
   payment_method    TEXT CHECK (payment_method IN ('cash', 'transfer', 'other')),
@@ -71,21 +104,21 @@ CREATE TABLE user_passes (
 );
 
 -- ============================================================
--- CLASS TEMPLATES (recurring weekly schedule)
+-- CLASS TEMPLATES
 -- ============================================================
 CREATE TABLE class_templates (
   id            SERIAL PRIMARY KEY,
-  day_of_week   INT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0=Sunday
+  day_of_week   INT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
   start_time    TIME NOT NULL,
   duration_min  INT NOT NULL DEFAULT 60,
   class_type    TEXT NOT NULL CHECK (class_type IN ('online', 'in_person', 'hybrid')),
-  capacity      INT,              -- NULL = use default from settings
+  capacity      INT,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
--- CLASS SESSIONS (generated from templates)
+-- CLASS SESSIONS
 -- ============================================================
 CREATE TABLE class_sessions (
   id            SERIAL PRIMARY KEY,
@@ -101,7 +134,7 @@ CREATE TABLE class_sessions (
 );
 
 -- ============================================================
--- BOOKINGS (student signs up for a class)
+-- BOOKINGS
 -- ============================================================
 CREATE TABLE bookings (
   id            SERIAL PRIMARY KEY,
@@ -113,7 +146,7 @@ CREATE TABLE bookings (
 );
 
 -- ============================================================
--- ATTENDANCE (admin confirms who showed up)
+-- ATTENDANCE
 -- ============================================================
 CREATE TABLE attendance (
   id             SERIAL PRIMARY KEY,
@@ -125,7 +158,7 @@ CREATE TABLE attendance (
 );
 
 -- ============================================================
--- SETTINGS (key-value store)
+-- SETTINGS
 -- ============================================================
 CREATE TABLE settings (
   key    TEXT PRIMARY KEY,
@@ -135,8 +168,6 @@ CREATE TABLE settings (
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
-
--- Helper: check if current user is admin
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
@@ -144,111 +175,59 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
--- PROFILES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (id = auth.uid());
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (is_admin());
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid()));
+CREATE POLICY "Admins can update any profile" ON profiles FOR UPDATE USING (is_admin());
 
-CREATE POLICY "Users can view own profile"
-  ON profiles FOR SELECT
-  USING (id = auth.uid());
-
-CREATE POLICY "Admins can view all profiles"
-  ON profiles FOR SELECT
-  USING (is_admin());
-
-CREATE POLICY "Users can update own profile (not role)"
-  ON profiles FOR UPDATE
-  USING (id = auth.uid())
-  WITH CHECK (id = auth.uid() AND role = (SELECT role FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Admins can update any profile"
-  ON profiles FOR UPDATE
-  USING (is_admin());
-
--- PASS TYPES
 ALTER TABLE pass_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view active pass types" ON pass_types FOR SELECT USING (auth.uid() IS NOT NULL AND is_active = TRUE);
+CREATE POLICY "Admins full access pass types" ON pass_types FOR ALL USING (is_admin());
 
-CREATE POLICY "Anyone authenticated can view active pass types"
-  ON pass_types FOR SELECT
-  USING (auth.uid() IS NOT NULL AND is_active = TRUE);
-
-CREATE POLICY "Admins can view all pass types"
-  ON pass_types FOR SELECT
-  USING (is_admin());
-
-CREATE POLICY "Admins can manage pass types"
-  ON pass_types FOR ALL
-  USING (is_admin());
-
--- USER PASSES
 ALTER TABLE user_passes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own passes" ON user_passes FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Admins full access passes" ON user_passes FOR ALL USING (is_admin());
 
-CREATE POLICY "Users can view own passes"
-  ON user_passes FOR SELECT
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Admins can manage all passes"
-  ON user_passes FOR ALL
-  USING (is_admin());
-
--- CLASS TEMPLATES
 ALTER TABLE class_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view active templates" ON class_templates FOR SELECT USING (auth.uid() IS NOT NULL AND is_active = TRUE);
+CREATE POLICY "Admins full access templates" ON class_templates FOR ALL USING (is_admin());
 
-CREATE POLICY "Anyone authenticated can view active templates"
-  ON class_templates FOR SELECT
-  USING (auth.uid() IS NOT NULL AND is_active = TRUE);
-
-CREATE POLICY "Admins can manage templates"
-  ON class_templates FOR ALL
-  USING (is_admin());
-
--- CLASS SESSIONS
 ALTER TABLE class_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view sessions" ON class_sessions FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins full access sessions" ON class_sessions FOR ALL USING (is_admin());
 
-CREATE POLICY "Anyone authenticated can view sessions"
-  ON class_sessions FOR SELECT
-  USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Admins can manage sessions"
-  ON class_sessions FOR ALL
-  USING (is_admin());
-
--- BOOKINGS
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own bookings" ON bookings FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can create own bookings" ON bookings FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own bookings" ON bookings FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Admins full access bookings" ON bookings FOR ALL USING (is_admin());
 
-CREATE POLICY "Users can view own bookings"
-  ON bookings FOR SELECT
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Users can create own bookings"
-  ON bookings FOR INSERT
-  WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY "Users can cancel own bookings"
-  ON bookings FOR UPDATE
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Admins can view all bookings"
-  ON bookings FOR ALL
-  USING (is_admin());
-
--- ATTENDANCE
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own attendance" ON attendance FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Admins full access attendance" ON attendance FOR ALL USING (is_admin());
 
-CREATE POLICY "Users can view own attendance"
-  ON attendance FOR SELECT
-  USING (user_id = auth.uid());
-
-CREATE POLICY "Admins can manage attendance"
-  ON attendance FOR ALL
-  USING (is_admin());
-
--- SETTINGS
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read settings" ON settings FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Admins full access settings" ON settings FOR ALL USING (is_admin());
 
-CREATE POLICY "Anyone authenticated can read settings"
-  ON settings FOR SELECT
-  USING (auth.uid() IS NOT NULL);
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+INSERT INTO pass_types (kind, class_count, validity_days, price) VALUES
+  ('single',    1,    1,   15.00),
+  ('multi',     10,   90,  120.00),
+  ('unlimited', NULL, 30,  85.00);
 
-CREATE POLICY "Admins can manage settings"
-  ON settings FOR ALL
-  USING (is_admin());
+INSERT INTO settings (key, value) VALUES
+  ('location_address',    ''),
+  ('online_meeting_link', ''),
+  ('signup_window_weeks', '2'),
+  ('default_capacity',    '15');
+
+-- Promote existing master admins if they already signed up
+UPDATE profiles SET role = 'admin'
+WHERE id IN (
+  SELECT id FROM auth.users
+  WHERE email IN ('chaudy@gmail.com', 'jordi.vanvelzen@gmail.com')
+);
