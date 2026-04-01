@@ -16,6 +16,8 @@ const translations = {
     'nav.history': 'Historial',
     'nav.profile': 'Perfil',
     'nav.logout': 'Cerrar sesión',
+    'nav.studentView': 'Vista Alumno',
+    'nav.adminView': 'Vista Admin',
 
     // Auth
     'auth.login': 'Iniciar sesión',
@@ -207,6 +209,8 @@ const translations = {
     'nav.history': 'History',
     'nav.profile': 'Profile',
     'nav.logout': 'Logout',
+    'nav.studentView': 'Student View',
+    'nav.adminView': 'Admin View',
 
     // Auth
     'auth.login': 'Log in',

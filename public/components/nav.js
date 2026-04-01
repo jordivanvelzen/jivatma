@@ -1,6 +1,7 @@
-import { sb, getProfile } from '../lib/supabase.js';
+import { sb, getSession, getProfile } from '../lib/supabase.js';
 import { navigate } from '../lib/router.js';
 import { t, toggleLang } from '../lib/i18n.js';
+import { isStudentView, toggleStudentView, isMasterAdmin } from '../lib/view-mode.js';
 
 export async function renderNav() {
   const nav = document.getElementById('nav');
@@ -13,12 +14,23 @@ export async function renderNav() {
 
   nav.classList.remove('hidden');
   const isAdmin = profile.role === 'admin';
+  const session = await getSession();
+  const masterAdmin = isAdmin && isMasterAdmin(session?.user?.email);
+  const showAdminNav = isAdmin && !isStudentView();
+
+  // Apply nav color based on view mode
+  nav.classList.toggle('nav-student-view', masterAdmin && isStudentView());
 
   nav.innerHTML = `
     <div class="nav-inner">
       <a href="#/" class="nav-brand">Jivatma</a>
+      ${masterAdmin ? `
+        <button id="view-toggle" class="view-toggle ${isStudentView() ? 'view-toggle--student' : ''}">
+          ${isStudentView() ? t('nav.adminView') : t('nav.studentView')}
+        </button>
+      ` : ''}
       <div class="nav-links">
-        ${isAdmin ? `
+        ${showAdminNav ? `
           <a href="#/admin">${t('nav.dashboard')}</a>
           <a href="#/admin/class">${t('nav.attendance')}</a>
           <a href="#/admin/users">${t('nav.users')}</a>
@@ -48,6 +60,14 @@ export async function renderNav() {
       nav.querySelector('.nav-links').classList.remove('open');
     });
   });
+
+  const viewToggleBtn = document.getElementById('view-toggle');
+  if (viewToggleBtn) {
+    viewToggleBtn.addEventListener('click', () => {
+      const nowStudent = toggleStudentView();
+      navigate(nowStudent ? '/dashboard' : '/admin');
+    });
+  }
 
   document.getElementById('lang-btn').addEventListener('click', () => {
     toggleLang();

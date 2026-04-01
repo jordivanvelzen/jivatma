@@ -1,6 +1,7 @@
 import { getSession, getProfile } from './lib/supabase.js';
 import { route, setNotFound, startRouter, navigate } from './lib/router.js';
 import { t } from './lib/i18n.js';
+import { isStudentView, setStudentView } from './lib/view-mode.js';
 import { renderNav } from './components/nav.js';
 import { renderLogin } from './pages/login.js';
 import { renderRegister } from './pages/register.js';
@@ -27,12 +28,13 @@ async function requireAuth(renderFn, params) {
   await renderFn(params);
 }
 
-// Admin guard: redirect if not admin
+// Admin guard: redirect if not admin or if in student view mode
 async function requireAdmin(renderFn, params) {
   const session = await getSession();
   if (!session) { navigate('/login'); return; }
   const profile = await getProfile();
   if (profile?.role !== 'admin') { navigate('/dashboard'); return; }
+  if (isStudentView()) { navigate('/dashboard'); return; }
   await renderNav();
   await renderFn(params);
 }
@@ -42,9 +44,11 @@ route('/login', async () => {
   const session = await getSession();
   if (session) {
     const profile = await getProfile();
-    navigate(profile?.role === 'admin' ? '/admin' : '/dashboard');
+    const isAdminNormal = profile?.role === 'admin' && !isStudentView();
+    navigate(isAdminNormal ? '/admin' : '/dashboard');
     return;
   }
+  setStudentView(false);
   document.getElementById('nav').classList.add('hidden');
   await renderLogin();
 });
@@ -85,7 +89,8 @@ route('/', async () => {
   const session = await getSession();
   if (!session) { navigate('/login'); return; }
   const profile = await getProfile();
-  navigate(profile?.role === 'admin' ? '/admin' : '/dashboard');
+  const isAdminNormal = profile?.role === 'admin' && !isStudentView();
+  navigate(isAdminNormal ? '/admin' : '/dashboard');
 });
 
 setNotFound(() => {

@@ -326,6 +326,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | User Management | Built | View all users, user detail, toggle admin role, assign passes |
 | Studio Settings | Built | Location, meeting link, sign-up window, default capacity |
 | Bilingual UI (ES/EN) | Built | Full Spanish/English with toggle, persisted via cookie |
+| View as Student Toggle | Built | Master admins can toggle between admin and student view via nav button. Student view shows their own real data (passes, bookings, attendance). Nav turns blue in student mode. In-memory state, resets on reload. Only visible to master admin emails. |
 | Responsive Mobile-First UI | Built | Hamburger nav, card layouts, 800px max-width desktop |
 | Profile Management | Built | Edit name/phone, change password |
 | Online Class Support | Built | Three class types (online, in-person, hybrid) with meeting link |
