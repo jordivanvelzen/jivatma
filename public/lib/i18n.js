@@ -61,6 +61,9 @@ const translations = {
     'schedule.bookingCancelled': 'Reserva cancelada.',
     'schedule.spots': 'plazas',
     'schedule.onlineLink': 'Enlace en línea:',
+    'schedule.noPass': 'Sin pase',
+    'schedule.noPassBanner': 'No tienes un pase activo. Ve a Mis Pases para seleccionar una clase individual o contacta a tu instructora para un pase.',
+    'schedule.getPasses': 'Obtener un pase',
 
     // Passes
     'passes.title': 'Mis Pases',
@@ -73,6 +76,16 @@ const translations = {
     'passes.active': 'activo',
     'passes.expired': 'vencido',
     'passes.usedUp': 'agotado',
+    'passes.payAtClass': 'pagar en clase',
+    'passes.yourPasses': 'Tus Pases',
+    'passes.availableTypes': 'Pases Disponibles',
+    'passes.validFor': '{days} días de validez',
+    'passes.singleNote': 'Selecciona y reserva una clase. Pagas al llegar.',
+    'passes.selectSingle': 'Seleccionar',
+    'passes.alreadySelected': 'Ya seleccionado',
+    'passes.singleSelected': '¡Clase individual seleccionada! Ya puedes reservar una clase.',
+    'passes.alreadyHasSingle': 'Ya tienes una clase individual activa.',
+    'passes.contactInstructor': 'Contacta a tu instructora',
 
     // Attendance history
     'attendance.title': 'Historial de Asistencia',
@@ -254,6 +267,9 @@ const translations = {
     'schedule.bookingCancelled': 'Booking cancelled.',
     'schedule.spots': 'spots',
     'schedule.onlineLink': 'Online link:',
+    'schedule.noPass': 'No pass',
+    'schedule.noPassBanner': 'You don\'t have an active pass. Go to My Passes to select a single class or contact your instructor for a pass.',
+    'schedule.getPasses': 'Get a pass',
 
     // Passes
     'passes.title': 'My Passes',
@@ -266,6 +282,16 @@ const translations = {
     'passes.active': 'active',
     'passes.expired': 'expired',
     'passes.usedUp': 'used up',
+    'passes.payAtClass': 'pay at class',
+    'passes.yourPasses': 'Your Passes',
+    'passes.availableTypes': 'Available Passes',
+    'passes.validFor': '{days} days validity',
+    'passes.singleNote': 'Select and book one class. Pay when you arrive.',
+    'passes.selectSingle': 'Select',
+    'passes.alreadySelected': 'Already selected',
+    'passes.singleSelected': 'Single class selected! You can now book a class.',
+    'passes.alreadyHasSingle': 'You already have an active single class pass.',
+    'passes.contactInstructor': 'Contact your instructor',
 
     // Attendance history
     'attendance.title': 'Attendance History',

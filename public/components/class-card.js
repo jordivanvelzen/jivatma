@@ -1,6 +1,6 @@
 import { t, getLocale } from '../lib/i18n.js';
 
-export function renderClassCard(session, booking, spotsLeft) {
+export function renderClassCard(session, booking, spotsLeft, hasActivePass = true) {
   const dateStr = new Date(session.date).toLocaleDateString(getLocale(), {
     weekday: 'short', day: 'numeric', month: 'short',
   });
@@ -10,6 +10,7 @@ export function renderClassCard(session, booking, spotsLeft) {
   const showSpots = session.class_type !== 'online';
   const isFull = showSpots && spotsLeft <= 0;
   const isBooked = booking && !booking.cancelled_at;
+  const cantBook = isFull || !hasActivePass;
 
   return `
     <div class="class-card" data-session-id="${session.id}">
@@ -21,8 +22,8 @@ export function renderClassCard(session, booking, spotsLeft) {
         ${isBooked
           ? `<button class="btn btn-secondary btn-cancel" data-session-id="${session.id}">${t('schedule.cancel')}</button>
              <span class="booked-badge">${t('schedule.youreSignedUp')}</span>`
-          : `<button class="btn btn-primary btn-signup ${isFull ? 'disabled' : ''}" data-session-id="${session.id}" ${isFull ? 'disabled' : ''}>
-               ${isFull ? t('schedule.full') : t('schedule.signup')}
+          : `<button class="btn btn-primary btn-signup ${cantBook ? 'disabled' : ''}" data-session-id="${session.id}" ${cantBook ? 'disabled' : ''}>
+               ${isFull ? t('schedule.full') : !hasActivePass ? t('schedule.noPass') : t('schedule.signup')}
              </button>`
         }
       </div>
