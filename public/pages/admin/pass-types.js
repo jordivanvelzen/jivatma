@@ -1,6 +1,7 @@
 import { sb } from '../../lib/supabase.js';
+import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
-import { t } from '../../lib/i18n.js';
+import { t, getLocale } from '../../lib/i18n.js';
 
 export async function renderAdminPassTypes() {
   const app = document.getElementById('app');
@@ -9,6 +10,18 @@ export async function renderAdminPassTypes() {
     .from('pass_types')
     .select('*')
     .order('kind');
+
+  // Fetch pass requests
+  let requests = [];
+  try {
+    requests = await api('/api/pass-requests');
+  } catch (e) {
+    // pass_requests table may not exist yet
+  }
+
+  const pendingRequests = (requests || []).filter(r => r.status === 'pending');
+  const processedRequests = (requests || []).filter(r => r.status !== 'pending');
+  const locale = getLocale();
 
   app.innerHTML = `
     <div class="page">
@@ -22,7 +35,7 @@ export async function renderAdminPassTypes() {
               <td>${pt.kind === 'single' ? t('passes.singleClass') : pt.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count }) : t('passes.unlimited')}</td>
               <td>${pt.class_count ?? '\u221E'}</td>
               <td>${pt.validity_days}</td>
-              <td>\u20AC${parseFloat(pt.price).toFixed(2)}</td>
+              <td>$${parseFloat(pt.price).toFixed(2)} MXN</td>
               <td>${pt.is_active ? '\u2713' : '\u2717'}</td>
               <td>
                 <button class="btn btn-small toggle-active" data-id="${pt.id}" data-active="${pt.is_active}">
@@ -52,12 +65,69 @@ export async function renderAdminPassTypes() {
           <label>${t('admin.validDays')}
             <input type="number" id="pt-days" required min="1" value="30" />
           </label>
-          <label>${t('admin.price')} (\u20AC)
+          <label>${t('admin.price')} (MXN)
             <input type="number" id="pt-price" required min="0" step="0.01" />
           </label>
         </div>
         <button type="submit" class="btn btn-primary">${t('admin.add')}</button>
       </form>
+
+      <section class="section" style="margin-top: 2rem;">
+        <h3>${t('requests.title')} ${pendingRequests.length ? `(${pendingRequests.length})` : ''}</h3>
+        ${!pendingRequests.length
+          ? `<p class="muted">${t('requests.noRequestsAdmin')}</p>`
+          : `<table class="table">
+              <thead><tr><th>${t('requests.student')}</th><th>${t('requests.passType')}</th><th>${t('requests.paymentMethod')}</th><th>${t('requests.date')}</th><th></th></tr></thead>
+              <tbody>
+                ${pendingRequests.map(r => {
+                  const pt = r.pass_types;
+                  const kindLabel = pt?.kind === 'single' ? t('passes.singleClass')
+                    : pt?.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
+                    : t('passes.unlimited');
+                  const dateStr = new Date(r.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+                  const name = r.profiles?.full_name || 'Unknown';
+                  const payLabel = r.payment_method === 'cash' ? t('admin.cash')
+                    : r.payment_method === 'transfer' ? t('admin.transfer')
+                    : r.payment_method ? t('admin.other') : '-';
+                  return `
+                    <tr>
+                      <td>${name}${r.notes ? `<br><small class="muted">${r.notes}</small>` : ''}</td>
+                      <td>${kindLabel}</td>
+                      <td>${payLabel}</td>
+                      <td>${dateStr}</td>
+                      <td>
+                        <button class="btn btn-small btn-primary approve-req" data-id="${r.id}">${t('requests.approve')}</button>
+                        <button class="btn btn-small btn-secondary decline-req" data-id="${r.id}">${t('requests.decline')}</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>`
+        }
+
+        ${processedRequests.length ? `
+          <details style="margin-top: 1rem;">
+            <summary class="muted" style="cursor:pointer;">${t('attendance.title')} (${processedRequests.length})</summary>
+            <table class="table" style="margin-top: 0.5rem;">
+              <thead><tr><th>${t('requests.student')}</th><th>${t('requests.passType')}</th><th>${t('requests.status')}</th><th>${t('requests.date')}</th></tr></thead>
+              <tbody>
+                ${processedRequests.map(r => {
+                  const pt = r.pass_types;
+                  const kindLabel = pt?.kind === 'single' ? t('passes.singleClass')
+                    : pt?.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
+                    : t('passes.unlimited');
+                  const dateStr = new Date(r.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+                  const name = r.profiles?.full_name || 'Unknown';
+                  const statusLabel = r.status === 'approved' ? t('requests.approved') : t('requests.declined');
+                  const statusClass = r.status === 'approved' ? 'badge-active' : 'badge-expired';
+                  return `<tr><td>${name}</td><td>${kindLabel}</td><td><span class="badge ${statusClass}">${statusLabel}</span></td><td>${dateStr}</td></tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </details>
+        ` : ''}
+      </section>
     </div>
   `;
 
@@ -98,5 +168,36 @@ export async function renderAdminPassTypes() {
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('admin.passTypeAdded'), 'success');
     renderAdminPassTypes();
+  });
+
+  // Approve/decline request handlers
+  app.querySelectorAll('.approve-req').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api('/api/pass-requests', {
+          method: 'PATCH',
+          body: JSON.stringify({ id: parseInt(btn.dataset.id, 10), status: 'approved' }),
+        });
+        showToast(t('requests.requestApproved'), 'success');
+        renderAdminPassTypes();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  app.querySelectorAll('.decline-req').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api('/api/pass-requests', {
+          method: 'PATCH',
+          body: JSON.stringify({ id: parseInt(btn.dataset.id, 10), status: 'declined' }),
+        });
+        showToast(t('requests.requestDeclined'), 'success');
+        renderAdminPassTypes();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
   });
 }

@@ -84,8 +84,8 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `kind` | TEXT | `'single'`, `'multi'`, or `'unlimited'` |
 | `class_count` | INT | NULL for unlimited, 1 for single, N for multi |
 | `validity_days` | INT | Days the pass is valid after purchase |
-| `price` | NUMERIC(8,2) | In EUR |
-| `currency` | TEXT | Default `'EUR'` |
+| `price` | NUMERIC(8,2) | In MXN |
+| `currency` | TEXT | Default `'MXN'` |
 | `is_active` | BOOLEAN | Soft delete |
 | `created_at` | TIMESTAMPTZ | |
 
@@ -149,6 +149,18 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `checked_in_at` | TIMESTAMPTZ | |
 | | | UNIQUE(`session_id`, `user_id`) |
 
+**`pass_requests`** — Student pass requests (pending admin approval)
+| Column | Type | Notes |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `user_id` | UUID FK | → `profiles(id)` |
+| `pass_type_id` | INT FK | → `pass_types(id)` |
+| `status` | TEXT | `'pending'`, `'approved'`, or `'declined'` |
+| `payment_method` | TEXT | `'cash'`, `'transfer'`, or `'other'` |
+| `notes` | TEXT | Optional student notes |
+| `created_at` | TIMESTAMPTZ | |
+| `updated_at` | TIMESTAMPTZ | |
+
 **`settings`** — Key-value configuration store
 | Key | Purpose | Default |
 |---|---|---|
@@ -201,6 +213,9 @@ All endpoints are Vercel serverless functions.
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
 | POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, user_ids }`) — auto-deducts passes, marks session completed |
 | DELETE | `/api/admin/attendance` | Admin | Remove a single attendance record (`{ session_id, user_id }`) — reverses pass deduction |
+| GET | `/api/pass-requests` | User | List pass requests (admin sees all, user sees own) |
+| POST | `/api/pass-requests` | User | Create a pass request (`{ pass_type_id, payment_method, notes }`) |
+| PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve |
 
 ## Cron Jobs
 
@@ -304,7 +319,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 - Frontend is vanilla JS — no framework, no bundler, no build step
 - Pages render into `#app` via `innerHTML` with template literals
 - CSS in `public/style.css` — mobile-first, BEM-lite class naming
-- All monetary values in EUR
+- All monetary values in MXN (Mexican Peso), displayed as "$X.XX MXN"
 - Dates handled as `YYYY-MM-DD` strings, times as `HH:MM` (from TIME columns)
 - Spanish is the primary language; all user-facing strings go through `t()` for i18n
 
@@ -332,6 +347,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Profile Management | Built | Edit name/phone, change password |
 | Online Class Support | Built | Three class types (online, in-person, hybrid) with meeting link |
 | Pass Expiry Monitoring (Cron) | Built | Daily cron identifies expiring passes and low-remaining passes |
+| Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Students see their request history with status badges. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment. |
 | Pass Expiry Notifications | Not Built | Email/WhatsApp notifications planned for V2 (placeholder in cron) |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |

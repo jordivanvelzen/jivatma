@@ -410,3 +410,51 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 
 /* ---- Session picker ---- */
 .session-picker { display: flex; flex-direction: column; gap: 0; }
+
+.btn-disabled {
+  background: var(--gray-light);
+  color: var(--gray);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---- Modal ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.modal-content h3 { margin-bottom: 1rem; color: var(--green); }
+.modal-content textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ---- Status badges ---- */
+.badge-active { background: var(--green-bg); color: var(--green); }
+.badge-expired { background: #fadbd8; color: var(--red); }
+.badge-pending { background: #fdebd0; color: var(--orange); }
