@@ -215,9 +215,9 @@ CREATE POLICY "Admins full access settings" ON settings FOR ALL USING (is_admin(
 -- SEED DATA
 -- ============================================================
 INSERT INTO pass_types (kind, class_count, validity_days, price) VALUES
-  ('single',    1,    1,   250.00),
-  ('multi',     10,   90,  2000.00),
-  ('unlimited', NULL, 30,  1500.00);
+  ('single',    1,    1,   150.00),
+  ('multi',     10,   60,  1200.00),
+  ('unlimited', NULL, 30,  1200.00);
 
 INSERT INTO settings (key, value) VALUES
   ('location_address',    ''),
