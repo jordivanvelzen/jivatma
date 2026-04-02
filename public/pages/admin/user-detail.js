@@ -58,7 +58,7 @@ export async function renderAdminUserDetail(params) {
               const label = pt.kind === 'single' ? t('passes.singleClass')
                 : pt.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
                 : t('passes.unlimited');
-              return `<option value="${pt.id}">${label} — \u20AC${pt.price}</option>`;
+              return `<option value="${pt.id}">${label} — $${parseFloat(pt.price).toFixed(2)} MXN</option>`;
             }).join('')}
           </select>
           <select id="payment-method">

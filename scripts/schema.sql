@@ -49,7 +49,7 @@ CREATE TABLE pass_types (
   class_count    INT,              -- NULL for unlimited, 1 for single, 10 for multi
   validity_days  INT NOT NULL,     -- 1 for single, 90 for 10-class, 30 for monthly
   price          NUMERIC(8,2) NOT NULL,
-  currency       TEXT NOT NULL DEFAULT 'EUR',
+  currency       TEXT NOT NULL DEFAULT 'MXN',
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
