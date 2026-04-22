@@ -101,7 +101,7 @@ export async function renderAdminSettings() {
     try {
       await sb.from('settings').upsert({ key: 'telegram_bot_token', value: token });
       await sb.from('settings').upsert({ key: 'telegram_chat_id', value: chat });
-      const result = await api('/api/admin/telegram-test', { method: 'POST' });
+      const result = await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ action: 'telegram-test' }) });
       if (result.ok) showToast(t('admin.telegramSent'), 'success');
       else showToast(`Telegram: ${result.error || result.reason}`, 'error');
     } catch (err) {

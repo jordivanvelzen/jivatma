@@ -228,7 +228,7 @@ All endpoints are Vercel serverless functions.
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
 | POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, records: [{user_id, attended}] }`) — auto-deducts passes (no-shows still deduct), marks session completed. Accepts legacy `user_ids` array (all treated as attended). |
 | DELETE | `/api/admin/attendance` | Admin | Remove a single attendance record (`{ session_id, user_id }`) — reverses pass deduction |
-| POST | `/api/admin/telegram-test` | Admin | Send a test Telegram message using current settings |
+| POST | `/api/admin/settings` | Admin | Admin actions. Body `{ action: 'telegram-test' }` sends a test Telegram message using current settings. |
 | GET | `/api/pass-requests` | User | List pass requests (admin sees all, user sees own) |
 | POST | `/api/pass-requests` | User | Create a pass request (`{ pass_type_id, payment_method, notes }`) |
 | PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve |
