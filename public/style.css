@@ -348,14 +348,42 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
   gap: 0.75rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--gray-light);
-  cursor: pointer;
 }
 .attendance-row input[type="checkbox"] {
   width: 22px;
   height: 22px;
   accent-color: var(--green);
 }
-.user-name { flex: 1; font-size: 1rem; }
+.user-name { flex: 1; font-size: 1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Segmented control for attendance state (attended / no-show / unmarked) */
+.att-seg {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.att-seg-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--gray);
+  border-left: 1px solid var(--gray-light);
+  padding: 0;
+  line-height: 1;
+}
+.att-seg-btn:first-child { border-left: none; }
+.att-seg-btn.active { font-weight: bold; color: #fff; }
+.att-seg-btn.att-attended { background: var(--green); }
+.att-seg-btn.att-noshow { background: #c0392b; }
+.att-seg-btn.active:not(.att-attended):not(.att-noshow) {
+  background: var(--gray-light); color: var(--dark);
+}
 
 /* ---- Quick actions ---- */
 .quick-actions {
@@ -578,4 +606,46 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 .table { display: block; overflow-x: auto; white-space: nowrap; }
 @media (min-width: 600px) {
   .table { display: table; white-space: normal; }
+}
+
+/* ---- Onboarding card (brand-new students) ---- */
+.onboarding-card {
+  background: #fff;
+  border: 1px solid var(--green-light);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+.onboarding-card h3 { color: var(--green); margin-bottom: 0.5rem; }
+.onboarding-card p { margin-bottom: 0.75rem; }
+.onboarding-steps {
+  margin: 0 0 1rem 1.25rem;
+  padding: 0;
+}
+.onboarding-steps li {
+  margin-bottom: 0.6rem;
+  line-height: 1.45;
+}
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---- Empty state with CTA ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* ---- Info box (used on register page) ---- */
+.info-box {
+  background: #fff;
+  border-left: 3px solid var(--green);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }

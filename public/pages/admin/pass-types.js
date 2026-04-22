@@ -109,7 +109,7 @@ export async function renderAdminPassTypes() {
 
         ${processedRequests.length ? `
           <details style="margin-top: 1rem;">
-            <summary class="muted" style="cursor:pointer;">${t('attendance.title')} (${processedRequests.length})</summary>
+            <summary class="muted" style="cursor:pointer;">${t('requests.history')} (${processedRequests.length})</summary>
             <table class="table" style="margin-top: 0.5rem;">
               <thead><tr><th>${t('requests.student')}</th><th>${t('requests.passType')}</th><th>${t('requests.status')}</th><th>${t('requests.date')}</th></tr></thead>
               <tbody>

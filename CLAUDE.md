@@ -147,6 +147,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `user_id` | UUID FK | → `profiles(id)` |
 | `pass_id` | INT FK | → `user_passes(id)`, SET NULL on delete |
 | `checked_in_at` | TIMESTAMPTZ | |
+| `attended` | BOOLEAN | Default `TRUE`. `FALSE` = no-show (still deducts a class). |
 | | | UNIQUE(`session_id`, `user_id`) |
 
 **`pass_requests`** — Student pass requests (pending admin approval)
@@ -180,7 +181,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 ### Database Functions & Triggers
 
 - `is_master_admin(email)` — Returns true for hardcoded master admin emails (`chaudy@gmail.com`, `jordi.vanvelzen@gmail.com`)
-- `handle_new_user()` — Trigger on `auth.users` INSERT: auto-creates a `profiles` row; master admins get `role='admin'` automatically
+- `handle_new_user()` — Trigger on `auth.users` INSERT: auto-creates a `profiles` row (including `phone` from signup metadata); master admins get `role='admin'` automatically
 - `protect_master_admin()` — Trigger on `profiles` UPDATE: prevents demoting master admins
 - `is_admin()` — Helper for RLS policies: checks if `auth.uid()` has admin role
 
@@ -225,7 +226,7 @@ All endpoints are Vercel serverless functions.
 | DELETE | `/api/admin/schedule?type=sessions` | Admin | Delete a session (`{ id }`) |
 | GET | `/api/admin/settings` | Admin | Get all settings as key-value object |
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
-| POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, user_ids }`) — auto-deducts passes, marks session completed |
+| POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, records: [{user_id, attended}] }`) — auto-deducts passes (no-shows still deduct), marks session completed. Accepts legacy `user_ids` array (all treated as attended). |
 | DELETE | `/api/admin/attendance` | Admin | Remove a single attendance record (`{ session_id, user_id }`) — reverses pass deduction |
 | POST | `/api/admin/telegram-test` | Admin | Send a test Telegram message using current settings |
 | GET | `/api/pass-requests` | User | List pass requests (admin sees all, user sees own) |
@@ -354,7 +355,9 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Stackable Single-Class Passes | Built | Students can self-select multiple single-class passes; each valid for 30 days. FIFO deduction (oldest-expiring first) |
 | Pass Assignment | Built | Admin assigns passes with payment method (cash/transfer/other/gift) and paid status tracking. Gift passes auto-mark as paid |
 | Edit Issued Passes | Built | Admin can edit any issued user_pass: classes remaining, expiry date, paid status. Also one-click `+1 class` (credit-back) or `+7 days` (extend), plus delete |
-| Attendance Tracking | Built | Admin marks attendance per session, auto-deducts from best active pass (FIFO) |
+| Attendance Tracking | Built | Admin marks attendance per session with three states per student (✓ attended / ✗ no-show / — unmarked). Both ✓ and ✗ deduct from the best active pass (FIFO); no-shows are tagged via the `attended` boolean so stats remain accurate. Unmarked students are left as no-row. |
+| Student Onboarding | Built | Register page requires phone (WhatsApp) and explains the email-verification → login → get-pass flow up front. Dashboard shows a welcome card with 3 steps (get pass → book → attend) for brand-new students (no passes + no bookings + no attendance), then auto-hides. Empty states on dashboard include CTA buttons. |
+| Approval WhatsApp Nudge | Built | When Claudia approves a pass request, she receives a Telegram message with a `wa.me/<phone>?text=...` tap-to-WhatsApp link pre-filled with a "tu pase está aprobado" message for the student. Mexico country code (52) auto-prepended to bare 10-digit phones. |
 | Attendance Undo | Built | Removing attendance reverses pass deduction |
 | Student Dashboard | Built | Active passes, upcoming bookings, recent attendance |
 | Admin Dashboard | Built | Today's classes, expiring pass alerts, low-class alerts, quick actions |

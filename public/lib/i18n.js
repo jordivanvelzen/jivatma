@@ -39,6 +39,13 @@ const translations = {
     'auth.checkEmailReset': 'Revisa tu correo para el enlace de restablecimiento.',
     'auth.passwordUpdated': '¡Contraseña actualizada!',
     'auth.accountCreated': '¡Cuenta creada! Revisa tu correo para confirmar.',
+    'auth.registerIntro': 'Crea tu cuenta para reservar clases de yoga en Jivatma. Todos los campos son obligatorios.',
+    'auth.phonePlaceholder': 'Teléfono (WhatsApp)',
+    'auth.nextSteps': 'Qué sigue:',
+    'auth.step1Email': 'Te llegará un correo de confirmación (revisa spam también).',
+    'auth.step2Confirm': 'Haz clic en el enlace del correo para confirmar tu cuenta.',
+    'auth.step3Login': 'Inicia sesión con tu correo y contraseña.',
+    'auth.step4Pass': 'Elige una clase individual o pide un pase a Claudia para empezar a reservar.',
 
     // Dashboard
     'dash.welcome': 'Bienvenido/a',
@@ -49,6 +56,18 @@ const translations = {
     'dash.browseClasses': 'Ver clases',
     'dash.recentAttendance': 'Asistencia Reciente',
     'dash.noAttendance': 'Aún no hay asistencia registrada.',
+
+    // Onboarding
+    'onboarding.welcomeTitle': '¡Bienvenida a Jivatma! 🧘',
+    'onboarding.welcomeIntro': 'Así funciona la app:',
+    'onboarding.step1Title': 'Consigue un pase',
+    'onboarding.step1Body': 'En "Mis Pases" puedes elegir una clase individual y pagarla al llegar, o pedir un pase más grande a Claudia.',
+    'onboarding.step2Title': 'Reserva tu clase',
+    'onboarding.step2Body': 'En "Clases" ve el horario y aparta tu lugar. Solo puedes reservar si tienes un pase activo.',
+    'onboarding.step3Title': 'Asiste',
+    'onboarding.step3Body': 'Llega a la clase (o conéctate si es en línea). Claudia marca tu asistencia y se descuenta del pase automáticamente.',
+    'onboarding.goPasses': 'Ver pases',
+    'onboarding.goSchedule': 'Ver horario',
 
     // Schedule
     'schedule.title': 'Próximas Clases',
@@ -121,9 +140,14 @@ const translations = {
     'admin.booked': 'reservado',
     'admin.others': 'Otros',
     'admin.saveAttendance': 'Guardar Asistencia',
-    'admin.checkedIn': '{n} registrados, {p} pases descontados',
+    'admin.checkedIn': '{n} asistieron, {p} pases descontados',
     'admin.noPass': '{n} sin pase',
+    'admin.noShowsCount': '{n} no asistieron',
     'admin.noClassesDate': 'No hay clases en esta fecha.',
+    'admin.attended': 'Asistió',
+    'admin.noShow': 'No vino',
+    'admin.unmarked': 'Sin marcar',
+    'admin.attendanceHelp': 'Marca ✓ si vino, ✗ si no vino (aún se descuenta su pase), o — para dejar sin marcar.',
 
     // Admin Users
     'admin.users': 'Usuarios',
@@ -225,6 +249,7 @@ const translations = {
     'requests.noRequestsAdmin': 'No hay solicitudes.',
     'requests.requestApproved': '¡Solicitud aprobada! Pase asignado.',
     'requests.requestDeclined': 'Solicitud rechazada.',
+    'requests.history': 'Historial de Solicitudes',
 
     // Language
     'lang.switch': 'English',
@@ -340,6 +365,13 @@ const translations = {
     'auth.checkEmailReset': 'Check your email for the reset link.',
     'auth.passwordUpdated': 'Password updated!',
     'auth.accountCreated': 'Account created! Check your email to confirm.',
+    'auth.registerIntro': 'Create your account to book yoga classes at Jivatma. All fields are required.',
+    'auth.phonePlaceholder': 'Phone (WhatsApp)',
+    'auth.nextSteps': "What's next:",
+    'auth.step1Email': "You'll receive a confirmation email (check spam too).",
+    'auth.step2Confirm': 'Click the link in that email to confirm your account.',
+    'auth.step3Login': 'Log in with your email and password.',
+    'auth.step4Pass': 'Pick a single class or request a pass from Claudia to start booking.',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
@@ -350,6 +382,18 @@ const translations = {
     'dash.browseClasses': 'Browse classes',
     'dash.recentAttendance': 'Recent Attendance',
     'dash.noAttendance': 'No attendance recorded yet.',
+
+    // Onboarding
+    'onboarding.welcomeTitle': 'Welcome to Jivatma! 🧘',
+    'onboarding.welcomeIntro': "Here's how the app works:",
+    'onboarding.step1Title': 'Get a pass',
+    'onboarding.step1Body': 'In "My Passes" you can pick a single class and pay at the studio, or request a larger pass from Claudia.',
+    'onboarding.step2Title': 'Book a class',
+    'onboarding.step2Body': 'In "Classes" browse the schedule and reserve your spot. You need an active pass to book.',
+    'onboarding.step3Title': 'Attend',
+    'onboarding.step3Body': "Show up (or join online). Claudia marks attendance and it's deducted from your pass automatically.",
+    'onboarding.goPasses': 'View passes',
+    'onboarding.goSchedule': 'View schedule',
 
     // Schedule
     'schedule.title': 'Upcoming Classes',
@@ -422,9 +466,14 @@ const translations = {
     'admin.booked': 'booked',
     'admin.others': 'Others',
     'admin.saveAttendance': 'Save Attendance',
-    'admin.checkedIn': '{n} checked in, {p} passes deducted',
+    'admin.checkedIn': '{n} attended, {p} passes deducted',
     'admin.noPass': '{n} without pass',
+    'admin.noShowsCount': '{n} no-show',
     'admin.noClassesDate': 'No classes on this date.',
+    'admin.attended': 'Attended',
+    'admin.noShow': 'No-show',
+    'admin.unmarked': 'Unmarked',
+    'admin.attendanceHelp': 'Tap ✓ if they came, ✗ for no-show (still deducts their pass), or — to leave unmarked.',
 
     // Admin Users
     'admin.users': 'Users',
@@ -526,6 +575,7 @@ const translations = {
     'requests.noRequestsAdmin': 'No requests.',
     'requests.requestApproved': 'Request approved! Pass assigned.',
     'requests.requestDeclined': 'Request declined.',
+    'requests.history': 'Request History',
 
     // Language
     'lang.switch': 'Español',

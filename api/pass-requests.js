@@ -102,10 +102,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'id and status (approved/declined) required' });
     }
 
-    // Get the request
+    // Get the request (with student profile for WhatsApp deeplink)
     const { data: request } = await supabase
       .from('pass_requests')
-      .select('*, pass_types(*)')
+      .select('*, pass_types(*), profiles(full_name, phone)')
       .eq('id', id)
       .single();
 
@@ -141,6 +141,35 @@ export default async function handler(req, res) {
       });
 
       if (passError) return res.status(500).json({ error: passError.message });
+
+      // Telegram nudge: tap-to-WhatsApp so admin can confirm with the student
+      const pt = request.pass_types;
+      const kindLabel = pt?.kind === 'single' ? 'Clase Única'
+        : pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases`
+        : 'Mensual Ilimitado';
+      const studentName = request.profiles?.full_name || 'Alumna';
+      const firstName = studentName.split(' ')[0];
+      let phone = (request.profiles?.phone || '').replace(/[^\d]/g, '');
+      // Prepend Mexico country code (52) if it looks like a bare 10-digit local number
+      if (phone.length === 10) phone = '52' + phone;
+      const waText = encodeURIComponent(
+        `Hola ${firstName}, \u00a1tu pase de *${kindLabel}* ya est\u00e1 aprobado! Nos vemos pronto en Jivatma. \ud83e\uddd8`
+      );
+      const waLink = phone
+        ? `https://wa.me/${phone}?text=${waText}`
+        : null;
+
+      const lines = [
+        `\u2705 *Pase aprobado*`,
+        ``,
+        `*Alumna:* ${studentName}`,
+        `*Pase:* ${kindLabel}`,
+        ``,
+        waLink
+          ? `[Avisar por WhatsApp](${waLink})`
+          : `_(Sin tel\u00e9fono guardado \u2014 avisar a mano)_`,
+      ];
+      sendTelegram(lines.join('\n')).catch(() => {});
     }
 
     return res.json({ success: true, status });

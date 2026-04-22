@@ -6,20 +6,17 @@ import { t } from '../../lib/i18n.js';
 export async function renderAdminClass() {
   const app = document.getElementById('app');
 
-  // Parse query params from hash
   const hashParts = window.location.hash.split('?');
   const params = new URLSearchParams(hashParts[1] || '');
   const selectedDate = params.get('date') || new Date().toISOString().split('T')[0];
   const selectedSessionId = params.get('session') ? parseInt(params.get('session'), 10) : null;
 
-  // Get sessions for selected date
   const { data: sessions } = await sb
     .from('class_sessions')
     .select('*')
     .eq('date', selectedDate)
     .order('start_time', { ascending: true });
 
-  // If only one session and none selected, auto-select it
   const activeSession = selectedSessionId
     ? sessions?.find(s => s.id === selectedSessionId)
     : sessions?.length === 1 ? sessions[0] : null;
@@ -27,7 +24,6 @@ export async function renderAdminClass() {
   let attendanceHtml = '';
 
   if (activeSession) {
-    // Get bookings for this session
     const { data: bookings } = await sb
       .from('bookings')
       .select('*, profiles(id, full_name)')
@@ -35,15 +31,15 @@ export async function renderAdminClass() {
       .is('cancelled_at', null)
       .order('profiles(full_name)', { ascending: true });
 
-    // Get existing attendance
     const { data: existingAttendance } = await sb
       .from('attendance')
-      .select('user_id')
+      .select('user_id, attended')
       .eq('session_id', activeSession.id);
 
-    const checkedIn = new Set((existingAttendance || []).map(a => a.user_id));
+    // existingMap[userId] = true (attended) | false (no-show) | undefined (not marked)
+    const existingMap = {};
+    (existingAttendance || []).forEach(a => { existingMap[a.user_id] = a.attended; });
 
-    // Get all users (for walk-ins)
     const { data: allUsers } = await sb
       .from('profiles')
       .select('id, full_name')
@@ -52,30 +48,42 @@ export async function renderAdminClass() {
     const bookedIds = new Set((bookings || []).map(b => b.profiles?.id).filter(Boolean));
     const unbookedUsers = (allUsers || []).filter(u => !bookedIds.has(u.id) && u.full_name);
 
+    const stateButtons = (userId, withNoShow) => {
+      const state = existingMap[userId]; // true / false / undefined
+      const unmarked = state === undefined;
+      return `
+        <div class="att-seg" data-user="${userId}">
+          <button type="button" class="att-seg-btn ${state === true ? 'active att-attended' : ''}" data-state="attended" title="${t('admin.attended')}">\u2713</button>
+          ${withNoShow ? `<button type="button" class="att-seg-btn ${state === false ? 'active att-noshow' : ''}" data-state="noshow" title="${t('admin.noShow')}">\u2717</button>` : ''}
+          <button type="button" class="att-seg-btn ${unmarked ? 'active' : ''}" data-state="unmarked" title="${t('admin.unmarked')}">\u2014</button>
+        </div>
+      `;
+    };
+
     attendanceHtml = `
       <div class="attendance-section">
         <h3>${activeSession.start_time.slice(0, 5)} · ${t('type.' + activeSession.class_type)}</h3>
+        <p class="muted" style="font-size:0.85rem">${t('admin.attendanceHelp')}</p>
 
-        <form id="attendance-form">
+        <div id="attendance-form">
           ${bookings?.length ? `<h4>${t('admin.booked')}</h4>` : ''}
           ${(bookings || []).filter(b => b.profiles).map(b => `
-            <label class="attendance-row booked">
-              <input type="checkbox" name="user" value="${b.profiles.id}" ${checkedIn.has(b.profiles.id) ? 'checked' : ''} />
+            <div class="attendance-row booked">
               <span class="user-name">${b.profiles.full_name}</span>
-              <span class="badge badge-booked">${t('admin.booked')}</span>
-            </label>
+              ${stateButtons(b.profiles.id, true)}
+            </div>
           `).join('')}
 
           ${unbookedUsers.length ? `<h4>${t('admin.others')}</h4>` : ''}
           ${unbookedUsers.map(u => `
-            <label class="attendance-row">
-              <input type="checkbox" name="user" value="${u.id}" ${checkedIn.has(u.id) ? 'checked' : ''} />
+            <div class="attendance-row">
               <span class="user-name">${u.full_name}</span>
-            </label>
+              ${stateButtons(u.id, false)}
+            </div>
           `).join('')}
 
-          <button type="submit" class="btn btn-primary btn-block">${t('admin.saveAttendance')}</button>
-        </form>
+          <button type="button" id="save-attendance" class="btn btn-primary btn-block">${t('admin.saveAttendance')}</button>
+        </div>
       </div>
     `;
   }
@@ -121,24 +129,41 @@ export async function renderAdminClass() {
     window.location.hash = `/admin/class?date=${d.toISOString().split('T')[0]}`;
   });
 
-  // Attendance form submission
-  document.getElementById('attendance-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const checked = [...e.target.querySelectorAll('input[name="user"]:checked')].map(cb => cb.value);
+  // Segmented control clicks
+  app.querySelectorAll('.att-seg').forEach(seg => {
+    seg.querySelectorAll('.att-seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        seg.querySelectorAll('.att-seg-btn').forEach(b => {
+          b.classList.remove('active', 'att-attended', 'att-noshow');
+        });
+        btn.classList.add('active');
+        if (btn.dataset.state === 'attended') btn.classList.add('att-attended');
+        if (btn.dataset.state === 'noshow') btn.classList.add('att-noshow');
+      });
+    });
+  });
+
+  // Save
+  document.getElementById('save-attendance')?.addEventListener('click', async () => {
+    const records = [];
+    app.querySelectorAll('.att-seg').forEach(seg => {
+      const userId = seg.dataset.user;
+      const activeBtn = seg.querySelector('.att-seg-btn.active');
+      const state = activeBtn?.dataset.state;
+      if (state === 'attended') records.push({ user_id: userId, attended: true });
+      else if (state === 'noshow') records.push({ user_id: userId, attended: false });
+      // unmarked → omit entirely
+    });
 
     try {
       const result = await api('/api/admin/attendance', {
         method: 'POST',
-        body: JSON.stringify({
-          session_id: activeSession.id,
-          user_ids: checked,
-        }),
+        body: JSON.stringify({ session_id: activeSession.id, records }),
       });
-      let msg = t('admin.checkedIn', { n: result.checked_in, p: result.passes_deducted });
-      if (result.no_pass > 0) {
-        msg += `, ${t('admin.noPass', { n: result.no_pass })}`;
-      }
-      showToast(msg, 'success');
+      const parts = [t('admin.checkedIn', { n: result.checked_in, p: result.passes_deducted })];
+      if (result.no_shows > 0) parts.push(t('admin.noShowsCount', { n: result.no_shows }));
+      if (result.no_pass > 0) parts.push(t('admin.noPass', { n: result.no_pass }));
+      showToast(parts.join(' · '), 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }
