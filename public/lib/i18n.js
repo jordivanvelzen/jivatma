@@ -292,6 +292,15 @@ const translations = {
 
     // Nav — icons
     'nav.menu': 'Menú',
+
+    // Telegram notifications
+    'admin.telegramSection': 'Notificaciones de Telegram',
+    'admin.telegramHelp': 'Crea un bot con @BotFather, pega el token aquí y obtén tu chat ID escribiendo a @userinfobot. Recibirás notificaciones cuando haya nuevas solicitudes de pase.',
+    'admin.telegramToken': 'Token del bot',
+    'admin.telegramChatId': 'Chat ID',
+    'admin.telegramTest': 'Enviar prueba',
+    'admin.telegramSent': '¡Mensaje de prueba enviado!',
+    'admin.telegramNeedBoth': 'Ingresa el token y el chat ID antes de probar.',
   },
 
   en: {
@@ -584,6 +593,15 @@ const translations = {
 
     // Nav — icons
     'nav.menu': 'Menu',
+
+    // Telegram notifications
+    'admin.telegramSection': 'Telegram Notifications',
+    'admin.telegramHelp': 'Create a bot with @BotFather, paste the token here, and get your chat ID by messaging @userinfobot. You will receive notifications when new pass requests arrive.',
+    'admin.telegramToken': 'Bot token',
+    'admin.telegramChatId': 'Chat ID',
+    'admin.telegramTest': 'Send test',
+    'admin.telegramSent': 'Test message sent!',
+    'admin.telegramNeedBoth': 'Enter the token and chat ID before testing.',
   },
 };
 

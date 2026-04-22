@@ -1,4 +1,5 @@
 import { sb } from '../../lib/supabase.js';
+import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t } from '../../lib/i18n.js';
 
@@ -46,7 +47,19 @@ export async function renderAdminSettings() {
           <textarea id="s-instructions" rows="3">${settings.payment_instructions || ''}</textarea>
         </label>
 
-        <button type="submit" class="btn btn-primary">${t('admin.saveSettings')}</button>
+        <h3 style="margin-top:1.5rem">${t('admin.telegramSection')}</h3>
+        <p class="muted" style="font-size:0.85rem">${t('admin.telegramHelp')}</p>
+        <label>${t('admin.telegramToken')}
+          <input type="text" id="s-tg-token" value="${settings.telegram_bot_token || ''}" placeholder="123456:ABC-DEF..." autocomplete="off" />
+        </label>
+        <label>${t('admin.telegramChatId')}
+          <input type="text" id="s-tg-chat" value="${settings.telegram_chat_id || ''}" placeholder="123456789" autocomplete="off" />
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">${t('admin.saveSettings')}</button>
+          <button type="button" id="tg-test" class="btn btn-secondary">${t('admin.telegramTest')}</button>
+        </div>
       </form>
     </div>
   `;
@@ -65,6 +78,8 @@ export async function renderAdminSettings() {
       bank_clabe: document.getElementById('s-clabe').value,
       bank_card_number: document.getElementById('s-card').value,
       payment_instructions: document.getElementById('s-instructions').value,
+      telegram_bot_token: document.getElementById('s-tg-token').value,
+      telegram_chat_id: document.getElementById('s-tg-chat').value,
     };
 
     for (const [key, value] of Object.entries(updates)) {
@@ -73,5 +88,26 @@ export async function renderAdminSettings() {
     }
 
     showToast(t('admin.settingsSaved'), 'success');
+  });
+
+  // Telegram test button — saves current token/chat first, then sends a test message
+  document.getElementById('tg-test').addEventListener('click', async () => {
+    const btn = document.getElementById('tg-test');
+    const token = document.getElementById('s-tg-token').value.trim();
+    const chat = document.getElementById('s-tg-chat').value.trim();
+    if (!token || !chat) { showToast(t('admin.telegramNeedBoth'), 'error'); return; }
+
+    btn.disabled = true;
+    try {
+      await sb.from('settings').upsert({ key: 'telegram_bot_token', value: token });
+      await sb.from('settings').upsert({ key: 'telegram_chat_id', value: chat });
+      const result = await api('/api/admin/telegram-test', { method: 'POST' });
+      if (result.ok) showToast(t('admin.telegramSent'), 'success');
+      else showToast(`Telegram: ${result.error || result.reason}`, 'error');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   });
 }

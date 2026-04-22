@@ -174,6 +174,8 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `bank_clabe` | CLABE (Mexican interbank number) | `''` |
 | `bank_card_number` | Card number | `''` |
 | `payment_instructions` | Extra free-form payment instructions | `''` |
+| `telegram_bot_token` | Telegram bot token (from @BotFather) | `''` |
+| `telegram_chat_id` | Telegram chat ID to notify on new pass requests | `''` |
 
 ### Database Functions & Triggers
 
@@ -225,6 +227,7 @@ All endpoints are Vercel serverless functions.
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
 | POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, user_ids }`) — auto-deducts passes, marks session completed |
 | DELETE | `/api/admin/attendance` | Admin | Remove a single attendance record (`{ session_id, user_id }`) — reverses pass deduction |
+| POST | `/api/admin/telegram-test` | Admin | Send a test Telegram message using current settings |
 | GET | `/api/pass-requests` | User | List pass requests (admin sees all, user sees own) |
 | POST | `/api/pass-requests` | User | Create a pass request (`{ pass_type_id, payment_method, notes }`) |
 | PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve |
@@ -366,8 +369,8 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Modal shows studio bank details (holder/bank/account/CLABE/card) configured in admin settings — clicking a value copies it. Student can check "I've made the payment" which prepends `[PAID]` to notes. Students see their request history with status badges. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment. |
 | Payment Instructions | Built | Admin configures bank details (holder, bank name, account, CLABE, card number, free-form instructions) in settings. Shown to students in pass-request modal with copy-on-click |
 | Icon Nav | Built | Logout, language, profile are icon-only buttons grouped on the right side of the nav. Main section links remain in the collapsible list. Language button shows the *other* language code (ES/EN) |
-| Pass Expiry Notifications | Not Built | Email/WhatsApp notifications planned (Telegram bot recommended for simplicity). Cron logs counts only |
-| Admin Notifications (new pass request) | Not Built | Decision pending on channel — Telegram bot or WhatsApp via Twilio |
+| Pass Expiry Notifications | Not Built | Could reuse the Telegram helper; cron currently logs counts only |
+| Admin Notifications (new pass request) | Built | Telegram bot notification fires on every new `pass_requests` insert. Admin configures bot token + chat ID in settings; "Send test" button validates setup. Message includes student name, pass type, price, payment method, paid marker, notes, and a deep link to `/admin/passes` |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |
 

@@ -1,5 +1,6 @@
 import { verifyUser, verifyAdmin } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
+import { sendTelegram } from '../lib/telegram.js';
 
 export default async function handler(req, res) {
   const auth = await verifyUser(req);
@@ -64,6 +65,31 @@ export default async function handler(req, res) {
       .single();
 
     if (error) return res.status(500).json({ error: error.message });
+
+    // Fire-and-forget Telegram notification to admin
+    const pt = data.pass_types;
+    const kindLabel = pt?.kind === 'single' ? 'Clase Única'
+      : pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases`
+      : 'Mensual Ilimitado';
+    const priceStr = pt?.price ? `$${parseFloat(pt.price).toFixed(0)} MXN` : '';
+    const methodLabel = data.payment_method === 'transfer' ? 'Transferencia'
+      : data.payment_method === 'cash' ? 'Efectivo'
+      : data.payment_method || 'N/A';
+    const paid = (data.notes || '').startsWith('[PAID]');
+    const studentName = auth.profile.full_name || auth.user.email;
+    const msg = [
+      `*Nueva solicitud de pase* \u{1F4EC}`,
+      ``,
+      `*Alumna:* ${studentName}`,
+      `*Pase:* ${kindLabel}${priceStr ? ' · ' + priceStr : ''}`,
+      `*Pago:* ${methodLabel}${paid ? ' \u2705 _marcado como pagado_' : ''}`,
+      data.notes ? `*Notas:* ${data.notes}` : '',
+      ``,
+      `Abrir: https://jivatma.vercel.app/#/admin/passes`,
+    ].filter(Boolean).join('\n');
+
+    sendTelegram(msg).catch(() => {});
+
     return res.status(201).json(data);
   }
 
