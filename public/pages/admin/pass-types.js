@@ -31,13 +31,14 @@ export async function renderAdminPassTypes() {
         <thead><tr><th>${t('admin.kind')}</th><th>${t('admin.classes')}</th><th>${t('admin.validDays')}</th><th>${t('admin.price')}</th><th>${t('admin.activeCol')}</th><th></th></tr></thead>
         <tbody>
           ${(passTypes || []).map(pt => `
-            <tr>
+            <tr data-pt-id="${pt.id}">
               <td>${pt.kind === 'single' ? t('passes.singleClass') : pt.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count }) : t('passes.unlimited')}</td>
-              <td>${pt.class_count ?? '\u221E'}</td>
-              <td>${pt.validity_days}</td>
-              <td>$${parseFloat(pt.price).toFixed(2)} MXN</td>
+              <td><input type="number" class="pt-edit-count" data-id="${pt.id}" value="${pt.class_count ?? ''}" placeholder="\u221E" min="1" style="width:4rem" /></td>
+              <td><input type="number" class="pt-edit-days" data-id="${pt.id}" value="${pt.validity_days}" min="1" style="width:5rem" /></td>
+              <td><input type="number" class="pt-edit-price" data-id="${pt.id}" value="${parseFloat(pt.price).toFixed(2)}" min="0" step="0.01" style="width:6rem" /> MXN</td>
               <td>${pt.is_active ? '\u2713' : '\u2717'}</td>
               <td>
+                <button class="btn btn-small save-pt" data-id="${pt.id}">${t('general.save')}</button>
                 <button class="btn btn-small toggle-active" data-id="${pt.id}" data-active="${pt.is_active}">
                   ${pt.is_active ? t('admin.deactivate') : t('admin.activate')}
                 </button>
@@ -150,6 +151,29 @@ export async function renderAdminPassTypes() {
       const { error } = await sb.from('pass_types').update({ is_active: !currentlyActive }).eq('id', id);
       if (error) { showToast(error.message, 'error'); return; }
       renderAdminPassTypes();
+    });
+  });
+
+  // Save edits on a pass type row
+  app.querySelectorAll('.save-pt').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const countEl = app.querySelector(`.pt-edit-count[data-id="${id}"]`);
+      const daysEl = app.querySelector(`.pt-edit-days[data-id="${id}"]`);
+      const priceEl = app.querySelector(`.pt-edit-price[data-id="${id}"]`);
+      const updates = {
+        class_count: countEl.value ? parseInt(countEl.value, 10) : null,
+        validity_days: parseInt(daysEl.value, 10),
+        price: parseFloat(priceEl.value),
+      };
+      try {
+        await api('/api/admin/passes?type=types', {
+          method: 'PATCH',
+          body: JSON.stringify({ id, ...updates }),
+        });
+        showToast(t('admin.passTypeUpdated'), 'success');
+        renderAdminPassTypes();
+      } catch (err) { showToast(err.message, 'error'); }
     });
   });
 

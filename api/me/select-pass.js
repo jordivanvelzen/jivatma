@@ -21,22 +21,8 @@ export default async function handler(req, res) {
   if (!passType) return res.status(404).json({ error: 'Pass type not found' });
   if (passType.kind !== 'single') return res.status(400).json({ error: 'Only single-class passes can be self-selected' });
 
-  // Prevent duplicates: check if user already has an active unpaid single pass
+  // Stackable: students may hold multiple single-class passes.
   const today = new Date().toISOString().split('T')[0];
-  const { data: existing } = await supabase
-    .from('user_passes')
-    .select('id')
-    .eq('user_id', auth.user.id)
-    .eq('pass_type_id', pass_type_id)
-    .eq('is_paid', false)
-    .gte('expires_at', today)
-    .gt('classes_remaining', 0)
-    .limit(1);
-
-  if (existing?.length) {
-    return res.status(400).json({ error: 'already_has_single_pass' });
-  }
-
   const startsAt = today;
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + passType.validity_days);

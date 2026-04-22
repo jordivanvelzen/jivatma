@@ -98,7 +98,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `classes_remaining` | INT | NULL for unlimited, decremented on attendance |
 | `starts_at` | DATE | |
 | `expires_at` | DATE | |
-| `payment_method` | TEXT | `'cash'`, `'transfer'`, or `'other'` |
+| `payment_method` | TEXT | `'cash'`, `'transfer'`, `'other'`, or `'gift'` |
 | `is_paid` | BOOLEAN | |
 | `created_by` | UUID FK | → `profiles(id)` (admin who assigned) |
 | `created_at` | TIMESTAMPTZ | |
@@ -168,6 +168,12 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `online_meeting_link` | Zoom/meet link for online classes | `''` |
 | `signup_window_weeks` | How far ahead students can book | `'2'` |
 | `default_capacity` | Default class capacity | `'15'` |
+| `bank_name` | Bank name for transfers | `''` |
+| `bank_account_holder` | Account holder name | `''` |
+| `bank_account_number` | Bank account number | `''` |
+| `bank_clabe` | CLABE (Mexican interbank number) | `''` |
+| `bank_card_number` | Card number | `''` |
+| `payment_instructions` | Extra free-form payment instructions | `''` |
 
 ### Database Functions & Triggers
 
@@ -200,15 +206,21 @@ All endpoints are Vercel serverless functions.
 | GET | `/api/admin/users` | Admin | List all user profiles |
 | PATCH | `/api/admin/users` | Admin | Update any user profile (`{ id, ...updates }`) |
 | GET | `/api/admin/passes` | Admin | List all user passes (optionally `?user_id=...`) |
-| POST | `/api/admin/passes` | Admin | Assign a pass to a user (`{ user_id, pass_type_id, payment_method, is_paid }`) |
+| POST | `/api/admin/passes` | Admin | Assign a pass to a user (`{ user_id, pass_type_id, payment_method, is_paid }`). `payment_method='gift'` auto-sets `is_paid=true` |
+| PATCH | `/api/admin/passes` | Admin | Edit an issued user_pass (`{ id, expires_at?, classes_remaining?, is_paid?, payment_method?, starts_at? }`) |
+| PUT | `/api/admin/passes` | Admin | Credit-back or extend a pass (`{ id, action: 'credit' \| 'extend', days? }`) |
+| DELETE | `/api/admin/passes` | Admin | Delete an issued user_pass (`{ id }`) |
 | GET | `/api/admin/passes?type=types` | Admin | List all pass types |
 | POST | `/api/admin/passes?type=types` | Admin | Create a pass type |
 | PATCH | `/api/admin/passes?type=types` | Admin | Update a pass type (`{ id, ...updates }`) |
 | GET | `/api/admin/schedule` | Admin | List class templates |
 | POST | `/api/admin/schedule` | Admin | Create a class template |
+| PATCH | `/api/admin/schedule` | Admin | Update a class template (`{ id, ...updates }`) |
 | DELETE | `/api/admin/schedule` | Admin | Delete a class template (`{ id }`) |
 | GET | `/api/admin/schedule?type=sessions` | Admin | List class sessions (optionally `?date=YYYY-MM-DD`) |
+| POST | `/api/admin/schedule?type=sessions` | Admin | Create a one-off session (`{ date, start_time, class_type, capacity?, notes? }`) |
 | PATCH | `/api/admin/schedule?type=sessions` | Admin | Update a session (`{ id, ...updates }`) |
+| DELETE | `/api/admin/schedule?type=sessions` | Admin | Delete a session (`{ id }`) |
 | GET | `/api/admin/settings` | Admin | Get all settings as key-value object |
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
 | POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, user_ids }`) — auto-deducts passes, marks session completed |
@@ -330,11 +342,15 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | User Registration & Login | Built | Email/password via Supabase Auth with email confirmation |
 | Master Admin Auto-Assignment | Built | Hardcoded emails get admin role on signup, cannot be demoted |
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
-| Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity |
+| Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity. Admin can edit templates inline (day/time/type/capacity) without deleting |
+| One-off Sessions | Built | Admin can add ad-hoc class sessions not tied to a template (e.g. special workshops). Appears in upcoming sessions list and can be deleted individually |
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
+| Delete Sessions | Built | Admin can delete individual upcoming sessions from the schedule page |
 | Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
-| Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity |
-| Pass Assignment | Built | Admin assigns passes with payment method and paid status tracking |
+| Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity. Pass types can be edited inline (price/classes/days) by admin |
+| Stackable Single-Class Passes | Built | Students can self-select multiple single-class passes; each valid for 30 days. FIFO deduction (oldest-expiring first) |
+| Pass Assignment | Built | Admin assigns passes with payment method (cash/transfer/other/gift) and paid status tracking. Gift passes auto-mark as paid |
+| Edit Issued Passes | Built | Admin can edit any issued user_pass: classes remaining, expiry date, paid status. Also one-click `+1 class` (credit-back) or `+7 days` (extend), plus delete |
 | Attendance Tracking | Built | Admin marks attendance per session, auto-deducts from best active pass (FIFO) |
 | Attendance Undo | Built | Removing attendance reverses pass deduction |
 | Student Dashboard | Built | Active passes, upcoming bookings, recent attendance |
@@ -347,8 +363,11 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Profile Management | Built | Edit name/phone, change password |
 | Online Class Support | Built | Three class types (online, in-person, hybrid) with meeting link |
 | Pass Expiry Monitoring (Cron) | Built | Daily cron identifies expiring passes and low-remaining passes |
-| Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Students see their request history with status badges. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment. |
-| Pass Expiry Notifications | Not Built | Email/WhatsApp notifications planned for V2 (placeholder in cron) |
+| Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Modal shows studio bank details (holder/bank/account/CLABE/card) configured in admin settings — clicking a value copies it. Student can check "I've made the payment" which prepends `[PAID]` to notes. Students see their request history with status badges. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment. |
+| Payment Instructions | Built | Admin configures bank details (holder, bank name, account, CLABE, card number, free-form instructions) in settings. Shown to students in pass-request modal with copy-on-click |
+| Icon Nav | Built | Logout, language, profile are icon-only buttons grouped on the right side of the nav. Main section links remain in the collapsible list. Language button shows the *other* language code (ES/EN) |
+| Pass Expiry Notifications | Not Built | Email/WhatsApp notifications planned (Telegram bot recommended for simplicity). Cron logs counts only |
+| Admin Notifications (new pass request) | Not Built | Decision pending on channel — Telegram bot or WhatsApp via Twilio |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |
 

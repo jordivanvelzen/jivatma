@@ -232,6 +232,66 @@ const translations = {
     // General
     'general.notFound': 'Página no encontrada',
     'general.goHome': 'Ir al inicio',
+    'general.save': 'Guardar',
+    'general.cancel': 'Cancelar',
+    'general.edit': 'Editar',
+    'general.delete': 'Eliminar',
+    'general.confirmDelete': '¿Estás seguro?',
+
+    // Payment instructions
+    'payment.title': 'Instrucciones de Pago',
+    'payment.bankName': 'Banco',
+    'payment.accountHolder': 'Titular',
+    'payment.accountNumber': 'Número de cuenta',
+    'payment.clabe': 'CLABE',
+    'payment.cardNumber': 'Número de tarjeta',
+    'payment.extraInstructions': 'Instrucciones adicionales',
+    'payment.copyCLABE': 'Copiar CLABE',
+    'payment.copied': '¡Copiado!',
+    'payment.iHavePaid': 'Ya realicé el pago',
+    'payment.paymentNote': 'Al marcar "Ya realicé el pago", Claudia recibirá una notificación para aprobar tu pase.',
+
+    // Passes — extra
+    'passes.gift': 'Regalo',
+    'passes.editPass': 'Editar Pase',
+    'passes.addClass': '+1 clase',
+    'passes.extend7': '+7 días',
+    'passes.classesRemaining': 'Clases restantes',
+    'passes.expiresAt': 'Vence',
+    'passes.deletePass': 'Eliminar pase',
+    'passes.deleteConfirm': '¿Eliminar este pase?',
+    'passes.passUpdated': 'Pase actualizado.',
+    'passes.passDeleted': 'Pase eliminado.',
+    'passes.creditAdded': '+1 clase añadida.',
+    'passes.extended': 'Vencimiento extendido.',
+    'passes.gifted': '¡Pase regalado!',
+
+    // Admin schedule — extra
+    'admin.editClass': 'Editar Clase',
+    'admin.oneOff': 'Clase Única (sin plantilla)',
+    'admin.addOneOff': 'Agregar Clase Única',
+    'admin.date': 'Fecha',
+    'admin.sessionNotes': 'Notas',
+    'admin.templateUpdated': '¡Plantilla actualizada!',
+    'admin.sessionAdded': '¡Clase agregada al horario!',
+    'admin.sessionDeleted': 'Clase eliminada.',
+    'admin.upcomingSessions': 'Próximas Clases',
+
+    // Admin pass types — edit
+    'admin.editPassType': 'Editar Tipo',
+    'admin.passTypeUpdated': '¡Tipo actualizado!',
+
+    // Admin settings — payment
+    'admin.paymentSection': 'Datos Bancarios para Pagos',
+    'admin.bankName': 'Nombre del banco',
+    'admin.accountHolder': 'Titular de la cuenta',
+    'admin.accountNumber': 'Número de cuenta',
+    'admin.clabe': 'CLABE',
+    'admin.cardNumber': 'Número de tarjeta',
+    'admin.paymentInstructions': 'Instrucciones adicionales',
+
+    // Nav — icons
+    'nav.menu': 'Menú',
   },
 
   en: {
@@ -464,6 +524,66 @@ const translations = {
     // General
     'general.notFound': 'Page not found',
     'general.goHome': 'Go home',
+    'general.save': 'Save',
+    'general.cancel': 'Cancel',
+    'general.edit': 'Edit',
+    'general.delete': 'Delete',
+    'general.confirmDelete': 'Are you sure?',
+
+    // Payment instructions
+    'payment.title': 'Payment Instructions',
+    'payment.bankName': 'Bank',
+    'payment.accountHolder': 'Account holder',
+    'payment.accountNumber': 'Account number',
+    'payment.clabe': 'CLABE',
+    'payment.cardNumber': 'Card number',
+    'payment.extraInstructions': 'Additional instructions',
+    'payment.copyCLABE': 'Copy CLABE',
+    'payment.copied': 'Copied!',
+    'payment.iHavePaid': "I've made the payment",
+    'payment.paymentNote': "When you check \"I've made the payment\", Claudia is notified to approve your pass.",
+
+    // Passes — extra
+    'passes.gift': 'Gift',
+    'passes.editPass': 'Edit Pass',
+    'passes.addClass': '+1 class',
+    'passes.extend7': '+7 days',
+    'passes.classesRemaining': 'Classes remaining',
+    'passes.expiresAt': 'Expires',
+    'passes.deletePass': 'Delete pass',
+    'passes.deleteConfirm': 'Delete this pass?',
+    'passes.passUpdated': 'Pass updated.',
+    'passes.passDeleted': 'Pass deleted.',
+    'passes.creditAdded': '+1 class added.',
+    'passes.extended': 'Expiry extended.',
+    'passes.gifted': 'Pass gifted!',
+
+    // Admin schedule — extra
+    'admin.editClass': 'Edit Class',
+    'admin.oneOff': 'One-off class (no template)',
+    'admin.addOneOff': 'Add One-off Class',
+    'admin.date': 'Date',
+    'admin.sessionNotes': 'Notes',
+    'admin.templateUpdated': 'Template updated!',
+    'admin.sessionAdded': 'Class added to schedule!',
+    'admin.sessionDeleted': 'Class deleted.',
+    'admin.upcomingSessions': 'Upcoming Classes',
+
+    // Admin pass types — edit
+    'admin.editPassType': 'Edit Type',
+    'admin.passTypeUpdated': 'Type updated!',
+
+    // Admin settings — payment
+    'admin.paymentSection': 'Bank Details for Payments',
+    'admin.bankName': 'Bank name',
+    'admin.accountHolder': 'Account holder',
+    'admin.accountNumber': 'Account number',
+    'admin.clabe': 'CLABE',
+    'admin.cardNumber': 'Card number',
+    'admin.paymentInstructions': 'Additional instructions',
+
+    // Nav — icons
+    'nav.menu': 'Menu',
   },
 };
 

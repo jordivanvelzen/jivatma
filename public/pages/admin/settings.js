@@ -25,6 +25,27 @@ export async function renderAdminSettings() {
         <label>${t('admin.defaultCapacity')}
           <input type="number" id="s-capacity" value="${settings.default_capacity || '15'}" min="1" />
         </label>
+
+        <h3 style="margin-top:1.5rem">${t('admin.paymentSection')}</h3>
+        <label>${t('admin.accountHolder')}
+          <input type="text" id="s-holder" value="${settings.bank_account_holder || ''}" />
+        </label>
+        <label>${t('admin.bankName')}
+          <input type="text" id="s-bank" value="${settings.bank_name || ''}" placeholder="BanCoppel" />
+        </label>
+        <label>${t('admin.accountNumber')}
+          <input type="text" id="s-account" value="${settings.bank_account_number || ''}" />
+        </label>
+        <label>${t('admin.clabe')}
+          <input type="text" id="s-clabe" value="${settings.bank_clabe || ''}" />
+        </label>
+        <label>${t('admin.cardNumber')}
+          <input type="text" id="s-card" value="${settings.bank_card_number || ''}" />
+        </label>
+        <label>${t('admin.paymentInstructions')}
+          <textarea id="s-instructions" rows="3">${settings.payment_instructions || ''}</textarea>
+        </label>
+
         <button type="submit" class="btn btn-primary">${t('admin.saveSettings')}</button>
       </form>
     </div>
@@ -38,6 +59,12 @@ export async function renderAdminSettings() {
       online_meeting_link: document.getElementById('s-meeting-link').value,
       signup_window_weeks: document.getElementById('s-window').value,
       default_capacity: document.getElementById('s-capacity').value,
+      bank_account_holder: document.getElementById('s-holder').value,
+      bank_name: document.getElementById('s-bank').value,
+      bank_account_number: document.getElementById('s-account').value,
+      bank_clabe: document.getElementById('s-clabe').value,
+      bank_card_number: document.getElementById('s-card').value,
+      payment_instructions: document.getElementById('s-instructions').value,
     };
 
     for (const [key, value] of Object.entries(updates)) {

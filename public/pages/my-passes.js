@@ -10,22 +10,18 @@ export async function renderMyPasses() {
   const userId = session.user.id;
   const today = new Date().toISOString().split('T')[0];
 
-  // Fetch user passes and available pass types in parallel
-  const [passesRes, typesRes] = await Promise.all([
+  // Fetch user passes, available pass types, and bank settings in parallel
+  const [passesRes, typesRes, settingsRes] = await Promise.all([
     sb.from('user_passes').select('*, pass_types(*)').eq('user_id', userId).order('created_at', { ascending: false }),
     sb.from('pass_types').select('*').eq('is_active', true).order('kind'),
+    sb.from('settings').select('*').in('key', ['bank_name', 'bank_account_holder', 'bank_account_number', 'bank_clabe', 'bank_card_number', 'payment_instructions']),
   ]);
 
   const passes = passesRes.data || [];
   const passTypes = typesRes.data || [];
-
-  // Check if user already has an active unpaid single pass
-  const hasUnpaidSingle = passes.some(p =>
-    p.pass_types?.kind === 'single' &&
-    !p.is_paid &&
-    new Date(p.expires_at) >= new Date(today) &&
-    p.classes_remaining > 0
-  );
+  const bank = {};
+  (settingsRes.data || []).forEach(s => { bank[s.key] = s.value; });
+  const hasBank = bank.bank_clabe || bank.bank_account_number || bank.bank_card_number;
 
   // Fetch user's pass requests
   let requests = [];
@@ -50,7 +46,6 @@ export async function renderMyPasses() {
     const validityStr = t('passes.validFor', { days: pt.validity_days });
 
     if (pt.kind === 'single') {
-      const alreadySelected = hasUnpaidSingle;
       return `
         <div class="pass-type-card">
           <div class="pass-type-info">
@@ -58,9 +53,8 @@ export async function renderMyPasses() {
             <div class="pass-type-detail">${priceStr} · ${validityStr}</div>
             <div class="pass-type-note">${t('passes.singleNote')}</div>
           </div>
-          <button class="btn btn-primary btn-select-single ${alreadySelected ? 'disabled' : ''}"
-                  data-type-id="${pt.id}" ${alreadySelected ? 'disabled' : ''}>
-            ${alreadySelected ? t('passes.alreadySelected') : t('passes.selectSingle')}
+          <button class="btn btn-primary btn-select-single" data-type-id="${pt.id}">
+            ${t('passes.selectSingle')}
           </button>
         </div>
       `;
@@ -104,14 +98,31 @@ export async function renderMyPasses() {
             <input type="hidden" id="req-pass-type-id" />
             <label>${t('requests.paymentMethod')}
               <select id="req-payment">
-                <option value="cash">${t('admin.cash')}</option>
                 <option value="transfer">${t('admin.transfer')}</option>
+                <option value="cash">${t('admin.cash')}</option>
                 <option value="other">${t('admin.other')}</option>
               </select>
             </label>
+
+            ${hasBank ? `
+              <div id="bank-details" class="bank-details">
+                <h4>${t('payment.title')}</h4>
+                ${bank.bank_account_holder ? `<div class="bank-row"><span>${t('payment.accountHolder')}:</span><strong>${bank.bank_account_holder}</strong></div>` : ''}
+                ${bank.bank_name ? `<div class="bank-row"><span>${t('payment.bankName')}:</span><strong>${bank.bank_name}</strong></div>` : ''}
+                ${bank.bank_account_number ? `<div class="bank-row"><span>${t('payment.accountNumber')}:</span><strong class="copyable" data-copy="${bank.bank_account_number}">${bank.bank_account_number}</strong></div>` : ''}
+                ${bank.bank_clabe ? `<div class="bank-row"><span>CLABE:</span><strong class="copyable" data-copy="${bank.bank_clabe}">${bank.bank_clabe}</strong></div>` : ''}
+                ${bank.bank_card_number ? `<div class="bank-row"><span>${t('payment.cardNumber')}:</span><strong class="copyable" data-copy="${bank.bank_card_number.replace(/\s+/g, '')}">${bank.bank_card_number}</strong></div>` : ''}
+                ${bank.payment_instructions ? `<p class="muted" style="margin-top:0.5rem">${bank.payment_instructions}</p>` : ''}
+              </div>
+            ` : ''}
+
             <label>${t('requests.notes')}
               <textarea id="req-notes" rows="2" placeholder="${t('requests.notesPlaceholder')}"></textarea>
             </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="req-paid" /> ${t('payment.iHavePaid')}
+            </label>
+            <p class="muted" style="font-size:0.8rem">${t('payment.paymentNote')}</p>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">${t('requests.submit')}</button>
               <button type="button" class="btn btn-secondary" id="cancel-request">${t('requests.cancel')}</button>
@@ -187,6 +198,8 @@ export async function renderMyPasses() {
     const passTypeId = parseInt(document.getElementById('req-pass-type-id').value, 10);
     const paymentMethod = document.getElementById('req-payment').value;
     const notes = document.getElementById('req-notes').value.trim();
+    const paid = document.getElementById('req-paid').checked;
+    const paidMarker = paid ? '[PAID] ' : '';
 
     try {
       await api('/api/pass-requests', {
@@ -194,7 +207,7 @@ export async function renderMyPasses() {
         body: JSON.stringify({
           pass_type_id: passTypeId,
           payment_method: paymentMethod,
-          notes: notes || null,
+          notes: (paidMarker + (notes || '')).trim() || null,
         }),
       });
       showToast(t('requests.sent'), 'success');
@@ -203,5 +216,15 @@ export async function renderMyPasses() {
     } catch (err) {
       showToast(err.message, 'error');
     }
+  });
+
+  // Copy-to-clipboard on bank detail values
+  app.querySelectorAll('.copyable').forEach(el => {
+    el.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(el.dataset.copy);
+        showToast(t('payment.copied'), 'success');
+      } catch {}
+    });
   });
 }
