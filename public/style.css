@@ -648,4 +648,8 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
   padding: 0.75rem 1rem;
   border-radius: 4px;
   font-size: 0.9rem;
+  text-align: left;
 }
+.info-box ol { margin: 0.5rem 0 0 1.25rem; padding: 0; }
+.info-box ol li { margin-bottom: 0.4rem; line-height: 1.45; }
+.info-box strong { display: block; margin-bottom: 0.25rem; }
