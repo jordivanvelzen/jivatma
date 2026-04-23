@@ -89,6 +89,10 @@ async function approveRequest(request, adminUserId) {
   const startsAt = todayStr();
   const expiresAt = addDays(startsAt, passType.validity_days);
 
+  // Transfers are verified in the bank before approval, so they're already paid.
+  // Cash is collected at the studio, so it stays unpaid until then.
+  const isPaid = request.payment_method === 'transfer';
+
   const { error: passErr } = await supabase.from('user_passes').insert({
     user_id: request.user_id,
     pass_type_id: request.pass_type_id,
@@ -96,7 +100,7 @@ async function approveRequest(request, adminUserId) {
     starts_at: startsAt,
     expires_at: expiresAt,
     payment_method: request.payment_method || 'cash',
-    is_paid: false,
+    is_paid: isPaid,
     created_by: adminUserId || null,
   });
   if (passErr) return { ok: false, reason: passErr.message };
