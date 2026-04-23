@@ -75,6 +75,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `full_name` | TEXT | Required |
 | `phone` | TEXT | Optional |
 | `role` | TEXT | `'admin'` or `'user'` (default `'user'`) |
+| `show_in_attendance` | BOOLEAN | Default `TRUE`. When `FALSE`, the user is hidden from the admin attendance page's student list (both "booked" and "others" sections). Used to exclude teaching admins like Claudia from appearing as a checkable student. Users with an existing attendance record for a given session still appear for that session regardless of the flag, so past data stays editable |
 | `created_at` | TIMESTAMPTZ | |
 
 **`pass_types`** — Pass templates configured by admin
@@ -360,6 +361,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Pass Assignment | Built | Admin assigns passes with payment method (cash/transfer/other/gift) and paid status tracking. Gift passes auto-mark as paid |
 | Edit Issued Passes | Built | Admin can edit any issued user_pass: classes remaining, expiry date, paid status. Also one-click `+1 class` (credit-back) or `+7 days` (extend), plus delete |
 | Attendance Tracking | Built | Admin marks attendance per session with three states per student (✓ attended / ✗ no-show / — unmarked). Both ✓ and ✗ deduct from the best active pass (FIFO); no-shows are tagged via the `attended` boolean so stats remain accurate. Unmarked students are left as no-row. |
+| Admin Attendance Visibility Toggle | Built | Each profile has a `show_in_attendance` flag (default `TRUE`). On the admin user-detail page, a checkbox appears for admin profiles letting you hide that admin from the attendance page's student list. Lets Claudia (teacher admin) disappear from attendance while Jordi (admin + student) stays visible. Users with existing attendance for a session still appear on that session so past records remain editable |
 | Student Onboarding | Built | Register page requires phone (WhatsApp) and explains the email-verification → login → get-pass flow up front. Dashboard shows a welcome card with 3 steps (get pass → book → attend) for brand-new students (no passes + no bookings + no attendance), then auto-hides. Empty states on dashboard include CTA buttons. |
 | Approval WhatsApp Nudge | Built | When Claudia approves a pass request, she receives a Telegram message with a `wa.me/<phone>?text=...` tap-to-WhatsApp link pre-filled with a "tu pase está aprobado" message for the student. Mexico country code (52) auto-prepended to bare 10-digit phones. |
 | Attendance Undo | Built | Removing attendance reverses pass deduction |

@@ -28,7 +28,7 @@ export async function renderAdminClass() {
   if (activeSession) {
     const { data: bookings } = await sb
       .from('bookings')
-      .select('*, profiles(id, full_name)')
+      .select('*, profiles(id, full_name, show_in_attendance)')
       .eq('session_id', activeSession.id)
       .is('cancelled_at', null)
       .order('profiles(full_name)', { ascending: true });
@@ -41,15 +41,26 @@ export async function renderAdminClass() {
     (existingAttendance || []).forEach(a => { existingMap[a.user_id] = a.attended; });
 
     const { data: allUsers } = await sb
-      .from('profiles').select('id, full_name')
+      .from('profiles').select('id, full_name, show_in_attendance')
       .order('full_name', { ascending: true });
 
-    const bookedIds = new Set((bookings || []).map(b => b.profiles?.id).filter(Boolean));
-    const unbookedUsers = (allUsers || []).filter(u => !bookedIds.has(u.id) && u.full_name);
+    // Users flagged as hidden from attendance (e.g. Claudia the teacher) are
+    // removed from both the booked list and the walk-in list, but we keep
+    // showing anyone who already has an attendance record so past data
+    // remains editable.
+    const visibleBookings = (bookings || []).filter(b =>
+      b.profiles && (b.profiles.show_in_attendance !== false || existingMap[b.profiles.id] !== undefined)
+    );
+    const bookedIds = new Set(visibleBookings.map(b => b.profiles.id));
+    const unbookedUsers = (allUsers || []).filter(u =>
+      !bookedIds.has(u.id)
+      && u.full_name
+      && (u.show_in_attendance !== false || existingMap[u.id] !== undefined)
+    );
 
     // Fetch active unpaid passes for the users we care about (so we can flag payment due)
     const relevantUserIds = [
-      ...(bookings || []).map(b => b.profiles?.id).filter(Boolean),
+      ...visibleBookings.map(b => b.profiles.id),
       ...unbookedUsers.map(u => u.id),
     ];
     let unpaidRows = [];
@@ -94,8 +105,8 @@ export async function renderAdminClass() {
         <p class="muted" style="font-size:0.85rem">${t('admin.attendanceHelp')}</p>
 
         <div id="attendance-form">
-          ${bookings?.length ? `<h4>${t('admin.booked')}</h4>` : ''}
-          ${(bookings || []).filter(b => b.profiles).map(b => `
+          ${visibleBookings.length ? `<h4>${t('admin.booked')}</h4>` : ''}
+          ${visibleBookings.map(b => `
             <div class="attendance-row booked">
               <div class="user-name-wrap">
                 <span class="user-name">${b.profiles.full_name}</span>
