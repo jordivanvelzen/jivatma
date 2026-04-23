@@ -258,6 +258,7 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 .pass-card.pass-active { border-left: 4px solid var(--green); }
 .pass-card.pass-expired { border-left: 4px solid var(--gray); opacity: 0.6; }
 .pass-card.pass-used-up { border-left: 4px solid var(--orange); opacity: 0.7; }
+.pass-card.pass-pending { border-left: 4px solid #e0b84c; }
 .pass-kind { font-weight: 600; }
 .pass-detail { color: var(--gray); font-size: 0.85rem; flex-basis: 100%; }
 .pass-badge {
@@ -272,6 +273,7 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 .pass-expired .pass-badge { background: var(--gray-light); color: var(--gray); }
 .pass-used-up .pass-badge { background: #fdebd0; color: var(--orange); }
 .pass-badge-unpaid { background: #fff3cd !important; color: #856404 !important; }
+.pass-badge-pending { background: #fff3cd !important; color: #856404 !important; }
 
 .pass-type-card {
   background: var(--white);
