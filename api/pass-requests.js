@@ -32,18 +32,18 @@ function buildRequestMessage({ studentName, request }) {
     ``,
     `*Alumna:* ${studentName}`,
     `*Pase:* ${kindLabel(pt)}${priceStr ? ' · ' + priceStr : ''}`,
-    `*Pago:* ${methodLabel(request.payment_method)}${paid ? ' \u2705 _alumna marcó como pagado_' : ''}`,
+    `*Pago:* ${methodLabel(request.payment_method)}${paid ? ' ✅ _alumna marcó como pagado_' : ''}`,
   ];
   if (request.notes) lines.push(`*Notas:* ${request.notes}`);
 
   if (request.payment_method === 'transfer') {
     lines.push('');
     lines.push(paid
-      ? '\u26a0\ufe0f _Verifica en el banco antes de aprobar._'
-      : '\u23f3 _Esperando que la alumna confirme pago._');
+      ? '⚠️ _Verifica en el banco antes de aprobar._'
+      : '⏳ _Esperando que la alumna confirme pago._');
   } else if (request.payment_method === 'cash') {
     lines.push('');
-    lines.push('\u{1F4B5} _Efectivo: se cobra en el estudio antes de la siguiente clase._');
+    lines.push('\u{1F4B5} _Efectivo: cobra en el estudio antes de aprobar._');
   }
 
   return lines.join('\n');
@@ -52,28 +52,28 @@ function buildRequestMessage({ studentName, request }) {
 function buildInlineKeyboard(requestId) {
   return {
     inline_keyboard: [[
-      { text: '\u2705 Aprobar', callback_data: `approve:${requestId}` },
-      { text: '\u274c Rechazar', callback_data: `decline:${requestId}` },
+      { text: '✅ Aprobar', callback_data: `approve:${requestId}` },
+      { text: '❌ Rechazar', callback_data: `decline:${requestId}` },
     ]],
   };
 }
 
-function buildApprovedMessage({ studentName, request, waLink, amount }) {
-  const pt = request.pass_types;
+function buildApprovedMessage({ studentName, request, waLink }) {
   const lines = [
-    `\u2705 *Pase aprobado*`,
+    `✅ *Pase aprobado*`,
     ``,
     `*Alumna:* ${studentName}`,
-    `*Pase:* ${kindLabel(pt)}`,
+    `*Pase:* ${kindLabel(request.pass_types)}`,
+    ``,
+    waLink
+      ? `[\u{1F4AC} Avisar por WhatsApp](${waLink})`
+      : `_(Sin teléfono — avisar a mano)_`,
   ];
-  if (request.payment_method === 'cash' && amount) {
-    lines.push(`*Pago:* Efectivo \u2014 *$${amount} pendiente en el estudio*`);
-  }
-  lines.push('');
-  lines.push(waLink
-    ? `[\u{1F4AC} Avisar por WhatsApp](${waLink})`
-    : `_(Sin teléfono \u2014 avisar a mano)_`);
   return lines.join('\n');
+}
+
+function buildApprovedWaText(firstName, request) {
+  return `Hola ${firstName}, ¡tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. 🧘`;
 }
 
 async function approveRequest(request, adminUserId) {
@@ -89,10 +89,8 @@ async function approveRequest(request, adminUserId) {
   const startsAt = todayStr();
   const expiresAt = addDays(startsAt, passType.validity_days);
 
-  // Transfers are verified in the bank before approval, so they're already paid.
-  // Cash is collected at the studio, so it stays unpaid until then.
-  const isPaid = request.payment_method === 'transfer';
-
+  // Approval is the admin's confirmation that payment has been verified
+  // (transfer) or collected (cash), so the new pass is always marked paid.
   const { error: passErr } = await supabase.from('user_passes').insert({
     user_id: request.user_id,
     pass_type_id: request.pass_type_id,
@@ -100,7 +98,7 @@ async function approveRequest(request, adminUserId) {
     starts_at: startsAt,
     expires_at: expiresAt,
     payment_method: request.payment_method || 'cash',
-    is_paid: isPaid,
+    is_paid: true,
     created_by: adminUserId || null,
   });
   if (passErr) return { ok: false, reason: passErr.message };
@@ -151,7 +149,7 @@ async function handleTelegramWebhook(req, res) {
       .update({ status: 'declined', updated_at: new Date().toISOString() })
       .eq('id', requestId);
 
-    const msg = `\u274c *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
+    const msg = `❌ *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
     if (request.telegram_message_id) {
       await editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: null });
     }
@@ -167,23 +165,15 @@ async function handleTelegramWebhook(req, res) {
   }
 
   const firstName = studentName.split(' ')[0];
-  const amount = request.pass_types?.price ? parseFloat(request.pass_types.price).toFixed(0) : null;
-  const waText = request.payment_method === 'cash' && amount
-    ? `Hola ${firstName}, \u00a1tu pase de *${kindLabel(request.pass_types)}* está aprobado! Recuerda llegar 10 min antes de la próxima clase con $${amount} en efectivo para pagar en el estudio. 🧘`
-    : `Hola ${firstName}, \u00a1tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. \ud83e\uddd8`;
-  const waLink = buildWaLink(request.profiles?.phone, waText);
-
-  const editedMsg = buildApprovedMessage({
-    studentName, request, waLink,
-    amount: request.payment_method === 'cash' ? amount : null,
-  });
+  const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
+  const editedMsg = buildApprovedMessage({ studentName, request, waLink });
 
   if (request.telegram_message_id) {
     await editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: null });
   } else {
     await sendTelegram(editedMsg);
   }
-  await answerCallbackQuery(cb.id, '\u2705 Aprobada');
+  await answerCallbackQuery(cb.id, '✅ Aprobada');
   return res.json({ ok: true });
 }
 
@@ -284,7 +274,7 @@ export default async function handler(req, res) {
         .update({ status: 'declined', updated_at: new Date().toISOString() })
         .eq('id', id);
       if (request.telegram_message_id) {
-        const msg = `\u274c *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
+        const msg = `❌ *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
         editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: null }).catch(() => {});
       }
       return res.json({ success: true, status });
@@ -295,15 +285,8 @@ export default async function handler(req, res) {
 
     // Edit the original message with approval + WhatsApp link
     const firstName = studentName.split(' ')[0];
-    const amount = request.pass_types?.price ? parseFloat(request.pass_types.price).toFixed(0) : null;
-    const waText = request.payment_method === 'cash' && amount
-      ? `Hola ${firstName}, \u00a1tu pase de *${kindLabel(request.pass_types)}* está aprobado! Recuerda llegar 10 min antes de la próxima clase con $${amount} en efectivo para pagar en el estudio. 🧘`
-      : `Hola ${firstName}, \u00a1tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. \ud83e\uddd8`;
-    const waLink = buildWaLink(request.profiles?.phone, waText);
-    const editedMsg = buildApprovedMessage({
-      studentName, request, waLink,
-      amount: request.payment_method === 'cash' ? amount : null,
-    });
+    const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
+    const editedMsg = buildApprovedMessage({ studentName, request, waLink });
     if (request.telegram_message_id) {
       editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: null }).catch(() => {});
     } else {
