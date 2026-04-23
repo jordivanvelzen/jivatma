@@ -104,6 +104,11 @@ export async function renderMyPasses() {
               </select>
             </label>
 
+            <div id="cash-notice" class="cash-notice hidden">
+              <strong>\u{1F4B5} ${t('payment.cashTitle')}</strong>
+              <p>${t('payment.cashInstruction')}</p>
+            </div>
+
             ${hasBank ? `
               <div id="bank-details" class="bank-details">
                 <h4>${t('payment.title')}</h4>
@@ -186,6 +191,37 @@ export async function renderMyPasses() {
     btn.addEventListener('click', () => {
       document.getElementById('req-pass-type-id').value = btn.dataset.id;
       document.getElementById('request-modal').classList.remove('hidden');
+    });
+  });
+
+  // Show cash/bank details based on payment method
+  const togglePaymentDetails = () => {
+    const method = document.getElementById('req-payment').value;
+    const cashEl = document.getElementById('cash-notice');
+    const bankEl = document.getElementById('bank-details');
+    const paidEl = document.getElementById('req-paid')?.closest('label');
+    if (method === 'cash') {
+      cashEl?.classList.remove('hidden');
+      bankEl?.classList.add('hidden');
+      if (paidEl) paidEl.style.display = 'none';
+    } else if (method === 'transfer') {
+      cashEl?.classList.add('hidden');
+      bankEl?.classList.remove('hidden');
+      if (paidEl) paidEl.style.display = '';
+    } else {
+      cashEl?.classList.add('hidden');
+      bankEl?.classList.add('hidden');
+      if (paidEl) paidEl.style.display = '';
+    }
+  };
+  document.getElementById('req-payment')?.addEventListener('change', togglePaymentDetails);
+  // Pre-open handler: when a request button is clicked, show the right panel on open
+  app.querySelectorAll('.request-pass-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Reset select to transfer each open so the visible state is predictable
+      const sel = document.getElementById('req-payment');
+      if (sel) sel.value = 'transfer';
+      togglePaymentDetails();
     });
   });
 

@@ -159,6 +159,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `status` | TEXT | `'pending'`, `'approved'`, or `'declined'` |
 | `payment_method` | TEXT | `'cash'`, `'transfer'`, or `'other'` |
 | `notes` | TEXT | Optional student notes |
+| `telegram_message_id` | BIGINT | Message ID of the notification in admin's Telegram chat — used to edit the message in place when admin taps Approve/Decline inline |
 | `created_at` | TIMESTAMPTZ | |
 | `updated_at` | TIMESTAMPTZ | |
 
@@ -177,6 +178,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `payment_instructions` | Extra free-form payment instructions | `''` |
 | `telegram_bot_token` | Telegram bot token (from @BotFather) | `''` |
 | `telegram_chat_id` | Telegram chat ID to notify on new pass requests | `''` |
+| `telegram_webhook_secret` | Secret token Telegram includes in the `X-Telegram-Bot-Api-Secret-Token` header on every webhook call. Generated when admin taps "Activar botones" | `''` |
 
 ### Database Functions & Triggers
 
@@ -231,7 +233,9 @@ All endpoints are Vercel serverless functions.
 | POST | `/api/admin/settings` | Admin | Admin actions. Body `{ action: 'telegram-test' }` sends a test Telegram message using current settings. |
 | GET | `/api/pass-requests` | User | List pass requests (admin sees all, user sees own) |
 | POST | `/api/pass-requests` | User | Create a pass request (`{ pass_type_id, payment_method, notes }`) |
-| PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve |
+| PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve; also edits the original Telegram message in place |
+| POST | `/api/pass-requests?webhook=telegram` | Telegram (secret header) | Telegram webhook for inline Approve/Decline buttons. Validates `X-Telegram-Bot-Api-Secret-Token` against `telegram_webhook_secret`. Processes `callback_query` updates, runs approve/decline, edits the message, answers the callback |
+| POST | `/api/admin/settings` `{ action: 'register-webhook' }` | Admin | Generates a fresh `telegram_webhook_secret`, persists it, and calls Telegram `setWebhook` pointing at `/api/pass-requests?webhook=telegram`. Run once per bot-token change |
 
 ## Cron Jobs
 
@@ -240,7 +244,7 @@ Configured in `vercel.json`:
 | Schedule | Path | Description |
 |---|---|---|
 | `0 7 * * *` (daily 7AM UTC) | `/api/cron/generate-sessions` | Generates class sessions for the next 14 days from active templates (skips if session already exists for that template+date) |
-| `0 8 * * *` (daily 8AM UTC) | `/api/cron/expire-passes` | Checks for passes expiring within 3 days and passes with 1-2 classes remaining. Currently logs counts only — notifications (email/WhatsApp) planned for V2 |
+| `0 8 * * *` (daily 8AM UTC) | `/api/cron/expire-passes` | Checks for passes expiring within 3 days and passes with 1-2 classes remaining. Also scans for stale unpaid passes (>3 days old, still `is_paid=false`, still active) and sends a `💵 Cobros pendientes` Telegram digest listing who owes cash |
 
 ## Frontend Pages
 
@@ -373,7 +377,13 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Payment Instructions | Built | Admin configures bank details (holder, bank name, account, CLABE, card number, free-form instructions) in settings. Shown to students in pass-request modal with copy-on-click |
 | Icon Nav | Built | Logout, language, profile are icon-only buttons grouped on the right side of the nav. Main section links remain in the collapsible list. Language button shows the *other* language code (ES/EN) |
 | Pass Expiry Notifications | Not Built | Could reuse the Telegram helper; cron currently logs counts only |
-| Admin Notifications (new pass request) | Built | Telegram bot notification fires on every new `pass_requests` insert. Admin configures bot token + chat ID in settings; "Send test" button validates setup. Message includes student name, pass type, price, payment method, paid marker, notes, and a deep link to `/admin/passes` |
+| Admin Notifications (new pass request) | Built | Telegram notification fires on every new `pass_requests` insert. Message is branched by payment method: transfer shows `⚠️ verify in bank before approving`, cash shows `💵 collected at studio`. Each message has inline `✅ Aprobar` / `❌ Rechazar` buttons. Admin taps once — request is processed and the message edits in place to show approval + a WhatsApp deeplink (for cash, the deeplink includes the amount and "bring cash" reminder). Requires one-time "Activar botones" in admin settings to register the Telegram webhook. Legacy PATCH path (approve from web UI) still works and also edits the Telegram message |
+| Cash-Pending Attendance UX | Built | On attendance page, students with an unpaid active pass show a `💵 cobrar $X` badge next to their name + a one-tap "Marcar pagado" button. After saving attendance, any checked-in student who still had an unpaid pass triggers a second toast listing names + amounts to collect |
+| Stale Cash Nudge (cron) | Built | Daily `expire-passes` cron scans `user_passes` where `is_paid=false`, `created_at > 3 days ago`, still active. Sends digest to Telegram listing who owes what. Catches no-shows who never came to pay |
+| Student Cash Instruction | Built | When a student selects "Efectivo" in the pass-request modal, a yellow notice replaces the bank-details block: *"Por favor trae el efectivo a tu próxima clase. Llega 10 minutos antes para pagar en el estudio antes de empezar."* System-driven so Claudia doesn't have to ask for money |
+| Users List Pass Summary | Built | Admin users list shows each user's best active pass at a glance: *"Unlimited Monthly · Vence 15 May"* or *"10-Class Pass · 7 restan · Vence 30 May"*. Unpaid passes carry a `💵` badge. Clicking the row opens user detail |
+| Pass-Types Mobile Cards | Built | Admin pass-types page rewritten from a cramped table to a card-per-type layout with inline editable fields (classes, validity days, price). Active/inactive badge on each card. Add form folded into a collapsible section |
+| Request History View-Pass | Built | Processed pass requests on admin passes page now show a "Ver pase" link that opens the student's user-detail page (where the full pass editor lives) |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |
 

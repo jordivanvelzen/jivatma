@@ -10,18 +10,19 @@ export async function renderAdminClass() {
   const params = new URLSearchParams(hashParts[1] || '');
   const selectedDate = params.get('date') || new Date().toISOString().split('T')[0];
   const selectedSessionId = params.get('session') ? parseInt(params.get('session'), 10) : null;
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: sessions } = await sb
-    .from('class_sessions')
-    .select('*')
-    .eq('date', selectedDate)
-    .order('start_time', { ascending: true });
+    .from('class_sessions').select('*')
+    .eq('date', selectedDate).order('start_time', { ascending: true });
 
   const activeSession = selectedSessionId
     ? sessions?.find(s => s.id === selectedSessionId)
     : sessions?.length === 1 ? sessions[0] : null;
 
   let attendanceHtml = '';
+  // Map of userId -> { id, amount } for unpaid active passes, used after save for toast
+  let unpaidMap = {};
 
   if (activeSession) {
     const { data: bookings } = await sb
@@ -32,24 +33,50 @@ export async function renderAdminClass() {
       .order('profiles(full_name)', { ascending: true });
 
     const { data: existingAttendance } = await sb
-      .from('attendance')
-      .select('user_id, attended')
+      .from('attendance').select('user_id, attended')
       .eq('session_id', activeSession.id);
 
-    // existingMap[userId] = true (attended) | false (no-show) | undefined (not marked)
     const existingMap = {};
     (existingAttendance || []).forEach(a => { existingMap[a.user_id] = a.attended; });
 
     const { data: allUsers } = await sb
-      .from('profiles')
-      .select('id, full_name')
+      .from('profiles').select('id, full_name')
       .order('full_name', { ascending: true });
 
     const bookedIds = new Set((bookings || []).map(b => b.profiles?.id).filter(Boolean));
     const unbookedUsers = (allUsers || []).filter(u => !bookedIds.has(u.id) && u.full_name);
 
+    // Fetch active unpaid passes for the users we care about (so we can flag payment due)
+    const relevantUserIds = [
+      ...(bookings || []).map(b => b.profiles?.id).filter(Boolean),
+      ...unbookedUsers.map(u => u.id),
+    ];
+    let unpaidRows = [];
+    if (relevantUserIds.length) {
+      const { data } = await sb.from('user_passes')
+        .select('id, user_id, is_paid, pass_types(price)')
+        .in('user_id', relevantUserIds)
+        .eq('is_paid', false)
+        .gte('expires_at', today);
+      unpaidRows = data || [];
+    }
+    unpaidRows.forEach(p => {
+      // Keep first unpaid pass per user (cheapest lookup)
+      if (!unpaidMap[p.user_id]) {
+        unpaidMap[p.user_id] = { id: p.id, amount: p.pass_types?.price ? parseFloat(p.pass_types.price).toFixed(0) : null };
+      }
+    });
+
+    const unpaidBadge = (userId) => {
+      const u = unpaidMap[userId];
+      if (!u) return '';
+      const amt = u.amount ? `$${u.amount}` : '';
+      return `<span class="badge-unpaid-inline" title="${t('admin.cashDueTooltip')}">\u{1F4B5} ${t('admin.cashDue')} ${amt}</span>
+              <button type="button" class="btn btn-xs btn-secondary mark-paid-btn" data-pass="${u.id}">${t('admin.markPaid')}</button>`;
+    };
+
     const stateButtons = (userId, withNoShow) => {
-      const state = existingMap[userId]; // true / false / undefined
+      const state = existingMap[userId];
       const unmarked = state === undefined;
       return `
         <div class="att-seg" data-user="${userId}">
@@ -69,7 +96,10 @@ export async function renderAdminClass() {
           ${bookings?.length ? `<h4>${t('admin.booked')}</h4>` : ''}
           ${(bookings || []).filter(b => b.profiles).map(b => `
             <div class="attendance-row booked">
-              <span class="user-name">${b.profiles.full_name}</span>
+              <div class="user-name-wrap">
+                <span class="user-name">${b.profiles.full_name}</span>
+                ${unpaidBadge(b.profiles.id)}
+              </div>
               ${stateButtons(b.profiles.id, true)}
             </div>
           `).join('')}
@@ -77,7 +107,10 @@ export async function renderAdminClass() {
           ${unbookedUsers.length ? `<h4>${t('admin.others')}</h4>` : ''}
           ${unbookedUsers.map(u => `
             <div class="attendance-row">
-              <span class="user-name">${u.full_name}</span>
+              <div class="user-name-wrap">
+                <span class="user-name">${u.full_name}</span>
+                ${unpaidBadge(u.id)}
+              </div>
               ${stateButtons(u.id, false)}
             </div>
           `).join('')}
@@ -114,7 +147,6 @@ export async function renderAdminClass() {
     </div>
   `;
 
-  // Date navigation
   document.getElementById('date-picker')?.addEventListener('change', (e) => {
     window.location.hash = `/admin/class?date=${e.target.value}`;
   });
@@ -129,7 +161,6 @@ export async function renderAdminClass() {
     window.location.hash = `/admin/class?date=${d.toISOString().split('T')[0]}`;
   });
 
-  // Segmented control clicks
   app.querySelectorAll('.att-seg').forEach(seg => {
     seg.querySelectorAll('.att-seg-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -143,16 +174,42 @@ export async function renderAdminClass() {
     });
   });
 
-  // Save
+  // One-tap "mark paid" on a user's unpaid pass right from the attendance list
+  app.querySelectorAll('.mark-paid-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const passId = parseInt(btn.dataset.pass, 10);
+      btn.disabled = true;
+      try {
+        await api('/api/admin/passes', {
+          method: 'PATCH',
+          body: JSON.stringify({ id: passId, is_paid: true }),
+        });
+        showToast(t('admin.markedPaid'), 'success');
+        // Remove the badge + button from the row
+        const row = btn.closest('.attendance-row');
+        row?.querySelectorAll('.badge-unpaid-inline, .mark-paid-btn').forEach(el => el.remove());
+        // Also drop from unpaidMap so the post-save toast is accurate
+        for (const uid in unpaidMap) {
+          if (unpaidMap[uid].id === passId) delete unpaidMap[uid];
+        }
+      } catch (err) {
+        btn.disabled = false;
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  // Save attendance
   document.getElementById('save-attendance')?.addEventListener('click', async () => {
     const records = [];
+    const attendedUserIds = [];
     app.querySelectorAll('.att-seg').forEach(seg => {
       const userId = seg.dataset.user;
       const activeBtn = seg.querySelector('.att-seg-btn.active');
       const state = activeBtn?.dataset.state;
-      if (state === 'attended') records.push({ user_id: userId, attended: true });
+      if (state === 'attended') { records.push({ user_id: userId, attended: true }); attendedUserIds.push(userId); }
       else if (state === 'noshow') records.push({ user_id: userId, attended: false });
-      // unmarked → omit entirely
     });
 
     try {
@@ -164,6 +221,19 @@ export async function renderAdminClass() {
       if (result.no_shows > 0) parts.push(t('admin.noShowsCount', { n: result.no_shows }));
       if (result.no_pass > 0) parts.push(t('admin.noPass', { n: result.no_pass }));
       showToast(parts.join(' · '), 'success');
+
+      // Cash-due reminder for any attended student with an unpaid pass
+      const cashDebts = [];
+      for (const uid of attendedUserIds) {
+        const u = unpaidMap[uid];
+        if (!u) continue;
+        const row = app.querySelector(`.att-seg[data-user="${uid}"]`)?.closest('.attendance-row');
+        const name = row?.querySelector('.user-name')?.textContent?.trim() || '';
+        cashDebts.push(`${name}${u.amount ? ' ($' + u.amount + ')' : ''}`);
+      }
+      if (cashDebts.length) {
+        setTimeout(() => showToast(`\u{1F4B5} ${t('admin.remindCollect')}: ${cashDebts.join(', ')}`, 'info'), 1200);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }

@@ -1,8 +1,7 @@
 import { supabase } from '../../lib/supabase.js';
+import { sendTelegram } from '../../lib/telegram.js';
 
 export default async function handler(req, res) {
-  // Check for expired passes and passes with few classes remaining
-  // This is a placeholder for V2 email notifications
   const today = new Date().toISOString().split('T')[0];
 
   // Find passes expiring in the next 3 days
@@ -15,7 +14,6 @@ export default async function handler(req, res) {
     .gte('expires_at', today)
     .lte('expires_at', threeDays.toISOString().split('T')[0]);
 
-  // Find passes with 1-2 classes remaining
   const { data: lowClasses } = await supabase
     .from('user_passes')
     .select('*, profiles(full_name, phone), pass_types(kind)')
@@ -23,10 +21,35 @@ export default async function handler(req, res) {
     .gt('classes_remaining', 0)
     .lte('classes_remaining', 2);
 
-  // V2: Send email/WhatsApp notifications here
+  // Stale unpaid passes (>3 days since creation, still not paid, still active)
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+  const { data: staleUnpaid } = await supabase
+    .from('user_passes')
+    .select('id, created_at, profiles(full_name), pass_types(kind, price, class_count)')
+    .eq('is_paid', false)
+    .gte('expires_at', today)
+    .lte('created_at', threeDaysAgo.toISOString());
+
+  if (staleUnpaid?.length) {
+    const lines = [`\u{1F4B5} *Cobros pendientes*`, ``];
+    for (const p of staleUnpaid) {
+      const pt = p.pass_types;
+      const kind = pt?.kind === 'single' ? 'Clase Única'
+        : pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases`
+        : 'Mensual Ilimitado';
+      const price = pt?.price ? `$${parseFloat(pt.price).toFixed(0)}` : '';
+      const name = p.profiles?.full_name || 'Alumna';
+      const ageDays = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000);
+      lines.push(`\u2022 ${name} \u2014 ${kind}${price ? ' ' + price : ''} _(${ageDays}d)_`);
+    }
+    sendTelegram(lines.join('\n')).catch(() => {});
+  }
+
   return res.json({
     expiring_soon: expiringSoon?.length || 0,
     low_classes: lowClasses?.length || 0,
-    message: 'V2: notifications will be sent here',
+    stale_unpaid: staleUnpaid?.length || 0,
   });
 }

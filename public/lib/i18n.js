@@ -326,6 +326,31 @@ const translations = {
     'admin.telegramTest': 'Enviar prueba',
     'admin.telegramSent': '¡Mensaje de prueba enviado!',
     'admin.telegramNeedBoth': 'Ingresa el token y el chat ID antes de probar.',
+    'admin.telegramWebhook': 'Activar botones en Telegram',
+    'admin.telegramWebhookHelp': 'Al activar, podrás aprobar o rechazar solicitudes directamente desde Telegram. Vuelve a activar si cambias el token.',
+    'admin.telegramWebhookOk': 'Botones activados. Las próximas solicitudes tendrán Aprobar/Rechazar en Telegram.',
+
+    // Admin — users list / pass summary
+    'admin.inactive': 'Inactivo',
+    'admin.viewPass': 'Ver pase',
+    'passes.leftShort': 'restan',
+    'passes.expiresShort': 'Vence',
+
+    // Admin — attendance (cash due)
+    'admin.cashDue': 'cobrar',
+    'admin.cashDueTooltip': 'Este pase aún no está pagado.',
+    'admin.markPaid': 'Marcar pagado',
+    'admin.markedPaid': 'Pase marcado como pagado.',
+    'admin.remindCollect': 'Recuerda cobrar a',
+
+    // Requests — inline warnings
+    'requests.verifyBankFirst': 'Verifica el pago en el banco antes de aprobar.',
+    'requests.cashReminderAdmin': 'Pago en efectivo: se cobra en el estudio.',
+    'payment.markedPaid': 'alumna marcó como pagado',
+
+    // Student request modal — cash info
+    'payment.cashTitle': 'Pago en efectivo',
+    'payment.cashInstruction': 'Por favor trae el efectivo a tu próxima clase. Llega 10 minutos antes para pagar en el estudio antes de empezar.',
   },
 
   en: {
@@ -652,6 +677,31 @@ const translations = {
     'admin.telegramTest': 'Send test',
     'admin.telegramSent': 'Test message sent!',
     'admin.telegramNeedBoth': 'Enter the token and chat ID before testing.',
+    'admin.telegramWebhook': 'Enable Telegram buttons',
+    'admin.telegramWebhookHelp': 'When enabled, you can approve or decline requests directly from Telegram. Re-enable if you change the token.',
+    'admin.telegramWebhookOk': 'Buttons enabled. Future requests will have Approve/Decline inline in Telegram.',
+
+    // Admin — users list / pass summary
+    'admin.inactive': 'Inactive',
+    'admin.viewPass': 'View pass',
+    'passes.leftShort': 'left',
+    'passes.expiresShort': 'Expires',
+
+    // Admin — attendance (cash due)
+    'admin.cashDue': 'collect',
+    'admin.cashDueTooltip': 'This pass has not been paid yet.',
+    'admin.markPaid': 'Mark paid',
+    'admin.markedPaid': 'Pass marked as paid.',
+    'admin.remindCollect': 'Remember to collect from',
+
+    // Requests — inline warnings
+    'requests.verifyBankFirst': 'Verify the transfer in the bank before approving.',
+    'requests.cashReminderAdmin': 'Cash payment: collected at the studio.',
+    'payment.markedPaid': 'student marked paid',
+
+    // Student request modal — cash info
+    'payment.cashTitle': 'Cash payment',
+    'payment.cashInstruction': 'Please bring the cash to your next class. Arrive 10 minutes early to pay at the studio before it starts.',
   },
 };
 

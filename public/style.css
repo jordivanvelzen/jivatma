@@ -653,3 +653,135 @@ hr { border: none; border-top: 1px solid var(--gray-light); margin: 1.5rem 0; }
 .info-box ol { margin: 0.5rem 0 0 1.25rem; padding: 0; }
 .info-box ol li { margin-bottom: 0.4rem; line-height: 1.45; }
 .info-box strong { display: block; margin-bottom: 0.25rem; }
+
+/* ---- Pass type admin cards ---- */
+.pt-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.pt-card {
+  background: #fff;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.pt-card-inactive { opacity: 0.6; }
+.pt-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.pt-card-title { font-weight: 600; font-size: 1rem; }
+.pt-card-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.pt-card-fields label {
+  font-size: 0.75rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.pt-card-fields input { font-size: 0.95rem; padding: 0.4rem; }
+.pt-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+@media (max-width: 520px) {
+  .pt-card-fields { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- Collapsible "Add pass type" section ---- */
+.section-collapsible summary { cursor: pointer; padding: 0.5rem 0; }
+
+/* ---- Request list (admin passes page) ---- */
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.request-card {
+  background: #fff;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+.request-card-done { background: var(--gray-lightest, #fafafa); }
+.request-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  gap: 0.5rem;
+}
+.request-name { font-weight: 600; color: inherit; text-decoration: none; }
+.request-name:hover { text-decoration: underline; }
+.request-body { font-size: 0.9rem; margin-bottom: 0.6rem; }
+.request-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.warn-line { color: #b45309; font-size: 0.85rem; margin-top: 0.4rem; }
+.info-line { color: var(--green); font-size: 0.85rem; margin-top: 0.4rem; }
+
+/* ---- Users list ---- */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  gap: 0.75rem;
+}
+.user-row:hover { background: var(--gray-lightest, #fafafa); }
+.user-row-main { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.user-row-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-row-pass { text-align: right; font-size: 0.85rem; color: var(--gray); }
+.user-pass-summary { line-height: 1.3; }
+.badge-unpaid { background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 999px; font-size: 0.75rem; }
+@media (max-width: 520px) {
+  .user-row-pass { font-size: 0.8rem; max-width: 50%; }
+}
+
+/* ---- Attendance row: name + unpaid badge + mark-paid ---- */
+.user-name-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.badge-unpaid-inline {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.btn-xs {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* ---- Student cash notice (request modal) ---- */
+.cash-notice {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+.cash-notice p { margin: 0.35rem 0 0; line-height: 1.4; }
+.hidden { display: none !important; }

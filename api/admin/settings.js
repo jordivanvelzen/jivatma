@@ -1,6 +1,7 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
-import { sendTelegram } from '../../lib/telegram.js';
+import { sendTelegram, setTelegramWebhook } from '../../lib/telegram.js';
+import crypto from 'node:crypto';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
@@ -20,6 +21,21 @@ export default async function handler(req, res) {
       const { error } = await supabase.from('settings').upsert({ key, value: String(value) });
       if (error) return res.status(500).json({ error: error.message });
     }
+
+    // Auto-register the Telegram webhook whenever the bot token is saved,
+    // so inline Approve/Decline buttons "just work" without a manual step.
+    if (updates.telegram_bot_token) {
+      try {
+        const secret = crypto.randomBytes(24).toString('hex');
+        await supabase.from('settings').upsert({ key: 'telegram_webhook_secret', value: secret });
+        const baseUrl = `https://${req.headers.host}`;
+        const webhookUrl = `${baseUrl}/api/pass-requests?webhook=telegram`;
+        await setTelegramWebhook(webhookUrl, secret);
+      } catch {
+        // Non-fatal — settings still saved; the user can re-save to retry
+      }
+    }
+
     return res.json({ ok: true });
   }
 
@@ -35,6 +51,21 @@ export default async function handler(req, res) {
       }
       return res.json({ ok: true });
     }
+
+    if (action === 'register-webhook') {
+      // Generate a fresh secret, persist it, then ask Telegram to use it
+      const secret = crypto.randomBytes(24).toString('hex');
+      await supabase.from('settings').upsert({ key: 'telegram_webhook_secret', value: secret });
+
+      const baseUrl = req.body?.baseUrl || `https://${req.headers.host}`;
+      const webhookUrl = `${baseUrl}/api/pass-requests?webhook=telegram`;
+      const result = await setTelegramWebhook(webhookUrl, secret);
+      if (!result.ok) {
+        return res.status(400).json({ ok: false, reason: result.reason, error: result.telegramError });
+      }
+      return res.json({ ok: true, url: webhookUrl });
+    }
+
     return res.status(400).json({ error: 'Unknown action' });
   }
 
