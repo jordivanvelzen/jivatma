@@ -15,6 +15,10 @@ export async function renderLogin() {
         <input type="password" id="password" placeholder="${t('auth.password')}" required autocomplete="current-password" />
         <button type="submit" class="btn btn-primary">${t('auth.login')}</button>
       </form>
+      <div id="unconfirmed-banner" class="cash-notice hidden" style="margin-top:1rem">
+        <p style="margin:0 0 0.5rem">${t('auth.emailNotConfirmed')}</p>
+        <button type="button" id="resend-confirmation" class="btn btn-small btn-secondary">${t('auth.resendConfirmation')}</button>
+      </div>
       <p class="auth-links">
         <a href="#/register">${t('auth.createAccount')}</a> · <a href="#/forgot-password">${t('auth.forgotPassword')}</a>
       </p>
@@ -22,6 +26,19 @@ export async function renderLogin() {
   `;
 
   document.getElementById('lang-toggle').addEventListener('click', () => toggleLang());
+
+  const banner = document.getElementById('unconfirmed-banner');
+  const resendBtn = document.getElementById('resend-confirmation');
+
+  resendBtn.addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    if (!email) return;
+    resendBtn.disabled = true;
+    const { error } = await sb.auth.resend({ type: 'signup', email });
+    resendBtn.disabled = false;
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast(t('auth.confirmationResent'), 'success');
+  });
 
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -31,9 +48,43 @@ export async function renderLogin() {
     const { error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
+      // Case 1: Supabase explicitly tells us the email isn't confirmed
+      const code = error.code || '';
+      const msg = (error.message || '').toLowerCase();
+      const unconfirmed = code === 'email_not_confirmed' || msg.includes('not confirmed') || msg.includes('not verified');
+
+      if (unconfirmed) {
+        banner.classList.remove('hidden');
+        showToast(t('auth.emailNotConfirmed'), 'error');
+        return;
+      }
+
+      // Case 2: generic "Invalid login credentials". Could be wrong password OR unconfirmed
+      // email on projects that mask that error. Probe by calling resend — if it succeeds
+      // without error, the user exists but is unconfirmed.
+      if (code === 'invalid_credentials' || msg.includes('invalid')) {
+        const { error: resendErr } = await sb.auth.resend({ type: 'signup', email });
+        // If resend succeeds (no error) OR the error is about rate-limiting, the account
+        // most likely exists and is unconfirmed. If it errors with "already confirmed" or
+        // "user not found", it's genuinely bad credentials.
+        const rMsg = (resendErr?.message || '').toLowerCase();
+        const looksUnconfirmed = !resendErr || rMsg.includes('rate') || rMsg.includes('seconds') || rMsg.includes('for security');
+
+        if (looksUnconfirmed) {
+          banner.classList.remove('hidden');
+          showToast(t('auth.emailNotConfirmed'), 'error');
+          return;
+        }
+
+        showToast(t('auth.invalidCredentials'), 'error');
+        return;
+      }
+
       showToast(error.message, 'error');
       return;
     }
+
+    banner.classList.add('hidden');
 
     await renderNav();
     // Check role and redirect

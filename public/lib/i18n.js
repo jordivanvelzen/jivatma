@@ -46,6 +46,10 @@ const translations = {
     'auth.step2Confirm': 'Haz clic en el enlace del correo para confirmar tu cuenta.',
     'auth.step3Login': 'Inicia sesión con tu correo y contraseña.',
     'auth.step4Pass': 'Elige una clase individual o pide un pase a Claudia para empezar a reservar.',
+    'auth.emailNotConfirmed': 'Tu correo aún no está confirmado. Revisa tu bandeja de entrada (y spam) y haz clic en el enlace de confirmación.',
+    'auth.resendConfirmation': 'Reenviar correo de confirmación',
+    'auth.confirmationResent': 'Correo de confirmación reenviado. Revisa tu bandeja de entrada.',
+    'auth.invalidCredentials': 'Correo o contraseña incorrectos.',
 
     // Dashboard
     'dash.welcome': 'Bienvenido/a',
@@ -418,6 +422,10 @@ const translations = {
     'auth.step2Confirm': 'Click the link in that email to confirm your account.',
     'auth.step3Login': 'Log in with your email and password.',
     'auth.step4Pass': 'Pick a single class or request a pass from Claudia to start booking.',
+    'auth.emailNotConfirmed': 'Your email isn\u2019t confirmed yet. Check your inbox (and spam) and click the confirmation link.',
+    'auth.resendConfirmation': 'Resend confirmation email',
+    'auth.confirmationResent': 'Confirmation email resent. Check your inbox.',
+    'auth.invalidCredentials': 'Incorrect email or password.',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
