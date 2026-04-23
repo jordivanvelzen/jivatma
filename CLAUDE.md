@@ -261,7 +261,7 @@ Configured in `vercel.json`:
 
 | Route | File | Description |
 |---|---|---|
-| `#/dashboard` | `pages/dashboard.js` | Home: active passes, upcoming bookings, recent attendance |
+| `#/dashboard` | `pages/dashboard.js` | Home: active passes, pending pass requests awaiting admin verification, upcoming bookings, recent attendance |
 | `#/schedule` | `pages/schedule.js` | Browse upcoming classes within sign-up window, book/cancel. Shows spots remaining, meeting link for online classes |
 | `#/my-passes` | `pages/my-passes.js` | All passes (active, expired, used up) with status badges. Shows available pass types; students can self-select single-class passes (pay at class) |
 | `#/my-attendance` | `pages/my-attendance.js` | Attendance history table (date, time, class type) |
@@ -373,7 +373,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Profile Management | Built | Edit name/phone, change password |
 | Online Class Support | Built | Three class types (online, in-person, hybrid) with meeting link |
 | Pass Expiry Monitoring (Cron) | Built | Daily cron identifies expiring passes and low-remaining passes |
-| Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Modal shows studio bank details (holder/bank/account/CLABE/card) configured in admin settings — clicking a value copies it. Student can check "I've made the payment" which prepends `[PAID]` to notes. Students see their request history with status badges. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment. |
+| Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Modal shows studio bank details (holder/bank/account/CLABE/card) configured in admin settings — clicking a value copies it. Student can check "I've made the payment" which prepends `[PAID]` to notes. Students see their request history with status badges. Pending requests also surface on the student dashboard as a yellow-bordered "waiting for Claudia to verify" card, so students get immediate feedback after submitting. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment: `payment_method='transfer'` is marked `is_paid=true` (admin verified the deposit before approving), `payment_method='cash'` stays `is_paid=false` (collected at the studio). |
 | Payment Instructions | Built | Admin configures bank details (holder, bank name, account, CLABE, card number, free-form instructions) in settings. Shown to students in pass-request modal with copy-on-click |
 | Icon Nav | Built | Logout, language, profile are icon-only buttons grouped on the right side of the nav. Main section links remain in the collapsible list. Language button shows the *other* language code (ES/EN) |
 | Pass Expiry Notifications | Not Built | Could reuse the Telegram helper; cron currently logs counts only |

@@ -56,6 +56,8 @@ const translations = {
     'dash.browseClasses': 'Ver clases',
     'dash.recentAttendance': 'Asistencia Reciente',
     'dash.noAttendance': 'Aún no hay asistencia registrada.',
+    'dash.pendingTransfer': 'Esperando que Claudia verifique tu transferencia.',
+    'dash.pendingGeneric': 'Esperando aprobación de Claudia.',
 
     // Onboarding
     'onboarding.welcomeTitle': '¡Bienvenida a Jivatma! 🧘',
@@ -407,6 +409,8 @@ const translations = {
     'dash.browseClasses': 'Browse classes',
     'dash.recentAttendance': 'Recent Attendance',
     'dash.noAttendance': 'No attendance recorded yet.',
+    'dash.pendingTransfer': 'Waiting for Claudia to verify your transfer.',
+    'dash.pendingGeneric': 'Waiting for Claudia to approve.',
 
     // Onboarding
     'onboarding.welcomeTitle': 'Welcome to Jivatma! 🧘',

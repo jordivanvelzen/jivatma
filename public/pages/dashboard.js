@@ -9,22 +9,46 @@ export async function renderDashboard() {
   const userId = session.user.id;
   const today = todayStr();
 
-  const [{ data: profile }, { data: passes }, { data: bookings }, { data: attendance }] = await Promise.all([
+  const [{ data: profile }, { data: passes }, { data: bookings }, { data: attendance }, { data: pendingRequests }] = await Promise.all([
     sb.from('profiles').select('full_name, phone').eq('id', userId).single(),
     sb.from('user_passes').select('*, pass_types(*)').eq('user_id', userId).gte('expires_at', today).order('expires_at', { ascending: true }),
     sb.from('bookings').select('*, class_sessions(*)').eq('user_id', userId).is('cancelled_at', null).gte('class_sessions.date', today).order('booked_at', { ascending: true }).limit(5),
     sb.from('attendance').select('*, class_sessions(*)').eq('user_id', userId).order('checked_in_at', { ascending: false }).limit(5),
+    sb.from('pass_requests').select('*, pass_types(*)').eq('user_id', userId).eq('status', 'pending').order('created_at', { ascending: false }),
   ]);
 
   const activePasses = (passes || []).filter(p =>
     p.pass_types.kind === 'unlimited' || p.classes_remaining > 0
   );
+  const pending = pendingRequests || [];
+
+  function kindLabel(pt) {
+    if (!pt) return '';
+    if (pt.kind === 'single') return t('passes.singleClass');
+    if (pt.kind === 'multi') return t('passes.multiClass', { n: pt.class_count });
+    return t('passes.unlimited');
+  }
+
+  const pendingHtml = pending.map(r => {
+    const waitMsg = r.payment_method === 'transfer'
+      ? t('dash.pendingTransfer')
+      : t('dash.pendingGeneric');
+    return `
+      <div class="pass-card pass-pending">
+        <div class="pass-kind">${kindLabel(r.pass_types)}</div>
+        <div class="pass-detail">${waitMsg}</div>
+        <div class="pass-badges">
+          <span class="pass-badge pass-badge-pending">${t('requests.pending')}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
 
   const locale = getLocale();
   const firstName = (profile?.full_name || '').split(' ')[0];
 
-  // Show onboarding for brand-new students: no passes, no bookings, no attendance
-  const isBrandNew = !activePasses.length && !bookings?.length && !attendance?.length;
+  // Show onboarding for brand-new students: no passes, no pending requests, no bookings, no attendance
+  const isBrandNew = !activePasses.length && !pending.length && !bookings?.length && !attendance?.length;
 
   const onboardingHtml = isBrandNew ? `
     <div class="onboarding-card">
@@ -50,7 +74,8 @@ export async function renderDashboard() {
 
       <section class="section">
         <h3>${t('dash.yourPasses')}</h3>
-        ${activePasses.length === 0
+        ${pendingHtml}
+        ${activePasses.length === 0 && pending.length === 0
           ? `<div class="empty-state">
               <p class="muted">${t('dash.noActivePasses')}</p>
               <a href="#/my-passes" class="btn btn-small btn-primary">${t('onboarding.goPasses')}</a>
