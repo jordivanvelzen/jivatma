@@ -93,6 +93,16 @@ export async function renderAdminUserDetail(params) {
         </div>
       ` : ''}
 
+      ${user.role === 'admin' ? `
+        <div class="role-toggle">
+          <label class="checkbox-label">
+            <input type="checkbox" id="toggle-show-attendance" ${user.show_in_attendance !== false ? 'checked' : ''} />
+            ${t('admin.showInAttendance')}
+          </label>
+          <p class="muted" style="font-size:0.8rem;margin-top:0.25rem">${t('admin.showInAttendanceHelp')}</p>
+        </div>
+      ` : ''}
+
       <section class="section">
         <h3>${t('admin.assignPass')}</h3>
         <form id="assign-pass-form" class="form form-inline">
@@ -147,6 +157,22 @@ export async function renderAdminUserDetail(params) {
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('admin.roleChanged', { role: newRole }), 'success');
     renderAdminUserDetail(params);
+  });
+
+  // Show-in-attendance toggle (admins only)
+  document.getElementById('toggle-show-attendance')?.addEventListener('change', async (e) => {
+    const show = e.target.checked;
+    try {
+      await api('/api/admin/users', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: userId, show_in_attendance: show }),
+      });
+      showToast(show ? t('admin.shownInAttendance') : t('admin.hiddenFromAttendance'), 'success');
+      user.show_in_attendance = show;
+    } catch (err) {
+      e.target.checked = !show;
+      showToast(err.message, 'error');
+    }
   });
 
   // Gift → auto-check paid

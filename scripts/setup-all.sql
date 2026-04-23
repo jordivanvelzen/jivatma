@@ -23,11 +23,12 @@ DROP TABLE IF EXISTS profiles CASCADE;
 -- PROFILES
 -- ============================================================
 CREATE TABLE profiles (
-  id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name  TEXT NOT NULL,
-  phone      TEXT,
-  role       TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                   UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name            TEXT NOT NULL,
+  phone                TEXT,
+  role                 TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  show_in_attendance   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Master admin check

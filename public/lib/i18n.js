@@ -162,6 +162,10 @@ const translations = {
     'admin.removeAdmin': 'Quitar admin',
     'admin.makeAdmin': 'Hacer admin',
     'admin.roleChanged': 'Rol cambiado a {role}',
+    'admin.showInAttendance': 'Mostrar en lista de asistencia',
+    'admin.showInAttendanceHelp': 'Desactiva esto para admins que dan clase (como Claudia) y no deben aparecer como alumnos en la página de asistencia.',
+    'admin.shownInAttendance': 'Visible en asistencia.',
+    'admin.hiddenFromAttendance': 'Oculto de la lista de asistencia.',
 
     // Admin Assign Pass
     'admin.assignPass': 'Asignar Pase',
@@ -530,6 +534,10 @@ const translations = {
     'admin.removeAdmin': 'Remove admin',
     'admin.makeAdmin': 'Make admin',
     'admin.roleChanged': 'Role changed to {role}',
+    'admin.showInAttendance': 'Show in attendance list',
+    'admin.showInAttendanceHelp': "Turn off for teaching admins (like Claudia) so they don't appear as a student on the attendance page.",
+    'admin.shownInAttendance': 'Visible in attendance.',
+    'admin.hiddenFromAttendance': 'Hidden from attendance list.',
 
     // Admin Assign Pass
     'admin.assignPass': 'Assign Pass',
