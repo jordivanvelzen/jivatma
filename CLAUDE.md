@@ -275,7 +275,7 @@ Configured in `vercel.json`:
 | `#/admin/class` | `pages/admin/class.js` | Attendance marking: date picker, session selector, checkbox list of booked students + walk-ins, saves via API |
 | `#/admin/users` | `pages/admin/users.js` | User list table (name, role, view link) |
 | `#/admin/users/:id` | `pages/admin/user-detail.js` | User detail: role toggle, assign pass form, pass history, recent attendance |
-| `#/admin/passes` | `pages/admin/pass-types.js` | Manage pass types: list, activate/deactivate, add new |
+| `#/admin/passes` | `pages/admin/pass-types.js` | Manage pass types (collapsed cards, tap to expand and edit inline — fields stack vertically on very narrow screens), Active Passes overview (all issued passes with student name / type / classes-left / expiry countdown, filter chips: all / unpaid / expiring), and pass requests |
 | `#/admin/schedule` | `pages/admin/schedule.js` | Manage weekly templates: list, enable/disable, delete, add new. Manual session generation button |
 | `#/admin/settings` | `pages/admin/settings.js` | Studio settings: location address, meeting link, sign-up window, default capacity |
 
@@ -383,6 +383,8 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Student Cash Instruction | Built | When a student selects "Efectivo" in the pass-request modal, a yellow notice replaces the bank-details block: *"Por favor trae el efectivo a tu próxima clase. Llega 10 minutos antes para pagar en el estudio antes de empezar."* System-driven so Claudia doesn't have to ask for money |
 | Users List Pass Summary | Built | Admin users list shows each user's best active pass at a glance: *"Unlimited Monthly · Vence 15 May"* or *"10-Class Pass · 7 restan · Vence 30 May"*. Unpaid passes carry a `💵` badge. Clicking the row opens user detail |
 | Pass-Types Mobile Cards | Built | Admin pass-types page rewritten from a cramped table to a card-per-type layout with inline editable fields (classes, validity days, price). Active/inactive badge on each card. Add form folded into a collapsible section |
+| Pass-Types Collapsed Editor | Built | Each pass type is collapsed by default (title · summary "N clases / M días / $price" · active badge); tap to expand and edit inline. Fields stack vertically on phones ≤419px so inputs never overflow the card (tested at 320px); 2-column grid at 420–599px; 3-column at 600px+. Unlimited passes show a disabled `∞` for class count |
+| Admin Active Passes Overview | Built | On `#/admin/passes` a dedicated "Active Passes" section lists every issued pass that is not expired and still has classes remaining, sorted by soonest expiry. Each card shows student name, pass type, classes-left (or ∞), relative expiry ("vence en N días" / hoy / mañana) + date, and a `💵 cobrar` badge if unpaid. Unpaid / expiring (≤7 days) rows get a colored left border. Filter chips above the list: All / 💵 Por cobrar / ⚠️ Por vencer. Clicking a card opens the user detail page (where the pass can be edited) |
 | Request History View-Pass | Built | Processed pass requests on admin passes page now show a "Ver pase" link that opens the student's user-detail page (where the full pass editor lives) |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |

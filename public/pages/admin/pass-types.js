@@ -6,44 +6,130 @@ import { t, getLocale } from '../../lib/i18n.js';
 export async function renderAdminPassTypes() {
   const app = document.getElementById('app');
 
-  const { data: passTypes } = await sb.from('pass_types').select('*').order('kind');
-
-  let requests = [];
-  try { requests = await api('/api/pass-requests'); } catch {}
+  const [{ data: passTypes }, userPasses, requests] = await Promise.all([
+    sb.from('pass_types').select('*').order('kind'),
+    api('/api/admin/passes').catch(() => []),
+    api('/api/pass-requests').catch(() => []),
+  ]);
 
   const pendingRequests = (requests || []).filter(r => r.status === 'pending');
   const processedRequests = (requests || []).filter(r => r.status !== 'pending');
   const locale = getLocale();
 
-  const ptLabel = (pt) => pt.kind === 'single' ? t('passes.singleClass')
+  const ptLabel = (pt) => !pt ? '-'
+    : pt.kind === 'single' ? t('passes.singleClass')
     : pt.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
     : t('passes.unlimited');
 
-  const passTypeCard = (pt) => `
-    <div class="pt-card ${pt.is_active ? '' : 'pt-card-inactive'}" data-pt-id="${pt.id}">
-      <div class="pt-card-head">
-        <div class="pt-card-title">${ptLabel(pt)}</div>
-        <span class="badge ${pt.is_active ? 'badge-active' : 'badge-expired'}">${pt.is_active ? t('passes.active') : t('admin.inactive')}</span>
-      </div>
-      <div class="pt-card-fields">
-        <label>${t('admin.classes')}
-          <input type="number" class="pt-edit-count" value="${pt.class_count ?? ''}" placeholder="\u221E" min="1" />
-        </label>
-        <label>${t('admin.validDays')}
-          <input type="number" class="pt-edit-days" value="${pt.validity_days}" min="1" />
-        </label>
-        <label>${t('admin.price')} (MXN)
-          <input type="number" class="pt-edit-price" value="${parseFloat(pt.price).toFixed(2)}" min="0" step="0.01" />
-        </label>
-      </div>
-      <div class="pt-card-actions">
-        <button class="btn btn-small btn-primary save-pt">${t('general.save')}</button>
-        <button class="btn btn-small btn-secondary toggle-active" data-active="${pt.is_active}">
-          ${pt.is_active ? t('admin.deactivate') : t('admin.activate')}
-        </button>
-      </div>
-    </div>
-  `;
+  const fmtPrice = (p) => `$${parseFloat(p).toFixed(0)} MXN`;
+
+  // ---- Pass type card (collapsed by default, expand to edit) ----
+  const passTypeCard = (pt) => {
+    const isUnlimited = pt.kind === 'unlimited';
+    const countSummary = isUnlimited
+      ? t('admin.unlimitedShort')
+      : `${pt.class_count} ${t('admin.classesShort')}`;
+    const summaryMeta = `${countSummary} · ${pt.validity_days} ${t('admin.daysShort')} · ${fmtPrice(pt.price)}`;
+
+    return `
+      <details class="pt-card ${pt.is_active ? '' : 'pt-card-inactive'}" data-pt-id="${pt.id}">
+        <summary>
+          <div class="pt-summary-main">
+            <div class="pt-summary-title">${ptLabel(pt)}</div>
+            <div class="pt-summary-meta">${summaryMeta}</div>
+          </div>
+          <span class="badge ${pt.is_active ? 'badge-active' : 'badge-expired'}">${pt.is_active ? t('passes.active') : t('admin.inactive')}</span>
+        </summary>
+        <div class="pt-card-body">
+          <div class="pt-card-fields">
+            <label>${t('admin.classes')}
+              <input type="number" class="pt-edit-count" value="${pt.class_count ?? ''}" placeholder="∞" min="1" ${isUnlimited ? 'disabled' : ''} />
+            </label>
+            <label>${t('admin.validDays')}
+              <input type="number" class="pt-edit-days" value="${pt.validity_days}" min="1" inputmode="numeric" />
+            </label>
+            <label>${t('admin.price')} (MXN)
+              <input type="number" class="pt-edit-price" value="${parseFloat(pt.price).toFixed(2)}" min="0" step="0.01" inputmode="decimal" />
+            </label>
+          </div>
+          <div class="pt-card-actions">
+            <button class="btn btn-small btn-primary save-pt">${t('general.save')}</button>
+            <button class="btn btn-small btn-secondary toggle-active" data-active="${pt.is_active}">
+              ${pt.is_active ? t('admin.deactivate') : t('admin.activate')}
+            </button>
+          </div>
+        </div>
+      </details>
+    `;
+  };
+
+  // ---- Active passes computation ----
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysBetween = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const target = new Date(y, m - 1, d);
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+  };
+  const isActivePass = (p) => {
+    const daysLeft = daysBetween(p.expires_at);
+    if (daysLeft < 0) return false;
+    if (p.classes_remaining !== null && p.classes_remaining <= 0) return false;
+    return true;
+  };
+
+  const activePasses = (userPasses || [])
+    .filter(isActivePass)
+    .sort((a, b) => a.expires_at.localeCompare(b.expires_at));
+
+  const activePassCard = (p) => {
+    const daysLeft = daysBetween(p.expires_at);
+    const pt = p.pass_types;
+    const name = p.profiles?.full_name || '—';
+
+    const classesLabel = p.classes_remaining === null
+      ? '∞'
+      : p.classes_remaining === 1 ? t('admin.oneClassLeft')
+      : t('admin.classesLeftShort', { n: p.classes_remaining });
+
+    const expiresLabel = daysLeft === 0 ? t('admin.expiresToday')
+      : daysLeft === 1 ? t('admin.expiresTomorrow')
+      : t('admin.expiresInDays', { n: daysLeft });
+    const expiresDate = new Date(p.expires_at + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+
+    const expiring = daysLeft <= 7;
+    const unpaid = !p.is_paid;
+    const classes = [
+      'active-pass-card',
+      unpaid ? 'unpaid' : (expiring ? 'expiring' : ''),
+    ].filter(Boolean).join(' ');
+
+    const filterTags = [
+      'all',
+      unpaid ? 'unpaid' : '',
+      expiring ? 'expiring' : '',
+    ].filter(Boolean).join(' ');
+
+    return `
+      <a href="#/admin/users/${p.user_id}" class="${classes}" data-filter="${filterTags}">
+        <div class="active-pass-main">
+          <div class="active-pass-name">
+            ${name}
+            ${unpaid ? `<span class="badge-unpaid-inline">\u{1F4B5} ${t('admin.cashDue')}</span>` : ''}
+          </div>
+          <div class="active-pass-type">${ptLabel(pt)} · ${classesLabel}</div>
+          <div class="active-pass-meta">
+            <span class="${expiring ? 'expiring-text' : ''}">${expiresLabel}</span>
+            <span class="sep">·</span>
+            <span>${expiresDate}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  };
+
+  const unpaidCount = activePasses.filter(p => !p.is_paid).length;
+  const expiringCount = activePasses.filter(p => daysBetween(p.expires_at) <= 7).length;
 
   app.innerHTML = `
     <div class="page">
@@ -81,6 +167,25 @@ export async function renderAdminPassTypes() {
       </details>
 
       <section class="section" style="margin-top: 2rem;">
+        <div class="active-passes-head">
+          <h3>${t('admin.activePasses')} ${activePasses.length ? `(${activePasses.length})` : ''}</h3>
+        </div>
+        ${!activePasses.length
+          ? `<p class="muted">${t('admin.activePassesNone')}</p>`
+          : `
+            <div class="filter-chips" id="active-pass-filters">
+              <button class="filter-chip active" data-filter="all">${t('admin.filterAll')} (${activePasses.length})</button>
+              ${unpaidCount ? `<button class="filter-chip" data-filter="unpaid">\u{1F4B5} ${t('admin.filterUnpaid')} (${unpaidCount})</button>` : ''}
+              ${expiringCount ? `<button class="filter-chip" data-filter="expiring">⚠️ ${t('admin.filterExpiring')} (${expiringCount})</button>` : ''}
+            </div>
+            <div class="active-pass-list" id="active-pass-list">
+              ${activePasses.map(activePassCard).join('')}
+            </div>
+          `
+        }
+      </section>
+
+      <section class="section" style="margin-top: 2rem;">
         <h3>${t('requests.title')} ${pendingRequests.length ? `(${pendingRequests.length})` : ''}</h3>
         ${!pendingRequests.length
           ? `<p class="muted">${t('requests.noRequestsAdmin')}</p>`
@@ -102,9 +207,9 @@ export async function renderAdminPassTypes() {
                     </div>
                     <div class="request-body">
                       <div>${ptLabel(pt)}${priceStr ? ' · ' + priceStr : ''}</div>
-                      <div class="muted">${payLabel}${paid ? ' \u2705 ' + t('payment.markedPaid') : ''}</div>
+                      <div class="muted">${payLabel}${paid ? ' ✅ ' + t('payment.markedPaid') : ''}</div>
                       ${r.notes ? `<div class="muted" style="font-size:0.85rem">${r.notes}</div>` : ''}
-                      ${r.payment_method === 'transfer' ? `<div class="warn-line">\u26a0\ufe0f ${t('requests.verifyBankFirst')}</div>` : ''}
+                      ${r.payment_method === 'transfer' ? `<div class="warn-line">⚠️ ${t('requests.verifyBankFirst')}</div>` : ''}
                       ${r.payment_method === 'cash' ? `<div class="info-line">\u{1F4B5} ${t('requests.cashReminderAdmin')}</div>` : ''}
                     </div>
                     <div class="request-actions">
@@ -160,17 +265,22 @@ export async function renderAdminPassTypes() {
     else { countInput.value = ''; daysInput.value = 30; }
   });
 
-  // Pass type cards: save / toggle
+  // Pass type cards: save / toggle. Stop propagation on clicks so the
+  // <details> open state doesn't toggle when interacting with inputs/buttons.
   app.querySelectorAll('.pt-card').forEach(card => {
     const id = parseInt(card.dataset.ptId, 10);
+    card.querySelectorAll('.pt-card-body').forEach(body => {
+      body.addEventListener('click', (e) => e.stopPropagation());
+    });
 
-    card.querySelector('.save-pt').addEventListener('click', async () => {
+    card.querySelector('.save-pt').addEventListener('click', async (e) => {
+      e.stopPropagation();
       const countEl = card.querySelector('.pt-edit-count');
       const daysEl = card.querySelector('.pt-edit-days');
       const priceEl = card.querySelector('.pt-edit-price');
       const updates = {
         id,
-        class_count: countEl.value ? parseInt(countEl.value, 10) : null,
+        class_count: countEl.disabled ? null : (countEl.value ? parseInt(countEl.value, 10) : null),
         validity_days: parseInt(daysEl.value, 10),
         price: parseFloat(priceEl.value),
       };
@@ -184,13 +294,29 @@ export async function renderAdminPassTypes() {
       } catch (err) { showToast(err.message, 'error'); }
     });
 
-    card.querySelector('.toggle-active').addEventListener('click', async () => {
+    card.querySelector('.toggle-active').addEventListener('click', async (e) => {
+      e.stopPropagation();
       const currentlyActive = card.querySelector('.toggle-active').dataset.active === 'true';
       const { error } = await sb.from('pass_types').update({ is_active: !currentlyActive }).eq('id', id);
       if (error) { showToast(error.message, 'error'); return; }
       renderAdminPassTypes();
     });
   });
+
+  // Active-pass filter chips
+  const filtersEl = document.getElementById('active-pass-filters');
+  if (filtersEl) {
+    filtersEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-chip');
+      if (!btn) return;
+      const filter = btn.dataset.filter;
+      filtersEl.querySelectorAll('.filter-chip').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('#active-pass-list .active-pass-card').forEach(card => {
+        const tags = (card.dataset.filter || '').split(' ');
+        card.style.display = tags.includes(filter) ? '' : 'none';
+      });
+    });
+  }
 
   // Add pass type
   document.getElementById('add-pass-form').addEventListener('submit', async (e) => {

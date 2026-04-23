@@ -307,6 +307,21 @@ const translations = {
     // Admin pass types — edit
     'admin.editPassType': 'Editar Tipo',
     'admin.passTypeUpdated': '¡Tipo actualizado!',
+    'admin.classesShort': 'clases',
+    'admin.daysShort': 'días',
+    'admin.unlimitedShort': 'Ilimitado',
+
+    // Admin — active passes section
+    'admin.activePasses': 'Pases Activos',
+    'admin.activePassesNone': 'No hay pases activos.',
+    'admin.filterAll': 'Todos',
+    'admin.filterUnpaid': 'Por cobrar',
+    'admin.filterExpiring': 'Por vencer',
+    'admin.expiresInDays': 'vence en {n} días',
+    'admin.expiresToday': 'vence hoy',
+    'admin.expiresTomorrow': 'vence mañana',
+    'admin.classesLeftShort': '{n} restantes',
+    'admin.oneClassLeft': '1 restante',
 
     // Admin settings — payment
     'admin.paymentSection': 'Datos Bancarios para Pagos',
@@ -660,6 +675,21 @@ const translations = {
     // Admin pass types — edit
     'admin.editPassType': 'Edit Type',
     'admin.passTypeUpdated': 'Type updated!',
+    'admin.classesShort': 'classes',
+    'admin.daysShort': 'days',
+    'admin.unlimitedShort': 'Unlimited',
+
+    // Admin — active passes section
+    'admin.activePasses': 'Active Passes',
+    'admin.activePassesNone': 'No active passes.',
+    'admin.filterAll': 'All',
+    'admin.filterUnpaid': 'Unpaid',
+    'admin.filterExpiring': 'Expiring',
+    'admin.expiresInDays': 'expires in {n} days',
+    'admin.expiresToday': 'expires today',
+    'admin.expiresTomorrow': 'expires tomorrow',
+    'admin.classesLeftShort': '{n} left',
+    'admin.oneClassLeft': '1 left',
 
     // Admin settings — payment
     'admin.paymentSection': 'Bank Details for Payments',
