@@ -1,12 +1,13 @@
 import { sb, getSession } from '../lib/supabase.js';
 import { renderPassCard } from '../components/pass-card.js';
 import { t, getLocale } from '../lib/i18n.js';
+import { todayStr, formatDbDate } from '../lib/dates.js';
 
 export async function renderDashboard() {
   const app = document.getElementById('app');
   const session = await getSession();
   const userId = session.user.id;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   const [{ data: profile }, { data: passes }, { data: bookings }, { data: attendance }] = await Promise.all([
     sb.from('profiles').select('full_name, phone').eq('id', userId).single(),
@@ -67,7 +68,7 @@ export async function renderDashboard() {
             </div>`
           : `<ul class="list">${bookings.filter(b => b.class_sessions).map(b => {
               const s = b.class_sessions;
-              const dateStr = new Date(s.date).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+              const dateStr = formatDbDate(s.date, locale, { weekday: 'short', day: 'numeric', month: 'short' });
               return `<li>${dateStr} · ${s.start_time.slice(0, 5)} · ${t('type.' + s.class_type)}</li>`;
             }).join('')}</ul>`
         }
@@ -78,7 +79,7 @@ export async function renderDashboard() {
           <h3>${t('dash.recentAttendance')}</h3>
           <ul class="list">${attendance.filter(a => a.class_sessions).map(a => {
             const s = a.class_sessions;
-            const dateStr = new Date(s.date).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+            const dateStr = formatDbDate(s.date, locale, { weekday: 'short', day: 'numeric', month: 'short' });
             return `<li>${dateStr} · ${s.start_time.slice(0, 5)}</li>`;
           }).join('')}</ul>
         </section>

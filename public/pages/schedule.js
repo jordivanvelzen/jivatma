@@ -2,12 +2,13 @@ import { sb, getSession } from '../lib/supabase.js';
 import { renderClassCard } from '../components/class-card.js';
 import { showToast } from '../components/toast.js';
 import { t } from '../lib/i18n.js';
+import { todayStr } from '../lib/dates.js';
 
 export async function renderSchedule() {
   const app = document.getElementById('app');
   const session = await getSession();
   const userId = session.user.id;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   // Check if user has an active pass
   const { data: activePasses } = await sb
@@ -28,7 +29,7 @@ export async function renderSchedule() {
   const windowWeeks = parseInt(windowSetting?.value || '2', 10);
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + windowWeeks * 7);
-  const maxDateStr = maxDate.toISOString().split('T')[0];
+  const maxDateStr = maxDate.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
   // Get sessions in window
   const { data: sessions } = await sb

@@ -3,12 +3,13 @@ import { api } from '../lib/api.js';
 import { renderPassCard } from '../components/pass-card.js';
 import { showToast } from '../components/toast.js';
 import { t, getLocale } from '../lib/i18n.js';
+import { todayStr } from '../lib/dates.js';
 
 export async function renderMyPasses() {
   const app = document.getElementById('app');
   const session = await getSession();
   const userId = session.user.id;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   // Fetch user passes, available pass types, and bank settings in parallel
   const [passesRes, typesRes, settingsRes] = await Promise.all([

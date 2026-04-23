@@ -1,5 +1,6 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
+import { todayStr, addDays } from '../../lib/dates.js';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
@@ -46,9 +47,8 @@ export default async function handler(req, res) {
     const { data: passType } = await supabase.from('pass_types').select('*').eq('id', pass_type_id).single();
     if (!passType) return res.status(404).json({ error: 'Pass type not found' });
 
-    const startsAt = new Date().toISOString().split('T')[0];
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + passType.validity_days);
+    const startsAt = todayStr();
+    const expiresAt = addDays(startsAt, passType.validity_days);
 
     const method = payment_method || 'cash';
     const paid = method === 'gift' ? true : !!is_paid;
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
       user_id, pass_type_id,
       classes_remaining: passType.class_count,
       starts_at: startsAt,
-      expires_at: expiresAt.toISOString().split('T')[0],
+      expires_at: expiresAt,
       payment_method: method,
       is_paid: paid,
       created_by: admin.profile.id,
@@ -103,11 +103,10 @@ export default async function handler(req, res) {
 
     if (action === 'extend') {
       const d = parseInt(days, 10) || 7;
-      const next = new Date(pass.expires_at);
-      next.setDate(next.getDate() + d);
+      const nextStr = addDays(pass.expires_at, d);
       const { data, error } = await supabase
         .from('user_passes')
-        .update({ expires_at: next.toISOString().split('T')[0] })
+        .update({ expires_at: nextStr })
         .eq('id', id).select().single();
       if (error) return res.status(500).json({ error: error.message });
       return res.json(data);

@@ -6,6 +6,7 @@ import {
   answerCallbackQuery,
   buildWaLink,
 } from '../lib/telegram.js';
+import { todayStr, addDays } from '../lib/dates.js';
 
 // ---------- helpers ----------
 
@@ -85,16 +86,15 @@ async function approveRequest(request, adminUserId) {
   if (updErr) return { ok: false, reason: updErr.message };
 
   const passType = request.pass_types;
-  const startsAt = new Date().toISOString().split('T')[0];
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + passType.validity_days);
+  const startsAt = todayStr();
+  const expiresAt = addDays(startsAt, passType.validity_days);
 
   const { error: passErr } = await supabase.from('user_passes').insert({
     user_id: request.user_id,
     pass_type_id: request.pass_type_id,
     classes_remaining: passType.class_count,
     starts_at: startsAt,
-    expires_at: expiresAt.toISOString().split('T')[0],
+    expires_at: expiresAt,
     payment_method: request.payment_method || 'cash',
     is_paid: false,
     created_by: adminUserId || null,

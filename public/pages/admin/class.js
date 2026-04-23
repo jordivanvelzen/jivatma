@@ -2,15 +2,16 @@ import { sb } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t } from '../../lib/i18n.js';
+import { todayStr, parseLocalDate } from '../../lib/dates.js';
 
 export async function renderAdminClass() {
   const app = document.getElementById('app');
 
   const hashParts = window.location.hash.split('?');
   const params = new URLSearchParams(hashParts[1] || '');
-  const selectedDate = params.get('date') || new Date().toISOString().split('T')[0];
+  const selectedDate = params.get('date') || todayStr();
   const selectedSessionId = params.get('session') ? parseInt(params.get('session'), 10) : null;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   const { data: sessions } = await sb
     .from('class_sessions').select('*')
@@ -150,15 +151,19 @@ export async function renderAdminClass() {
   document.getElementById('date-picker')?.addEventListener('change', (e) => {
     window.location.hash = `/admin/class?date=${e.target.value}`;
   });
+  const shiftDate = (delta) => {
+    const d = parseLocalDate(selectedDate);
+    d.setDate(d.getDate() + delta);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
   document.getElementById('prev-date')?.addEventListener('click', () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    window.location.hash = `/admin/class?date=${d.toISOString().split('T')[0]}`;
+    window.location.hash = `/admin/class?date=${shiftDate(-1)}`;
   });
   document.getElementById('next-date')?.addEventListener('click', () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    window.location.hash = `/admin/class?date=${d.toISOString().split('T')[0]}`;
+    window.location.hash = `/admin/class?date=${shiftDate(1)}`;
   });
 
   app.querySelectorAll('.att-seg').forEach(seg => {

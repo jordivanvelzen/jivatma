@@ -2,10 +2,11 @@ import { sb } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t, getLocale } from '../../lib/i18n.js';
+import { todayStr } from '../../lib/dates.js';
 
 export async function renderAdminSchedule() {
   const app = document.getElementById('app');
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   const [{ data: templates }, { data: capSetting }, { data: sessions }] = await Promise.all([
     sb.from('class_templates').select('*').order('day_of_week').order('start_time'),

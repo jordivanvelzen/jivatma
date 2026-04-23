@@ -1,5 +1,6 @@
 import { sb, getSession } from '../lib/supabase.js';
 import { t, getLocale } from '../lib/i18n.js';
+import { formatDbDate } from '../lib/dates.js';
 
 export async function renderMyAttendance() {
   const app = document.getElementById('app');
@@ -23,7 +24,7 @@ export async function renderMyAttendance() {
             <tbody>
               ${records.filter(r => r.class_sessions).map(r => {
                 const s = r.class_sessions;
-                const dateStr = new Date(s.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+                const dateStr = formatDbDate(s.date, locale, { day: 'numeric', month: 'short', year: 'numeric' });
                 return `<tr><td>${dateStr}</td><td>${s.start_time.slice(0, 5)}</td><td>${t('type.' + s.class_type)}</td></tr>`;
               }).join('')}
             </tbody>

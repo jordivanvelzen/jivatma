@@ -2,6 +2,7 @@ import { sb, getSession } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t, getLocale } from '../../lib/i18n.js';
+import { todayStr, parseLocalDate, formatDbDate } from '../../lib/dates.js';
 
 export async function renderAdminUserDetail(params) {
   const app = document.getElementById('app');
@@ -10,7 +11,7 @@ export async function renderAdminUserDetail(params) {
   const { data: user } = await sb.from('profiles').select('*').eq('id', userId).single();
   if (!user) { app.innerHTML = '<div class="page"><p>User not found.</p></div>'; return; }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   const { data: passes } = await sb
     .from('user_passes')
@@ -40,7 +41,7 @@ export async function renderAdminUserDetail(params) {
     const kindLabel = pt?.kind === 'single' ? t('passes.singleClass')
       : pt?.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
       : t('passes.unlimited');
-    const expired = new Date(p.expires_at) < new Date(today);
+    const expired = parseLocalDate(p.expires_at) < parseLocalDate(today);
     const usedUp = p.classes_remaining !== null && p.classes_remaining <= 0;
     const status = expired ? t('passes.expired') : usedUp ? t('passes.usedUp') : t('passes.active');
     const statusClass = expired ? 'badge-expired' : usedUp ? 'badge-pending' : 'badge-active';
@@ -131,7 +132,7 @@ export async function renderAdminUserDetail(params) {
           ? `<p class="muted">${t('admin.noAttendanceYet')}</p>`
           : `<ul class="list">${attendance.filter(a => a.class_sessions).map(a => {
               const s = a.class_sessions;
-              const dateStr = new Date(s.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+              const dateStr = formatDbDate(s.date, locale, { day: 'numeric', month: 'short' });
               return `<li>${dateStr} · ${s.start_time.slice(0, 5)}</li>`;
             }).join('')}</ul>`
         }

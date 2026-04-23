@@ -1,7 +1,8 @@
 import { t, getLocale } from '../lib/i18n.js';
+import { parseLocalDate, formatDbDate, todayStr } from '../lib/dates.js';
 
 export function renderPassCard(pass, passType) {
-  const isExpired = new Date(pass.expires_at) < new Date();
+  const isExpired = parseLocalDate(pass.expires_at) < parseLocalDate(todayStr());
   const isUsedUp = passType.kind !== 'unlimited' && pass.classes_remaining <= 0;
   const status = isExpired ? 'expired' : isUsedUp ? 'used-up' : 'active';
 
@@ -9,7 +10,7 @@ export function renderPassCard(pass, passType) {
     : passType.kind === 'multi' ? t('passes.multiClass', { n: passType.class_count })
     : t('passes.unlimited');
 
-  const dateStr = new Date(pass.expires_at).toLocaleDateString(getLocale(), {
+  const dateStr = formatDbDate(pass.expires_at, getLocale(), {
     day: 'numeric', month: 'short', year: 'numeric'
   });
 

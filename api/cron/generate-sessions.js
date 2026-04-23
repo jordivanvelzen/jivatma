@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase.js';
+import { todayStr, addDays } from '../../lib/dates.js';
 
 export default async function handler(req, res) {
   // Generate sessions for the next 14 days from active templates
@@ -17,13 +18,12 @@ export default async function handler(req, res) {
   const defaultCap = parseInt(capSetting?.value || '15', 10);
 
   let created = 0;
-  const today = new Date();
+  const today = todayStr();
 
   for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + dayOffset);
-    const dayOfWeek = date.getDay();
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = addDays(today, dayOffset);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dayOfWeek = new Date(y, m - 1, d).getDay();
 
     for (const tmpl of templates) {
       if (tmpl.day_of_week !== dayOfWeek) continue;

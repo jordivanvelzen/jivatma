@@ -1,18 +1,18 @@
 import { supabase } from '../../lib/supabase.js';
 import { sendTelegram } from '../../lib/telegram.js';
+import { todayStr, addDays } from '../../lib/dates.js';
 
 export default async function handler(req, res) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   // Find passes expiring in the next 3 days
-  const threeDays = new Date();
-  threeDays.setDate(threeDays.getDate() + 3);
+  const threeDaysStr = addDays(today, 3);
 
   const { data: expiringSoon } = await supabase
     .from('user_passes')
     .select('*, profiles(full_name, phone), pass_types(kind)')
     .gte('expires_at', today)
-    .lte('expires_at', threeDays.toISOString().split('T')[0]);
+    .lte('expires_at', threeDaysStr);
 
   const { data: lowClasses } = await supabase
     .from('user_passes')

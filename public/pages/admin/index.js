@@ -1,9 +1,10 @@
 import { sb } from '../../lib/supabase.js';
 import { t, getLocale } from '../../lib/i18n.js';
+import { todayStr, formatDbDate } from '../../lib/dates.js';
 
 export async function renderAdminDashboard() {
   const app = document.getElementById('app');
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   // Today's sessions
   const { data: sessions } = await sb
@@ -16,7 +17,7 @@ export async function renderAdminDashboard() {
   // Expiring passes (within 7 days)
   const weekFromNow = new Date();
   weekFromNow.setDate(weekFromNow.getDate() + 7);
-  const weekStr = weekFromNow.toISOString().split('T')[0];
+  const weekStr = weekFromNow.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
   const { data: expiringPasses } = await sb
     .from('user_passes')
@@ -62,7 +63,7 @@ export async function renderAdminDashboard() {
           : `<ul class="list">
               ${(expiringPasses || []).map(p => {
                 const name = p.profiles?.full_name || 'Unknown';
-                const dateStr = new Date(p.expires_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+                const dateStr = formatDbDate(p.expires_at, locale, { day: 'numeric', month: 'short' });
                 return `<li class="alert-item">\u23F0 ${name} — ${t('admin.expiresOn', { date: dateStr })}</li>`;
               }).join('')}
               ${(lowPasses || []).map(p => {

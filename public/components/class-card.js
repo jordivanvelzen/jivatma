@@ -1,7 +1,8 @@
 import { t, getLocale } from '../lib/i18n.js';
+import { formatDbDate } from '../lib/dates.js';
 
 export function renderClassCard(session, booking, spotsLeft, hasActivePass = true) {
-  const dateStr = new Date(session.date).toLocaleDateString(getLocale(), {
+  const dateStr = formatDbDate(session.date, getLocale(), {
     weekday: 'short', day: 'numeric', month: 'short',
   });
 

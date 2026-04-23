@@ -1,9 +1,10 @@
 import { sb } from '../../lib/supabase.js';
 import { t, getLocale } from '../../lib/i18n.js';
+import { todayStr, parseLocalDate, formatDbDate } from '../../lib/dates.js';
 
 export async function renderAdminUsers() {
   const app = document.getElementById('app');
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
 
   const [{ data: users }, { data: passes }] = await Promise.all([
     sb.from('profiles').select('*').order('full_name', { ascending: true }),
@@ -26,7 +27,7 @@ export async function renderAdminUsers() {
       return 1;
     };
     if (score(p) > score(existing)) byUser[p.user_id] = p;
-    else if (score(p) === score(existing) && new Date(p.expires_at) > new Date(existing.expires_at)) {
+    else if (score(p) === score(existing) && parseLocalDate(p.expires_at) > parseLocalDate(existing.expires_at)) {
       byUser[p.user_id] = p;
     }
   });
@@ -38,7 +39,7 @@ export async function renderAdminUsers() {
     const label = pt?.kind === 'single' ? t('passes.singleClass')
       : pt?.kind === 'multi' ? t('passes.multiClass', { n: pt.class_count })
       : t('passes.unlimited');
-    const expires = new Date(p.expires_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    const expires = formatDbDate(p.expires_at, locale, { day: 'numeric', month: 'short' });
     const remaining = p.classes_remaining !== null
       ? ` · ${p.classes_remaining} ${t('passes.leftShort')}`
       : '';
