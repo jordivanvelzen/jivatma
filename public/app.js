@@ -1,4 +1,4 @@
-import { getSession, getProfile } from './lib/supabase.js';
+import { sb, getSession, getProfile, bootSession } from './lib/supabase.js';
 import { route, setNotFound, startRouter, navigate } from './lib/router.js';
 import { t } from './lib/i18n.js';
 import { isStudentView, setStudentView } from './lib/view-mode.js';
@@ -112,5 +112,20 @@ setNotFound(() => {
   `;
 });
 
-// Start
-startRouter();
+// If the refresh token dies mid-session (revoked, past max lifetime, etc.),
+// Supabase fires SIGNED_OUT. Bounce to /login so we don't leave an authed UI
+// pointing at a dead session. Only act when we're on a guarded page.
+const PUBLIC_PATHS = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT' && !PUBLIC_PATHS.has(window.location.pathname)) {
+    navigate('/login');
+  }
+});
+
+// Start: refresh the session up front so route guards see a live token even
+// after the PWA has been backgrounded for >1h. Returning PWA users no longer
+// get a flash of /login while the auto-refresh races the auth guard.
+(async () => {
+  await bootSession();
+  startRouter();
+})();

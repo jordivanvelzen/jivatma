@@ -1,6 +1,6 @@
 // Jivatma service worker — minimal shell cache so the app is installable + works briefly offline.
 // Bump CACHE_VERSION whenever you want to force a clean cache on next visit.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `jivatma-shell-${CACHE_VERSION}`;
 
 const SHELL = [
