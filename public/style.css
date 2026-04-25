@@ -6,30 +6,30 @@
 
 :root {
   /* ---- Color tokens ---- */
-  /* Deep forest sage — primary brand */
-  --green-900: #1f3024;
-  --green-800: #2a4231;
-  --green-700: #355440;     /* brand */
-  --green-600: #486a55;
-  --green-500: #6b8c75;
-  --green-300: #a8c0ae;
-  --green-100: #d9e3dc;
-  --green-50:  #eef3ef;
+  /* Deep maroon — primary brand (token name kept as `--green-*` for legacy callers) */
+  --green-900: #3d0f08;
+  --green-800: #5a160d;
+  --green-700: #852519;     /* brand */
+  --green-600: #9c2e20;
+  --green-500: #b04938;
+  --green-300: #d18f83;
+  --green-100: #f0d4ce;
+  --green-50:  #faeae6;
 
-  /* Warm honey — accent / primary CTA */
-  --honey-700: #b07a2c;
-  --honey-500: #d99a3f;
-  --honey-300: #f0bf73;
-  --honey-100: #fbe6c2;
-  --honey-50:  #fdf3df;
+  /* Warm gold — accent / primary CTA (token name kept as `--honey-*`) */
+  --honey-700: #b8830a;
+  --honey-500: #fdb515;     /* accent */
+  --honey-300: #fece5e;
+  --honey-100: #ffe9a8;
+  --honey-50:  #fffbd2;     /* brand cream */
 
   /* Soft clay — secondary accent */
   --clay-600: #b06a4f;
   --clay-100: #f3dcd0;
 
   /* Cream-bone background */
-  --cream-50:  #faf7f0;     /* page bg */
-  --cream-100: #f3eee0;
+  --cream-50:  #fffaeb;     /* page bg — soft tint of brand cream */
+  --cream-100: #fff3c9;
 
   /* Warm ink scale */
   --ink-900: #1a221d;
