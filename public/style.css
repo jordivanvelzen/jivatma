@@ -2329,13 +2329,10 @@ body.has-bottom-nav #pwa-android-nudge {
   gap: 10px;
   text-decoration: none;
 }
-.landing-nav-brand img { border-radius: 8px; }
-.landing-nav-brand span {
-  font-weight: 800;
-  font-size: 1.05rem;
-  color: #fdb515;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.landing-nav-wordmark {
+  display: block;
+  height: 26px;
+  width: auto;
 }
 .landing-nav-actions {
   display: flex;
@@ -2502,13 +2499,13 @@ body.has-bottom-nav #pwa-android-nudge {
   margin-bottom: var(--s-2);
 }
 .landing-title {
-  font-size: clamp(3rem, 10vw, 5.5rem);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.02em;
-  color: #fdb515;
-  text-transform: uppercase;
-  margin-bottom: var(--s-3);
+  margin: 0 0 var(--s-3);
+  line-height: 0;
+}
+.landing-title-wordmark {
+  display: block;
+  width: clamp(240px, 70vw, 440px);
+  height: auto;
 }
 .landing-subtitle {
   font-size: clamp(1rem, 3vw, 1.3rem);
@@ -2608,6 +2605,13 @@ body.has-bottom-nav #pwa-android-nudge {
   font-size: 0.85rem;
   color: rgba(255,251,210,0.4);
   font-weight: 600;
+}
+.landing-schedule-empty {
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  color: rgba(255,251,210,0.55);
+  padding: var(--s-6);
+  text-align: center;
 }
 .landing-schedule-note {
   display: inline-flex;

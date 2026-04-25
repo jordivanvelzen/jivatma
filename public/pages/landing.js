@@ -1,17 +1,69 @@
 import { navigate } from '../lib/router.js';
+import { sb } from '../lib/supabase.js';
 import { t, toggleLang } from '../lib/i18n.js';
+
+function formatTime(timeStr) {
+  // "08:30:00" → "8:30 am"
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'pm' : 'am';
+  h = h % 12; if (h === 0) h = 12;
+  return { time: `${h}:${m}`, ampm };
+}
+
+function renderScheduleCards(templates) {
+  if (!templates || templates.length === 0) {
+    return `<p class="landing-schedule-empty">${t('landing.schedule.empty')}</p>`;
+  }
+  // Group by start_time → list of day_of_week
+  const groups = new Map();
+  for (const tpl of templates) {
+    const key = tpl.start_time;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(tpl.day_of_week);
+  }
+  // Sort: groups by time asc; days within a group asc
+  const sorted = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return sorted.map(([time, days]) => {
+    const dayNames = [...new Set(days)].sort((a, b) => a - b).map(d => t(`day.${d}`));
+    const daysLabel = dayNames.length > 1
+      ? dayNames.slice(0, -1).join(', ') + ' & ' + dayNames[dayNames.length - 1]
+      : dayNames[0];
+    const { time: tStr, ampm } = formatTime(time);
+    return `
+      <div class="landing-schedule-card">
+        <span class="landing-schedule-days">${daysLabel}</span>
+        <div class="landing-schedule-time-row">
+          <span class="landing-schedule-time">${tStr}</span>
+          <span class="landing-schedule-ampm">${ampm}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 export async function renderLanding() {
   document.getElementById('nav').classList.add('hidden');
+
+  // Fetch active class templates (publicly readable). Failure → empty state.
+  let templates = [];
+  try {
+    const { data } = await sb
+      .from('class_templates')
+      .select('day_of_week, start_time')
+      .eq('is_active', true)
+      .order('start_time', { ascending: true });
+    templates = data || [];
+  } catch { /* ignore — show empty state */ }
 
   document.getElementById('app').innerHTML = `
     <div class="landing-page">
 
       <!-- ── Top nav ── -->
       <header class="landing-nav">
-        <a class="landing-nav-brand" href="/">
-          <img src="/brand/logo.svg" alt="Jivatma" width="36" height="36" />
-          <span>Jivatma</span>
+        <a class="landing-nav-brand" href="/" aria-label="Jivatma">
+          <img src="/brand/wordmark.svg" alt="Jivatma" class="landing-nav-wordmark" />
         </a>
         <div class="landing-nav-actions">
           <button class="landing-lang-btn" id="landing-lang">${t('lang.switch')}</button>
@@ -38,7 +90,9 @@ export async function renderLanding() {
           </div>
 
           <p class="landing-eyebrow">Yoga Iyengar</p>
-          <h1 class="landing-title">JIVATMA</h1>
+          <h1 class="landing-title">
+            <img src="/brand/wordmark.svg" alt="Jivatma" class="landing-title-wordmark" />
+          </h1>
           <p class="landing-subtitle">${t('landing.subtitle')}</p>
 
           <span class="landing-type-badge">
@@ -62,20 +116,7 @@ export async function renderLanding() {
       <section class="landing-schedule">
         <p class="landing-section-label">${t('landing.schedule.title')}</p>
         <div class="landing-schedule-grid">
-          <div class="landing-schedule-card">
-            <span class="landing-schedule-days">${t('landing.schedule.monwed')}</span>
-            <div class="landing-schedule-time-row">
-              <span class="landing-schedule-time">10:00</span>
-              <span class="landing-schedule-ampm">am</span>
-            </div>
-          </div>
-          <div class="landing-schedule-card">
-            <span class="landing-schedule-days">${t('landing.schedule.tuesat')}</span>
-            <div class="landing-schedule-time-row">
-              <span class="landing-schedule-time">8:30</span>
-              <span class="landing-schedule-ampm">am</span>
-            </div>
-          </div>
+          ${renderScheduleCards(templates)}
         </div>
         <p class="landing-schedule-note">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
