@@ -381,6 +381,8 @@ const translations = {
     'general.delete': 'Eliminar',
     'general.confirmDelete': '¿Estás seguro?',
     'general.loading': 'Cargando…',
+    'pwa.updateAvailable': 'Nueva versión disponible',
+    'pwa.reload': 'Recargar',
 
     // Confirm modal
     'confirm.defaultTitle': '¿Estás seguro?',
@@ -886,6 +888,8 @@ const translations = {
     'general.delete': 'Delete',
     'general.confirmDelete': 'Are you sure?',
     'general.loading': 'Loading…',
+    'pwa.updateAvailable': 'New version available',
+    'pwa.reload': 'Reload',
 
     // Confirm modal
     'confirm.defaultTitle': 'Are you sure?',

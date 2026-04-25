@@ -25,7 +25,15 @@ self.addEventListener('install', (event) => {
       ),
     ),
   );
-  self.skipWaiting();
+  // Do NOT skipWaiting() here — the new SW stays in "waiting" state until the
+  // page sends { type: 'SKIP_WAITING' }, which fires after the user accepts the
+  // in-app "Update available" toast. This avoids surprise reloads mid-action.
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
