@@ -9,7 +9,7 @@ import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
 export async function renderAdminUserDetail(params) {
   const app = document.getElementById('app');
   const userId = params.id;
-  const backHref = params.from === 'passes' ? '#/admin/passes' : '#/admin/users';
+  const backHref = params.from === 'passes' ? '/admin/passes' : '/admin/users';
   const backLabel = params.from === 'passes' ? t('admin.backToPasses') : t('admin.backToUsers');
 
   const { data: user } = await sb.from('profiles').select('*').eq('id', userId).single();

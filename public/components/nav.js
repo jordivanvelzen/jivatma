@@ -109,16 +109,16 @@ function renderBottomNav(mode) {
 
   const items = mode === 'admin'
     ? [
-        { href: '#/admin',        icon: ICON.home,    label: t('nav.panel'),      match: '/admin',      exact: true },
-        { href: '#/admin/class',  icon: ICON.check,   label: t('nav.attendance'), match: '/admin/class' },
-        { href: '#/admin/users',  icon: ICON.spots,   label: t('nav.users'),      match: '/admin/users' },
-        { href: '#/admin/passes', icon: ICON.passes,  label: t('nav.passes'),     match: '/admin/passes' },
+        { href: '/admin',        icon: ICON.home,    label: t('nav.panel'),      match: '/admin',      exact: true },
+        { href: '/admin/class',  icon: ICON.check,   label: t('nav.attendance'), match: '/admin/class' },
+        { href: '/admin/users',  icon: ICON.spots,   label: t('nav.users'),      match: '/admin/users' },
+        { href: '/admin/passes', icon: ICON.passes,  label: t('nav.passes'),     match: '/admin/passes' },
       ]
     : [
-        { href: '#/dashboard',    icon: ICON.home,      label: t('nav.home'),     match: '/dashboard' },
-        { href: '#/schedule',     icon: ICON.classes,   label: t('nav.classes'),  match: '/schedule' },
-        { href: '#/my-passes',    icon: ICON.passes,    label: t('nav.myPasses'), match: '/my-passes' },
-        { href: '#/profile',      icon: ICON.profile24, label: t('nav.profile'),  match: '/profile' },
+        { href: '/dashboard',    icon: ICON.home,      label: t('nav.home'),     match: '/dashboard' },
+        { href: '/schedule',     icon: ICON.classes,   label: t('nav.classes'),  match: '/schedule' },
+        { href: '/my-passes',    icon: ICON.passes,    label: t('nav.myPasses'), match: '/my-passes' },
+        { href: '/profile',      icon: ICON.profile24, label: t('nav.profile'),  match: '/profile' },
       ];
 
   const path = currentPath();
