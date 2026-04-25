@@ -102,7 +102,7 @@ export async function renderAdminClass() {
     };
 
     attendanceHtml = `
-      <details id="session-details" class="session-att-details" open>
+      <details id="session-details" class="session-att-details">
         <summary class="session-att-summary">
           <span class="session-att-title">${activeSession.start_time.slice(0, 5)} · ${t('type.' + activeSession.class_type)}</span>
           <span id="att-saved-badge" class="att-saved-badge" style="display:none"></span>
