@@ -318,6 +318,11 @@ const translations = {
     'admin.defaultCapacity': 'Capacidad por defecto',
     'admin.saveSettings': 'Guardar Ajustes',
     'admin.settingsSaved': '¡Ajustes guardados!',
+    'admin.permissionsSection': 'Permisos de Admin',
+    'admin.permissionsSectionSub': 'Qué puede hacer Claudia en la app',
+    'admin.claudiaCanGenerate': 'Claudia puede generar y sincronizar sesiones',
+    'admin.claudiaCanGenerateHelp': 'Cuando está desactivado, la sección "Generar y Sincronizar" en la página de horario queda oculta para Claudia.',
+    'admin.permissionSaved': 'Permiso actualizado.',
 
     // Class types (legacy keys, kept for any non-migrated callers)
     'type.online': 'En línea',
@@ -862,6 +867,11 @@ const translations = {
     'admin.defaultCapacity': 'Default Class Capacity',
     'admin.saveSettings': 'Save Settings',
     'admin.settingsSaved': 'Settings saved!',
+    'admin.permissionsSection': 'Admin Permissions',
+    'admin.permissionsSectionSub': 'What Claudia can do in the app',
+    'admin.claudiaCanGenerate': 'Claudia can generate and sync sessions',
+    'admin.claudiaCanGenerateHelp': 'When off, the "Generate & Sync" section on the schedule page is hidden from Claudia.',
+    'admin.permissionSaved': 'Permission updated.',
 
     // Class types (legacy keys, kept for any non-migrated callers)
     'type.online': 'Online',
