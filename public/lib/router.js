@@ -60,12 +60,14 @@ function matchRoute(pattern, path) {
  * Resolve the current hash and call the matching handler.
  */
 async function resolve() {
-  const path = currentPath();
+  const full = currentPath();
+  const [path, qs] = full.split('?');
+  const query = Object.fromEntries(new URLSearchParams(qs || ''));
 
   for (const [pattern, handler] of Object.entries(routes)) {
     const params = matchRoute(pattern, path);
     if (params !== null) {
-      await handler(params);
+      await handler({ ...params, ...query });
       return;
     }
   }

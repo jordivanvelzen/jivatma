@@ -8,6 +8,8 @@ import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
 export async function renderAdminUserDetail(params) {
   const app = document.getElementById('app');
   const userId = params.id;
+  const backHref = params.from === 'passes' ? '#/admin/passes' : '#/admin/users';
+  const backLabel = params.from === 'passes' ? t('admin.backToPasses') : t('admin.backToUsers');
 
   const { data: user } = await sb.from('profiles').select('*').eq('id', userId).single();
   if (!user) { app.innerHTML = '<div class="page"><p>User not found.</p></div>'; return; }
@@ -82,7 +84,7 @@ export async function renderAdminUserDetail(params) {
 
   app.innerHTML = `
     <div class="page">
-      <a href="#/admin/users" class="back-link">${t('admin.backToUsers')}</a>
+      <a href="${backHref}" class="back-link">${backLabel}</a>
       <h2>${user.full_name || '(no name)'}</h2>
       <p class="muted">${user.phone || t('admin.noPhone')} · <span class="badge badge-${user.role}">${user.role}</span></p>
 

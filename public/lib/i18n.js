@@ -96,6 +96,14 @@ const translations = {
     'schedule.noPassBanner': 'No tienes un pase activo. Ve a Mis Pases para seleccionar una clase individual o contacta a tu instructora para un pase.',
     'schedule.getPasses': 'Obtener un pase',
 
+    // Pass status banners
+    'banner.expiringToday': 'Tu pase vence hoy — renuévalo antes de tu próxima clase.',
+    'banner.expiringTomorrow': 'Tu pase vence mañana — renuévalo pronto.',
+    'banner.expiringInDays': 'Tu pase vence en {n} días.',
+    'banner.outOfClasses': 'Ya usaste todas tus clases — renueva tu pase para seguir reservando.',
+    'banner.passExpired': 'Tu pase ha vencido — obtén uno nuevo para reservar clases.',
+    'banner.renew': 'Renovar pase',
+
     // Passes
     'passes.title': 'Mis Pases',
     'passes.noPasses': 'Aún no tienes pases.',
@@ -168,6 +176,7 @@ const translations = {
     'admin.role': 'Rol',
     'admin.view': 'Ver',
     'admin.backToUsers': '← Volver a usuarios',
+    'admin.backToPasses': '← Volver a pases',
     'admin.noPhone': 'Sin teléfono',
     'admin.removeAdmin': 'Quitar admin',
     'admin.makeAdmin': 'Hacer admin',
@@ -498,6 +507,14 @@ const translations = {
     'schedule.noPassBanner': 'You don\'t have an active pass. Go to My Passes to select a single class or contact your instructor for a pass.',
     'schedule.getPasses': 'Get a pass',
 
+    // Pass status banners
+    'banner.expiringToday': 'Your pass expires today — renew before your next class.',
+    'banner.expiringTomorrow': 'Your pass expires tomorrow — renew soon.',
+    'banner.expiringInDays': 'Your pass expires in {n} days.',
+    'banner.outOfClasses': 'You\'ve used all your classes — renew your pass to keep booking.',
+    'banner.passExpired': 'Your pass has expired — get a new one to book classes.',
+    'banner.renew': 'Renew pass',
+
     // Passes
     'passes.title': 'My Passes',
     'passes.noPasses': 'No passes yet.',
@@ -570,6 +587,7 @@ const translations = {
     'admin.role': 'Role',
     'admin.view': 'View',
     'admin.backToUsers': '← Back to users',
+    'admin.backToPasses': '← Back to passes',
     'admin.noPhone': 'No phone',
     'admin.removeAdmin': 'Remove admin',
     'admin.makeAdmin': 'Make admin',

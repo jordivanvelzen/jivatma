@@ -120,7 +120,7 @@ export async function renderAdminPassTypes() {
     ].filter(Boolean).join(' ');
 
     return `
-      <a href="#/admin/users/${p.user_id}" class="${classes}" data-filter="${filterTags}">
+      <a href="#/admin/users/${p.user_id}?from=passes" class="${classes}" data-filter="${filterTags}">
         <div class="active-pass-main">
           <div class="active-pass-name">
             ${name}
@@ -226,7 +226,7 @@ export async function renderAdminPassTypes() {
                 return `
                   <div class="request-card">
                     <div class="request-head">
-                      <a href="#/admin/users/${r.user_id}" class="request-name">${name}</a>
+                      <a href="#/admin/users/${r.user_id}?from=passes" class="request-name">${name}</a>
                       <span class="muted">${dateStr}</span>
                     </div>
                     <div class="request-body">
@@ -259,7 +259,7 @@ export async function renderAdminPassTypes() {
                 return `
                   <div class="request-card request-card-done">
                     <div class="request-head">
-                      <a href="#/admin/users/${r.user_id}" class="request-name">${name}</a>
+                      <a href="#/admin/users/${r.user_id}?from=passes" class="request-name">${name}</a>
                       <span class="badge ${statusClass}">${statusLabel}</span>
                     </div>
                     <div class="request-body">
@@ -267,7 +267,7 @@ export async function renderAdminPassTypes() {
                       <div class="muted">${dateStr}</div>
                     </div>
                     <div class="request-actions">
-                      <a href="#/admin/users/${r.user_id}" class="btn btn-small btn-secondary">${t('admin.viewPass')}</a>
+                      <a href="#/admin/users/${r.user_id}?from=passes" class="btn btn-small btn-secondary">${t('admin.viewPass')}</a>
                     </div>
                   </div>
                 `;
