@@ -282,7 +282,7 @@ const translations = {
     // Admin Settings
     'admin.settingsTitle': 'Ajustes',
     'admin.recipientTitle': '📩 Destinatario activo',
-    'admin.recipientHelp': 'Quién recibe las notificaciones de Telegram y los SMS ahora mismo.',
+    'admin.recipientHelp': 'Quién recibe las notificaciones de Telegram ahora mismo.',
     'admin.recipientClaudia': '👩‍🦰 Claudia',
     'admin.recipientJordi': '🧪 Jordi',
     'admin.recipientToProd': '👩‍🦰 Production mode (Claudia)',
@@ -831,7 +831,7 @@ const translations = {
     // Admin Settings
     'admin.settingsTitle': 'Settings',
     'admin.recipientTitle': '📩 Active recipient',
-    'admin.recipientHelp': 'Who currently receives Telegram and SMS notifications.',
+    'admin.recipientHelp': 'Who currently receives Telegram notifications.',
     'admin.recipientClaudia': '👩‍🦰 Claudia',
     'admin.recipientJordi': '🧪 Jordi',
     'admin.recipientToProd': '👩‍🦰 Production mode (Claudia)',

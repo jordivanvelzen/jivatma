@@ -2,7 +2,6 @@ import { api } from '../../lib/api.js';
 import { t, getLocale } from '../../lib/i18n.js';
 
 const CHANNEL_META = {
-  sms:      { label: 'SMS',      glyph: '📱' },
   telegram: { label: 'Telegram', glyph: '✈️' },
 };
 
@@ -60,7 +59,7 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-// Turn raw error_detail (often Twilio JSON) into a short human line + full raw.
+// Turn raw error_detail into a short human line + full raw.
 function parseError(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
@@ -180,7 +179,7 @@ export async function renderAdminNotifications() {
       return;
     }
 
-    const channelOpts = ['', 'sms', 'telegram'].map(v =>
+    const channelOpts = ['', 'telegram'].map(v =>
       `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? `${CHANNEL_META[v].glyph} ${CHANNEL_META[v].label}` : t('notifications.allChannels')}</option>`
     ).join('');
     const eventOpts = ['', ...Object.keys(EVENT_KEYS)].map(v =>

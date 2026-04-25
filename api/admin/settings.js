@@ -1,7 +1,6 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 import { sendTelegram, setTelegramWebhook } from '../../lib/telegram.js';
-import { sendSms } from '../../lib/sms.js';
 import crypto from 'node:crypto';
 
 export default async function handler(req, res) {
@@ -73,34 +72,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, reason: result.reason, error: result.telegramError });
       }
       return res.json({ ok: true });
-    }
-
-    if (action === 'sms-test') {
-      // Sends a test SMS. In test_mode it routes to jordi_test_phone; otherwise
-      // it requires an explicit `to` in the request body so we never silently
-      // text Claudia's number when production toggle is on.
-      const { data: testModeRow } = await supabase
-        .from('settings').select('value').eq('key', 'test_mode').single();
-      const testMode = (testModeRow?.value || '').trim().toLowerCase() === 'true';
-
-      let toPhone = req.body?.to;
-      if (testMode) {
-        // sendSms will reroute to jordi_test_phone — pass any non-empty placeholder
-        toPhone = toPhone || '+10000000000';
-      }
-      if (!toPhone) {
-        return res.status(400).json({ ok: false, reason: 'to_required_in_production' });
-      }
-
-      const result = await sendSms(
-        toPhone,
-        '🧘 Prueba de Jivatma: si recibes este SMS, Twilio está configurado correctamente.',
-        { bypassOptIn: true, eventType: 'test', recipientName: 'Admin' }
-      );
-      if (!result.ok) {
-        return res.status(400).json({ ok: false, reason: result.reason, error: result.twilioError });
-      }
-      return res.json({ ok: true, sid: result.sid });
     }
 
     if (action === 'register-webhook') {

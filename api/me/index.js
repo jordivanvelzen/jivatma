@@ -34,9 +34,8 @@ export default async function handler(req, res) {
   if (action === 'profile') {
     if (req.method === 'GET') return res.json(auth.profile);
     if (req.method === 'PATCH') {
-      const { full_name, phone, sms_opt_in } = req.body;
+      const { full_name, phone } = req.body;
       const updates = { full_name, phone };
-      if (typeof sms_opt_in === 'boolean') updates.sms_opt_in = sms_opt_in;
       const { data, error } = await supabase.from('profiles').update(updates).eq('id', auth.user.id).select().single();
       if (error) return res.status(500).json({ error: error.message });
       return res.json(data);
