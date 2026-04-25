@@ -94,7 +94,10 @@ export async function renderDashboard() {
           : `<ul class="list">${bookings.filter(b => b.class_sessions).map(b => {
               const s = b.class_sessions;
               const dateStr = formatDbDate(s.date, locale, { weekday: 'short', day: 'numeric', month: 'short' });
-              return `<li>${dateStr} · ${s.start_time.slice(0, 5)} · ${t('type.' + s.class_type)}</li>`;
+              const modeSuffix = (s.class_type === 'hybrid' && b.attendance_mode)
+                ? ` · ${t('schedule.mode.' + b.attendance_mode)}`
+                : '';
+              return `<li>${dateStr} · ${s.start_time.slice(0, 5)} · ${t('type.' + s.class_type)}${modeSuffix}</li>`;
             }).join('')}</ul>`
         }
       </section>

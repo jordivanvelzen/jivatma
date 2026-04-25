@@ -18,6 +18,9 @@ const translations = {
     'nav.logout': 'Cerrar sesión',
     'nav.studentView': 'Vista Alumno',
     'nav.adminView': 'Vista Admin',
+    'nav.viewToggle': 'Cambiar vista',
+    'nav.adminShort': 'Admin',
+    'nav.studentShort': 'Alumno',
 
     // Auth
     'auth.login': 'Iniciar sesión',
@@ -64,7 +67,7 @@ const translations = {
     'dash.pendingGeneric': 'Esperando aprobación de Claudia.',
 
     // Onboarding
-    'onboarding.welcomeTitle': '¡Bienvenida a Jivatma! 🧘',
+    'onboarding.welcomeTitle': '¡Bienvenida a Jivatma!',
     'onboarding.welcomeIntro': 'Así funciona la app:',
     'onboarding.step1Title': 'Consigue un pase',
     'onboarding.step1Body': 'En "Mis Pases" puedes elegir una clase individual y pagarla al llegar, o pedir un pase más grande a Claudia.',
@@ -225,10 +228,23 @@ const translations = {
     'admin.saveSettings': 'Guardar Ajustes',
     'admin.settingsSaved': '¡Ajustes guardados!',
 
-    // Class types
-    'type.online': '💻 En línea',
-    'type.in_person': '🏠 Presencial',
-    'type.hybrid': '🔀 Híbrido',
+    // Class types (legacy keys, kept for any non-migrated callers)
+    'type.online': 'En línea',
+    'type.in_person': 'Presencial',
+    'type.hybrid': 'Híbrido',
+    // Class type labels (used by new class card)
+    'type.online.label': 'En línea',
+    'type.in_person.label': 'Presencial',
+    'type.hybrid.label': 'Híbrido',
+    // Attendance mode (hybrid)
+    'schedule.mode.online': 'En línea',
+    'schedule.mode.in_person': 'Presencial',
+    'schedule.pickModeTitle': '¿Cómo asistirás?',
+    'schedule.pickModeBody': 'Esta clase es híbrida. Elige cómo prefieres asistir:',
+    'schedule.pickModeOnline': 'En línea',
+    'schedule.pickModeOnlineSub': 'Únete por Zoom',
+    'schedule.pickModeInPerson': 'Presencial',
+    'schedule.pickModeInPersonSub': 'En el estudio',
 
     // Days
     'day.0': 'Domingo', 'day.1': 'Lunes', 'day.2': 'Martes',
@@ -396,6 +412,9 @@ const translations = {
     'nav.logout': 'Logout',
     'nav.studentView': 'Student View',
     'nav.adminView': 'Admin View',
+    'nav.viewToggle': 'Switch view',
+    'nav.adminShort': 'Admin',
+    'nav.studentShort': 'Student',
 
     // Auth
     'auth.login': 'Log in',
@@ -442,7 +461,7 @@ const translations = {
     'dash.pendingGeneric': 'Waiting for Claudia to approve.',
 
     // Onboarding
-    'onboarding.welcomeTitle': 'Welcome to Jivatma! 🧘',
+    'onboarding.welcomeTitle': 'Welcome to Jivatma!',
     'onboarding.welcomeIntro': "Here's how the app works:",
     'onboarding.step1Title': 'Get a pass',
     'onboarding.step1Body': 'In "My Passes" you can pick a single class and pay at the studio, or request a larger pass from Claudia.',
@@ -603,10 +622,23 @@ const translations = {
     'admin.saveSettings': 'Save Settings',
     'admin.settingsSaved': 'Settings saved!',
 
-    // Class types
-    'type.online': '💻 Online',
-    'type.in_person': '🏠 In-person',
-    'type.hybrid': '🔀 Hybrid',
+    // Class types (legacy keys, kept for any non-migrated callers)
+    'type.online': 'Online',
+    'type.in_person': 'In-person',
+    'type.hybrid': 'Hybrid',
+    // Class type labels (used by new class card)
+    'type.online.label': 'Online',
+    'type.in_person.label': 'In-person',
+    'type.hybrid.label': 'Hybrid',
+    // Attendance mode (hybrid)
+    'schedule.mode.online': 'Online',
+    'schedule.mode.in_person': 'In-person',
+    'schedule.pickModeTitle': 'How will you attend?',
+    'schedule.pickModeBody': "This class is hybrid. Pick how you'd like to attend:",
+    'schedule.pickModeOnline': 'Online',
+    'schedule.pickModeOnlineSub': 'Join via Zoom',
+    'schedule.pickModeInPerson': 'In-person',
+    'schedule.pickModeInPersonSub': 'At the studio',
 
     // Days
     'day.0': 'Sunday', 'day.1': 'Monday', 'day.2': 'Tuesday',

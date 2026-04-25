@@ -138,6 +138,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `user_id` | UUID FK | → `profiles(id)` |
 | `booked_at` | TIMESTAMPTZ | |
 | `cancelled_at` | TIMESTAMPTZ | Soft cancel (NULL = active) |
+| `attendance_mode` | TEXT | NULL or `'online'` / `'in_person'`. For **hybrid** sessions the student picks how they will attend at sign-up time (modal). For online or in-person sessions this can also be set (auto-populated from the session's class_type). Used to show students/admin who is coming online vs at the studio |
 | | | UNIQUE(`session_id`, `user_id`) |
 
 **`attendance`** — Check-in records (admin confirms who attended)
@@ -204,7 +205,7 @@ All endpoints are Vercel serverless functions.
 |---|---|---|---|
 | GET | `/api/schedule` | User | List upcoming sessions within sign-up window |
 | GET | `/api/bookings` | User | List user's active bookings (with session data) |
-| POST | `/api/bookings` | User | Book a session (`{ session_id }`) — validates capacity, window, duplicates |
+| POST | `/api/bookings` | User | Book a session (`{ session_id, attendance_mode? }`) — `attendance_mode` is `'online'` or `'in_person'`, required UX-wise for hybrid sessions (the SPA opens a picker modal). The frontend writes directly to Supabase rather than going through this endpoint, but the API accepts the same shape |
 | DELETE | `/api/bookings` | User | Cancel a booking (`{ session_id }`) — soft delete via `cancelled_at` |
 | GET | `/api/me` | User | Get own profile (default), passes (`?action=passes`), or attendance (`?action=attendance`) |
 | PATCH | `/api/me` | User | Update own profile (`{ full_name, phone }`) |
@@ -285,7 +286,8 @@ Configured in `vercel.json`:
 | File | Export | Description |
 |---|---|---|
 | `components/nav.js` | `renderNav()` | Responsive navigation. **Admin:** top nav with all sections (dashboard, attendance, users, passes, schedule, settings) + hamburger on mobile. **Student (mobile):** slim top bar (brand + lang/profile/logout icons) plus a fixed bottom-nav with Classes, My Passes, More — the More button opens a bottom sheet containing Home, History, Profile, Language toggle, Logout. **Student (≥768px):** classic inline top nav. Body gets `has-bottom-nav` class so layout reserves space for the bottom-nav and toast positioning shifts up |
-| `components/class-card.js` | `renderClassCard(session, booking, spotsLeft)` | Card showing class date, time, type, spots remaining, and book/cancel button |
+| `components/class-card.js` | `renderClassCard(session, booking, spotsLeft, hasActivePass)` | Redesigned card: calendar-block date on the left (DOW / day / month), big time + custom-SVG class-type badge in the body, spots count with people icon, and an action area (sign-up button or booked pill + cancel). Hybrid bookings show a chosen-mode pill ("In-person" / "Online") next to the booked pill. The sign-up button on hybrid classes carries `js-signup-hybrid` so the schedule page knows to open the mode-picker modal |
+| `lib/icons.js` | `icon(name, opts)` / `classTypeIcon(type)` | Custom SVG icon set. All icons are 24×24 stroke-based, inherit `currentColor`, and replace what would otherwise be standard emojis. Includes class-type icons (in_person, online, hybrid), nav icons (classes, passes, more, home, history, profile, lang, logout), view-toggle icons (admin/student shields), brand mark (lotus), and status icons (check, x, clock, spots, alert, arrow_right) |
 | `components/pass-card.js` | `renderPassCard(pass, passType)` | Card showing pass kind, classes remaining, expiry date, and status badge (active/expired/used up) |
 | `components/toast.js` | `showToast(message, type)` | Fixed-position toast notification (success/error/info), auto-dismisses after 3s |
 
@@ -356,6 +358,8 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
 | Delete Sessions | Built | Admin can delete individual upcoming sessions from the schedule page |
 | Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
+| Hybrid Attendance Mode | Built | When a student signs up for a hybrid class, a mode-picker modal opens with two large card-buttons ("In-person — at the studio" / "Online — join via Zoom"). Choice is stored in `bookings.attendance_mode`. The booked pill on the class card surfaces it, the dashboard upcoming list appends it, and the admin attendance page shows a small mode pill next to each booked student. Online and in-person sessions auto-fill the mode without a picker |
+| Visual Refresh & Bottom Nav | Built | Mobile-first design system using CSS custom-property tokens (deep forest sage brand, warm honey accent, cream-bone background). Custom SVG icon set in `lib/icons.js` replaces standard emojis. Class card redesigned with a calendar-block date and custom type badge. Master-admin view switcher is a segmented `[Admin \| Student]` pill. Students get a fixed bottom-nav (Classes, My Passes, More) on mobile, with secondary items (Home, History, Profile, language, logout) in a More bottom sheet |
 | Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity. Pass types can be edited inline (price/classes/days) by admin |
 | Stackable Single-Class Passes | Built | Students can self-select multiple single-class passes; each valid for 30 days. FIFO deduction (oldest-expiring first) |
 | Pass Assignment | Built | Admin assigns passes with payment method (cash/transfer/other/gift) and paid status tracking. Gift passes auto-mark as paid |

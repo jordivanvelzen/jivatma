@@ -2,17 +2,20 @@ import { sb, getSession, getProfile } from '../lib/supabase.js';
 import { navigate, currentPath } from '../lib/router.js';
 import { t, toggleLang, getCurrentLang } from '../lib/i18n.js';
 import { isStudentView, toggleStudentView, isMasterAdmin } from '../lib/view-mode.js';
+import { icon } from '../lib/icons.js';
 
-// SVG icons (24x24 stroke)
+// Pre-rendered icon shortcuts for nav (default size 20)
 const ICON = {
-  classes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-  passes:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 12h20"/></svg>',
-  more:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
-  home:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z"/></svg>',
-  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 9"/><path d="M12 7v5l3 2"/></svg>',
-  profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>',
-  lang:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
-  logout:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  classes: icon('classes', { size: 24 }),
+  passes:  icon('passes',  { size: 24 }),
+  more:    icon('more',    { size: 24 }),
+  home:    icon('home',    { size: 20 }),
+  history: icon('history', { size: 20 }),
+  profile: icon('profile', { size: 20 }),
+  lang:    icon('lang',    { size: 20 }),
+  logout:  icon('logout',  { size: 20 }),
+  admin:   icon('admin',   { size: 14 }),
+  student: icon('student', { size: 14 }),
 };
 
 function isActive(prefix) {
@@ -63,10 +66,7 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="#/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
       </div>
       <div class="nav-actions">
-        ${masterAdmin ? `
-          <button id="view-toggle" class="view-toggle" title="${t('nav.studentView')}">
-            \u{1F9D8}
-          </button>` : ''}
+        ${masterAdmin ? renderViewPill(false) : ''}
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
         <a href="#/profile" class="nav-icon-btn" title="${t('nav.profile')}">${ICON.profile}</a>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
@@ -89,10 +89,7 @@ function renderStudentNav(nav, { masterAdmin, otherLang }) {
         <a href="#/my-attendance" class="${isActive('/my-attendance') ? 'active' : ''}">${t('nav.history')}</a>
       </div>
       <div class="nav-actions">
-        ${masterAdmin ? `
-          <button id="view-toggle" class="view-toggle view-toggle--student" title="${t('nav.adminView')}">
-            \u{1F469}‍\u{1F3EB}
-          </button>` : ''}
+        ${masterAdmin ? renderViewPill(true) : ''}
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
         <a href="#/profile" class="nav-icon-btn" title="${t('nav.profile')}">${ICON.profile}</a>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
@@ -165,6 +162,20 @@ function renderStudentNav(nav, { masterAdmin, otherLang }) {
   wireCommonHandlers(nav);
 }
 
+function renderViewPill(isStudent) {
+  // Segmented pill: [Admin | Student]
+  return `
+    <div class="view-pill" role="group" aria-label="${t('nav.viewToggle')}">
+      <button type="button" class="view-pill-btn ${!isStudent ? 'active' : ''}" data-view="admin" title="${t('nav.adminView')}">
+        ${ICON.admin}<span>${t('nav.adminShort')}</span>
+      </button>
+      <button type="button" class="view-pill-btn view-pill-btn--student ${isStudent ? 'active' : ''}" data-view="student" title="${t('nav.studentView')}">
+        ${ICON.student}<span>${t('nav.studentShort')}</span>
+      </button>
+    </div>
+  `;
+}
+
 function wireCommonHandlers(nav) {
   const navToggle = document.getElementById('nav-toggle');
   if (navToggle) {
@@ -178,13 +189,18 @@ function wireCommonHandlers(nav) {
     });
   });
 
-  const viewToggleBtn = document.getElementById('view-toggle');
-  if (viewToggleBtn) {
-    viewToggleBtn.addEventListener('click', () => {
-      const nowStudent = toggleStudentView();
-      navigate(nowStudent ? '/dashboard' : '/admin');
+  // Segmented view-pill — clicking the inactive side flips
+  nav.querySelectorAll('.view-pill-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('active')) return;
+      const wantStudent = btn.dataset.view === 'student';
+      const currentlyStudent = isStudentView();
+      if (wantStudent !== currentlyStudent) {
+        const nowStudent = toggleStudentView();
+        navigate(nowStudent ? '/dashboard' : '/admin');
+      }
     });
-  }
+  });
 
   document.getElementById('lang-btn').addEventListener('click', () => {
     toggleLang();

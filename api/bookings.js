@@ -19,8 +19,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { session_id } = req.body;
+    const { session_id, attendance_mode = null } = req.body;
     if (!session_id) return res.status(400).json({ error: 'session_id required' });
+    if (attendance_mode && !['online', 'in_person'].includes(attendance_mode)) {
+      return res.status(400).json({ error: 'attendance_mode must be online or in_person' });
+    }
 
     const check = await canBook(session_id, auth.user.id);
     if (!check.ok) return res.status(400).json({ error: check.reason });
@@ -33,7 +36,7 @@ export default async function handler(req, res) {
     if (existing) {
       const { data, error } = await supabase
         .from('bookings')
-        .update({ cancelled_at: null, booked_at: new Date().toISOString() })
+        .update({ cancelled_at: null, booked_at: new Date().toISOString(), attendance_mode })
         .eq('id', existing.id).select().single();
       if (error) return res.status(500).json({ error: error.message });
       return res.json(data);
@@ -41,7 +44,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from('bookings')
-      .insert({ session_id, user_id: auth.user.id })
+      .insert({ session_id, user_id: auth.user.id, attendance_mode })
       .select().single();
 
     if (error) return res.status(500).json({ error: error.message });

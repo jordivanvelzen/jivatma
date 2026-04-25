@@ -3,6 +3,7 @@ import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t } from '../../lib/i18n.js';
 import { todayStr, parseLocalDate } from '../../lib/dates.js';
+import { icon } from '../../lib/icons.js';
 
 export async function renderAdminClass() {
   const app = document.getElementById('app');
@@ -106,15 +107,23 @@ export async function renderAdminClass() {
 
         <div id="attendance-form">
           ${visibleBookings.length ? `<h4>${t('admin.booked')}</h4>` : ''}
-          ${visibleBookings.map(b => `
-            <div class="attendance-row booked">
-              <div class="user-name-wrap">
-                <span class="user-name">${b.profiles.full_name}</span>
-                ${unpaidBadge(b.profiles.id)}
+          ${visibleBookings.map(b => {
+            const isHybrid = activeSession.class_type === 'hybrid';
+            const mode = b.attendance_mode;
+            const modeBadge = (isHybrid && mode)
+              ? `<span class="cc-mode-pill" title="${t('schedule.mode.' + mode)}">${icon(mode === 'online' ? 'online' : 'in_person', { size: 14 })}${t('schedule.mode.' + mode)}</span>`
+              : '';
+            return `
+              <div class="attendance-row booked">
+                <div class="user-name-wrap">
+                  <span class="user-name">${b.profiles.full_name}</span>
+                  ${modeBadge}
+                  ${unpaidBadge(b.profiles.id)}
+                </div>
+                ${stateButtons(b.profiles.id, true)}
               </div>
-              ${stateButtons(b.profiles.id, true)}
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
 
           ${unbookedUsers.length ? `<h4>${t('admin.others')}</h4>` : ''}
           ${unbookedUsers.map(u => `

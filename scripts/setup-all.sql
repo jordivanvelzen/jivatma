@@ -138,11 +138,12 @@ CREATE TABLE class_sessions (
 -- BOOKINGS
 -- ============================================================
 CREATE TABLE bookings (
-  id            SERIAL PRIMARY KEY,
-  session_id    INT NOT NULL REFERENCES class_sessions(id) ON DELETE CASCADE,
-  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  booked_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  cancelled_at  TIMESTAMPTZ,
+  id              SERIAL PRIMARY KEY,
+  session_id      INT NOT NULL REFERENCES class_sessions(id) ON DELETE CASCADE,
+  user_id         UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  booked_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  cancelled_at    TIMESTAMPTZ,
+  attendance_mode TEXT CHECK (attendance_mode IN ('online','in_person')),
   UNIQUE(session_id, user_id)
 );
 
