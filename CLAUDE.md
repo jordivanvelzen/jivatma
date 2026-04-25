@@ -1,5 +1,8 @@
 # Jivatma
 
+## Supabase MCP
+Two Supabase MCP servers are configured in this environment. Always use **`mcp__supabase__*`** (the plain one) for this project. The `mcp__supabase-kendama__*` server points to a different project (Kendama Senses) and must not be used here.
+
 ## Self-Maintenance
 This file is the single source of truth for the Jivatma project. Every Claude Code session that changes the codebase MUST update this file to reflect the changes before finishing. This includes: adding new features to the feature list, updating the schema section if tables change, adding new API routes, updating the status of features, and noting any new known issues. When in doubt, update CLAUDE.md.
 
@@ -64,7 +67,7 @@ scripts/                → SQL scripts (schema, seed, migrations — run in Sup
   - `verifyUser(req)` — returns `{ user, profile }` or `null`
   - `verifyAdmin(req)` — same but also checks `profile.role === 'admin'`
 - Business logic modules: `lib/bookings.js` (booking validation), `lib/passes.js` (pass deduction/reversal)
-- Notification modules: `lib/telegram.js` (admin Telegram bot — supports test-mode rerouting to Jordi's chat), `lib/sms.js` (Twilio SMS to students — respects per-user `sms_opt_in` and test-mode rerouting to `jordi_test_phone`)
+- Notification modules: `lib/telegram.js` (admin Telegram bot — supports test-mode rerouting to Jordi's chat), `lib/sms.js` (Twilio SMS to students — respects per-user `sms_opt_in` and test-mode rerouting to `jordi_test_phone`), `lib/notification-log.js` (fire-and-forget logger that writes to `notification_log` table — imported by both sms.js and telegram.js; callers pass `opts.eventType` and `opts.recipientName`)
 
 ### Data Flow
 
@@ -208,6 +211,20 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `kind` | TEXT | `'expiring'` or `'low_classes'` (one row per pass per kind = sent at most once) |
 | `sent_at` | TIMESTAMPTZ | Default `now()` |
 
+**`notification_log`** — Audit log of every outgoing SMS and Telegram message
+| Column | Type | Notes |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `channel` | TEXT | `'sms'` or `'telegram'` |
+| `event_type` | TEXT | `'pass_request'`, `'pass_approved'`, `'pass_declined'`, `'expiry_reminder'`, `'low_classes'`, `'stale_unpaid'`, `'test'` |
+| `recipient_name` | TEXT | Student name or `'Admin'` |
+| `recipient_phone` | TEXT | E.164 phone, SMS only |
+| `message_preview` | TEXT | First 300 chars of the message body |
+| `status` | TEXT | `'sent'`, `'failed'`, `'opted_out'`, `'not_configured'`, `'test_phone_not_set'`, `'invalid_phone'`, `'skipped'` |
+| `error_detail` | TEXT | Truncated error from Twilio or Telegram when status is `'failed'` |
+| `test_mode` | BOOLEAN | Whether test_mode was active at send time |
+| `created_at` | TIMESTAMPTZ | Default `now()` |
+
 ### Database Functions & Triggers
 
 - `is_master_admin(email)` — Returns true for hardcoded master admin emails (`chaudy@gmail.com`, `jordi.vanvelzen@gmail.com`)
@@ -264,6 +281,7 @@ All endpoints are Vercel serverless functions.
 | PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve; also edits the original Telegram message in place |
 | POST | `/api/pass-requests?webhook=telegram` | Telegram (secret header) | Telegram webhook for inline Approve/Decline buttons. Validates `X-Telegram-Bot-Api-Secret-Token` against `telegram_webhook_secret`. Processes `callback_query` updates, runs approve/decline, edits the message, answers the callback |
 | POST | `/api/admin/settings` `{ action: 'register-webhook' }` | Admin | Generates a fresh `telegram_webhook_secret`, persists it, and calls Telegram `setWebhook` pointing at `/api/pass-requests?webhook=telegram`. Run once per bot-token change |
+| GET | `/api/admin/notifications` | Admin | List notification_log rows. Accepts `?limit`, `?offset`, `?channel`, `?event_type`, `?status` filters. Returns `{ rows, total }` |
 | POST | `/api/admin/settings` `{ action: 'sms-test', to? }` | Admin | Sends a test SMS via Twilio. In `test_mode='true'`, reroutes to `jordi_test_phone` automatically. In production mode, requires explicit `to` in body (E.164) so we never accidentally text a real student |
 
 ## Cron Jobs
@@ -307,6 +325,7 @@ Configured in `vercel.json`:
 | `#/admin/passes` | `pages/admin/pass-types.js` | Manage pass types (collapsed cards, tap to expand and edit inline — fields stack vertically on very narrow screens), Active Passes overview (all issued passes with student name / type / classes-left / expiry countdown, filter chips: all / unpaid / expiring), and pass requests |
 | `#/admin/schedule` | `pages/admin/schedule.js` | Manage weekly templates: list, enable/disable, delete, add new. Manual session generation button |
 | `#/admin/settings` | `pages/admin/settings.js` | Studio settings: location address, meeting link, sign-up window, default capacity |
+| `#/admin/notifications` | `pages/admin/notifications.js` | Notification history: paginated log of all SMS and Telegram sends with channel, event type, recipient, status, message preview. Filterable by channel and event type |
 
 ## Components
 
@@ -427,6 +446,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Pass-Types Collapsed Editor | Built | Each pass type is collapsed by default (title · summary "N clases / M días / $price" · active badge); tap to expand and edit inline. Fields stack vertically on phones ≤419px so inputs never overflow the card (tested at 320px); 2-column grid at 420–599px; 3-column at 600px+. Unlimited passes show a disabled `∞` for class count |
 | Admin Active Passes Overview | Built | On `#/admin/passes` a dedicated "Active Passes" section lists every issued pass that is not expired and still has classes remaining, sorted by soonest expiry. Each card shows student name, pass type, classes-left (or ∞), relative expiry ("vence en N días" / hoy / mañana) + date, and a `💵 cobrar` badge if unpaid. Unpaid / expiring (≤7 days) rows get a colored left border. Filter chips above the list: All / 💵 Por cobrar / ⚠️ Por vencer. Clicking a card opens the user detail page (where the pass can be edited) |
 | Request History View-Pass | Built | Processed pass requests on admin passes page now show a "Ver pase" link that opens the student's user-detail page (where the full pass editor lives) |
+| Notification History | Built | `notification_log` table captures every outgoing SMS and Telegram send: channel, event type, recipient, status (`sent`/`failed`/`opted_out`/etc.), message preview (300 chars), test_mode flag, and error detail on failure. `lib/notification-log.js` is a fire-and-forget logger imported by `lib/sms.js` and `lib/telegram.js`. Viewable at `#/admin/notifications` with channel + event-type filters and pagination. The admin bottom nav's 5th "Ajustes" tab (gear icon) covers Settings, Schedule, and Notifications |
 | Payment Processing | Not Built | No online payments — passes assigned manually, payment tracked as cash/transfer/other |
 | Waitlist | Not Built | No waitlist when classes are full — students see "Full" |
 

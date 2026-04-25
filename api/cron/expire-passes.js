@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     const daysLeft = Math.ceil((new Date(p.expires_at) - new Date(today)) / 86400000);
     const whenStr = daysLeft <= 0 ? 'hoy' : daysLeft === 1 ? 'mañana' : `en ${daysLeft} días`;
     const text = `Hola ${firstName}, tu pase de Jivatma vence ${whenStr}. ¡Aprovecha tus clases restantes! 🧘`;
-    const result = await sendSms(p.profiles.phone, text, { userId: p.user_id });
+    const result = await sendSms(p.profiles.phone, text, { userId: p.user_id, eventType: 'expiry_reminder', recipientName: p.profiles.full_name });
     if (result.ok) await recordSmsSent(p.id, 'expiring');
   }
 
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
     const firstName = (p.profiles.full_name || '').split(' ')[0] || 'alumna';
     const left = p.classes_remaining;
     const text = `Hola ${firstName}, te ${left === 1 ? 'queda' : 'quedan'} ${left} ${left === 1 ? 'clase' : 'clases'} en tu pase de Jivatma. ¡Reserva pronto! 🧘`;
-    const result = await sendSms(p.profiles.phone, text, { userId: p.user_id });
+    const result = await sendSms(p.profiles.phone, text, { userId: p.user_id, eventType: 'low_classes', recipientName: p.profiles.full_name });
     if (result.ok) await recordSmsSent(p.id, 'low_classes');
   }
 
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
       const ageDays = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000);
       lines.push(`• ${name} — ${kind}${price ? ' ' + price : ''} _(${ageDays}d)_`);
     }
-    sendTelegram(lines.join('\n')).catch(() => {});
+    sendTelegram(lines.join('\n'), { eventType: 'stale_unpaid', recipientName: 'Admin' }).catch(() => {});
   }
 
   return res.json({

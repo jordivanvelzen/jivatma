@@ -19,6 +19,7 @@ import { renderAdminUserDetail } from './pages/admin/user-detail.js';
 import { renderAdminPassTypes } from './pages/admin/pass-types.js';
 import { renderAdminSchedule } from './pages/admin/schedule.js';
 import { renderAdminSettings } from './pages/admin/settings.js';
+import { renderAdminNotifications } from './pages/admin/notifications.js';
 
 // Show a centered spinner in #app while the next page is loading.
 // The renderFn overwrites #app via innerHTML, so this clears on render.
@@ -92,6 +93,7 @@ route('/admin/users/:id', (p) => requireAdmin(renderAdminUserDetail, p));
 route('/admin/passes', (p) => requireAdmin(renderAdminPassTypes, p));
 route('/admin/schedule', (p) => requireAdmin(renderAdminSchedule, p));
 route('/admin/settings', (p) => requireAdmin(renderAdminSettings, p));
+route('/admin/notifications', (p) => requireAdmin(renderAdminNotifications, p));
 
 // Default route
 route('/', async () => {

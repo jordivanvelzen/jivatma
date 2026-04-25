@@ -191,7 +191,7 @@ async function handleTelegramWebhook(req, res) {
     sendSms(
       request.profiles.phone,
       buildApprovedSmsText(firstName, request),
-      { userId: request.user_id }
+      { userId: request.user_id, eventType: 'pass_approved', recipientName: studentName }
     ).catch(() => {});
   }
 
@@ -260,7 +260,7 @@ export default async function handler(req, res) {
     const msg = buildRequestMessage({ studentName, request: data });
     const keyboard = buildInlineKeyboard(data.id);
     try {
-      const tg = await sendTelegram(msg, { replyMarkup: keyboard });
+      const tg = await sendTelegram(msg, { replyMarkup: keyboard, eventType: 'pass_request', recipientName: studentName });
       if (tg.ok && tg.messageId) {
         await supabase.from('pass_requests')
           .update({ telegram_message_id: tg.messageId })
@@ -320,7 +320,7 @@ export default async function handler(req, res) {
       sendSms(
         request.profiles.phone,
         buildApprovedSmsText(firstName, request),
-        { userId: request.user_id }
+        { userId: request.user_id, eventType: 'pass_approved', recipientName: studentName }
       ).catch(() => {});
     }
 

@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     const action = req.body?.action || req.query?.action;
     if (action === 'telegram-test') {
       const result = await sendTelegram(
-        '\u{1F9D8} *Prueba de Jivatma*\n\nSi ves este mensaje, las notificaciones de Telegram est\u00e1n configuradas correctamente.'
+        '\u{1F9D8} *Prueba de Jivatma*\n\nSi ves este mensaje, las notificaciones de Telegram est\u00e1n configuradas correctamente.',
+        { eventType: 'test', recipientName: 'Admin' }
       );
       if (!result.ok) {
         return res.status(400).json({ ok: false, reason: result.reason, error: result.telegramError });
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
       const result = await sendSms(
         toPhone,
         '🧘 Prueba de Jivatma: si recibes este SMS, Twilio está configurado correctamente.',
-        { bypassOptIn: true }
+        { bypassOptIn: true, eventType: 'test', recipientName: 'Admin' }
       );
       if (!result.ok) {
         return res.status(400).json({ ok: false, reason: result.reason, error: result.twilioError });

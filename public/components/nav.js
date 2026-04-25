@@ -6,17 +6,18 @@ import { icon } from '../lib/icons.js';
 
 // Pre-rendered icon shortcuts for nav (default size 20)
 const ICON = {
-  classes: icon('classes', { size: 24 }),
-  passes:  icon('passes',  { size: 24 }),
-  home:    icon('home',    { size: 24 }),
-  check:   icon('check',   { size: 24 }),
-  spots:   icon('spots',   { size: 24 }),
-  profile24: icon('profile', { size: 24 }),
-  profile: icon('profile', { size: 20 }),
-  lang:    icon('lang',    { size: 20 }),
-  logout:  icon('logout',  { size: 20 }),
-  admin:   icon('admin',   { size: 14 }),
-  student: icon('student', { size: 14 }),
+  classes:   icon('classes',  { size: 24 }),
+  passes:    icon('passes',   { size: 24 }),
+  home:      icon('home',     { size: 24 }),
+  check:     icon('check',    { size: 24 }),
+  spots:     icon('spots',    { size: 24 }),
+  settings:  icon('settings', { size: 24 }),
+  profile24: icon('profile',  { size: 24 }),
+  profile:   icon('profile',  { size: 20 }),
+  lang:      icon('lang',     { size: 20 }),
+  logout:    icon('logout',   { size: 20 }),
+  admin:     icon('admin',    { size: 14 }),
+  student:   icon('student',  { size: 14 }),
 };
 
 function isActive(prefix) {
@@ -67,6 +68,7 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="#/admin/passes" class="${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
         <a href="#/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="#/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
+        <a href="#/admin/notifications" class="${isActive('/admin/notifications') ? 'active' : ''}">Notificaciones</a>
         <a href="#/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">
@@ -107,10 +109,12 @@ function renderBottomNav(mode) {
 
   const items = mode === 'admin'
     ? [
-        { href: '#/admin',        icon: ICON.home,      label: t('nav.panel'),      match: '/admin',        exact: true },
-        { href: '#/admin/class',  icon: ICON.check,     label: t('nav.attendance'), match: '/admin/class' },
-        { href: '#/admin/users',  icon: ICON.spots,     label: t('nav.users'),      match: '/admin/users' },
-        { href: '#/admin/passes', icon: ICON.passes,    label: t('nav.passes'),     match: '/admin/passes' },
+        { href: '#/admin',              icon: ICON.home,      label: t('nav.panel'),      match: '/admin',        exact: true },
+        { href: '#/admin/class',        icon: ICON.check,     label: t('nav.attendance'), match: '/admin/class' },
+        { href: '#/admin/users',        icon: ICON.spots,     label: t('nav.users'),      match: '/admin/users' },
+        { href: '#/admin/passes',       icon: ICON.passes,    label: t('nav.passes'),     match: '/admin/passes' },
+        { href: '#/admin/settings',     icon: ICON.settings,  label: 'Ajustes',           match: '/admin/settings',
+          extraMatches: ['/admin/schedule', '/admin/notifications'] },
       ]
     : [
         { href: '#/dashboard',    icon: ICON.home,      label: t('nav.home'),     match: '/dashboard' },
@@ -120,7 +124,11 @@ function renderBottomNav(mode) {
       ];
 
   const path = currentPath();
-  const itemActive = (it) => it.exact ? path === it.match : (path === it.match || path.startsWith(it.match + '/'));
+  const itemActive = (it) => {
+    const primary = it.exact ? path === it.match : (path === it.match || path.startsWith(it.match + '/'));
+    if (primary) return true;
+    return it.extraMatches?.some(m => path === m || path.startsWith(m + '/')) ?? false;
+  };
 
   const bottomNav = document.createElement('nav');
   bottomNav.className = 'bottom-nav';
