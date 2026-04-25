@@ -21,13 +21,6 @@ export async function renderRegister() {
         <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
         <input type="tel" id="phone" placeholder="${t('auth.phonePlaceholder')}" required autocomplete="tel" pattern="[0-9+\\s\\-\\(\\)]{7,}" />
         <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
-        <label class="opt-in-label">
-          <input type="checkbox" id="sms-opt-in" checked class="opt-in-checkbox" />
-          <span class="opt-in-text">
-            <span class="opt-in-main">💬 ${t('auth.smsOptIn')}</span>
-            <span class="opt-in-note">${t('auth.smsOptInNote')}</span>
-          </span>
-        </label>
         <button type="submit" class="btn btn-primary">${t('auth.createAccount')}</button>
       </form>
 
@@ -37,7 +30,6 @@ export async function renderRegister() {
           <li>${t('auth.step1Email')}</li>
           <li>${t('auth.step2Confirm')}</li>
           <li>${t('auth.step3Login')}</li>
-          <li>${t('auth.step4Pass')}</li>
         </ol>
       </div>
 
@@ -54,13 +46,11 @@ export async function renderRegister() {
     const email = document.getElementById('email').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value;
-    const smsOptIn = document.getElementById('sms-opt-in').checked;
-
     const { data, error } = await sb.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, phone, sms_opt_in: smsOptIn },
+        data: { full_name: fullName, phone },
       },
     });
 
@@ -69,9 +59,9 @@ export async function renderRegister() {
       return;
     }
 
-    // Best-effort: save phone + opt-in to profile (trigger may have created it already)
+    // Best-effort: save phone to profile (trigger may have created it already)
     if (data?.user) {
-      await sb.from('profiles').update({ full_name: fullName, phone, sms_opt_in: smsOptIn }).eq('id', data.user.id);
+      await sb.from('profiles').update({ full_name: fullName, phone }).eq('id', data.user.id);
     }
 
     // Fire-and-forget: notify Claudia in Telegram about the new signup.
