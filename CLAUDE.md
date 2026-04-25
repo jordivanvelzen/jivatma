@@ -144,9 +144,19 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `capacity_inperson` | INT | Per-mode cap for hybrid sessions (in-person bookings) |
 | `capacity_online` | INT | Per-mode cap for hybrid sessions (online bookings) |
 | `status` | TEXT | `'scheduled'`, `'completed'`, or `'cancelled'` |
+| `cancellation_reason` | TEXT | Set when the generate-sessions cron auto-cancels a session because its date falls in an `unavailability` window. NULL means admin-cancelled (manual). The cron uses this column to round-trip: when the unavailability is removed, any session with a non-null `cancellation_reason` whose date is no longer in any window is restored to `status='scheduled'`. Admin-cancelled rows (NULL) are never auto-restored. |
 | `notes` | TEXT | |
 | `created_at` | TIMESTAMPTZ | |
 | | | UNIQUE(`template_id`, `date`) |
+
+**`unavailability`** — Date ranges when no classes are held (vacation, retreats, holidays). Closed range `[start_date, end_date]`. The generate-sessions cron auto-cancels sessions on these dates instead of deleting them, so students see "class cancelled" on the schedule rather than the slot disappearing.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `start_date` | DATE | |
+| `end_date` | DATE | CHECK `end_date >= start_date` |
+| `reason` | TEXT | Optional, surfaced to students as the cancellation reason |
+| `created_at` | TIMESTAMPTZ | |
 
 **`bookings`** — Student sign-ups for sessions
 | Column | Type | Notes |
@@ -276,6 +286,10 @@ All endpoints are Vercel serverless functions.
 | POST | `/api/admin/schedule?type=sessions` | Admin | Create a one-off session (`{ date, start_time, class_type, capacity?, notes? }`) |
 | PATCH | `/api/admin/schedule?type=sessions` | Admin | Update a session (`{ id, ...updates }`) |
 | DELETE | `/api/admin/schedule?type=sessions` | Admin | Delete a session (`{ id }`) |
+| GET | `/api/admin/schedule?type=unavailability` | Admin | List unavailability windows (sorted by `start_date` asc) |
+| POST | `/api/admin/schedule?type=unavailability` | Admin | Create an unavailability window (`{ start_date, end_date, reason? }`). The admin UI auto-runs the generate cron right after so cancellations propagate immediately to existing future sessions |
+| DELETE | `/api/admin/schedule?type=unavailability` | Admin | Delete an unavailability window (`{ id }`). The admin UI auto-runs the generate cron after so previously auto-cancelled sessions get restored |
+| POST | `/api/admin/schedule?action=resync` | Admin | Resync future scheduled sessions to their template: copies `start_time`, `class_type`, `capacity`, `capacity_inperson`, `capacity_online` from the template onto every future scheduled session whose `template_id` matches. Returns `{ updated, withBookings: [{session_id, bookings}], errors }` so admin can see which updated sessions had active bookings (and may need a heads-up to students). One-off sessions (`template_id=null`) are skipped |
 | GET | `/api/admin/settings` | Admin | Get all settings as key-value object |
 | PATCH | `/api/admin/settings` | Admin | Upsert settings (`{ key: value, ... }`) |
 | POST | `/api/admin/attendance` | Admin | Save attendance for a session (`{ session_id, records: [{user_id, attended}] }`) — auto-deducts passes (no-shows still deduct), marks session completed. Accepts legacy `user_ids` array (all treated as attended). |
@@ -296,7 +310,7 @@ Configured in `vercel.json`:
 
 | Schedule | Path | Description |
 |---|---|---|
-| `0 7 * * *` (daily 7AM UTC) | `/api/cron/generate-sessions` | Generates class sessions for the next 14 days from active templates (skips if session already exists for that template+date) |
+| `0 7 * * *` (daily 7AM UTC) | `/api/cron/generate-sessions` | Generates class sessions for the next 14 days (starting **tomorrow** — never re-creates today's class if it was deleted). For each `(active template, date in window)`: if no session exists, inserts one; if the date falls inside an `unavailability` window, the new session is created with `status='cancelled'` and `cancellation_reason` set. Then it auto-cancels existing scheduled sessions whose date is now in an unavailable window, auto-restores previously auto-cancelled sessions whose window was removed, and deletes future sessions belonging to deactivated templates **only if they have zero active bookings**. Returns `{ created, autoCancelled, restored, cleanedUp, cleanupSkippedWithBookings, errors, window }`. Supports `?dryRun=1` to compute the plan without writing — the admin schedule page exposes this as a "Vista previa" button. |
 | `0 8 * * *` (daily 8AM UTC) | `/api/cron/expire-passes` | (1) Telegram digest to admin listing passes expiring **today** — each entry has a pre-filled WhatsApp deeplink so Claudia can notify the student; (2) Telegram digest listing stale unpaid passes (>3 days old, still `is_paid=false`, still active). No SMS sent. |
 
 ## Frontend Pages
@@ -411,7 +425,9 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
 | Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity. Admin schedule page renders templates as collapsed cards (title `Day · HH:MM`, meta `type · capacity summary`, active/inactive badge). Tap to expand → stacked editable fields (day/time/type/capacity, per-mode pair shown for hybrid) plus Save / Disable / Delete actions. Upcoming sessions list rebuilt as compact `session-row` cards instead of a wide table so both sections read well on 320px-wide phones |
 | One-off Sessions | Built | Admin can add ad-hoc class sessions not tied to a template (e.g. special workshops). Appears in upcoming sessions list and can be deleted individually |
-| Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
+| Session Generation (Cron) | Built | Daily cron generates sessions for the next 14 days starting **tomorrow** (so a deleted "today" class doesn't get re-created same-day). Idempotent via `(template_id, date)` uniqueness. Now also: auto-cancels sessions in `unavailability` windows (sets `status='cancelled'` + `cancellation_reason`), auto-restores when the window is removed, and cleans up sessions belonging to deactivated templates if they have no bookings. Admin schedule page exposes "Vista previa" (dry-run), "Generar próximas 2 semanas" (apply), and "Aplicar cambios de plantilla" (resync) buttons. The generate response surfaces a counts summary (`+N · ⊘N · ↺N · 🗑N`). |
+| Teacher Unavailability | Built | Admin can mark date ranges (vacations, retreats, holidays) on the schedule page → "Días no disponibles". On insert/delete, the page auto-runs the generate cron so existing future sessions in the range are auto-cancelled (status='cancelled', cancellation_reason set), and removing a range restores them. Students see those sessions in their schedule with a strikethrough + a red "Class cancelled · <reason>" pill instead of the slot disappearing. The signup button is disabled. Admin's upcoming-sessions list also shows cancelled rows with strikethrough + reason |
+| Resync Templates → Sessions | Built | Editing a template no longer leaves already-generated future sessions stale. Admin clicks "Aplicar cambios de plantilla" on the schedule page to push `start_time`, `class_type`, and capacity fields from each active template onto every future scheduled session that uses it. The toast reports how many were updated and how many had active bookings (so admin knows whether to message students) |
 | Delete Sessions | Built | Admin can delete individual upcoming sessions from the schedule page |
 | Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
 | Hybrid Attendance Mode | Built | When a student signs up for a hybrid class, a mode-picker modal opens with two large card-buttons ("In-person — at the studio" / "Online — join via Zoom"). Choice is stored in `bookings.attendance_mode`. The booked pill on the class card surfaces it, the dashboard upcoming list appends it, and the admin attendance page shows a small mode pill next to each booked student. Online and in-person sessions auto-fill the mode without a picker |

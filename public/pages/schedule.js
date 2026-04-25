@@ -33,11 +33,12 @@ export async function renderSchedule() {
   maxDate.setDate(maxDate.getDate() + windowWeeks * 7);
   const maxDateStr = maxDate.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 
-  // Sessions in window
+  // Sessions in window — include cancelled so students see "class not happening" instead
+  // of the slot disappearing without explanation.
   const { data: sessions } = await sb
     .from('class_sessions')
     .select('*')
-    .eq('status', 'scheduled')
+    .in('status', ['scheduled', 'cancelled'])
     .gte('date', today)
     .lte('date', maxDateStr)
     .order('date', { ascending: true })

@@ -1675,6 +1675,22 @@ body:not(.has-bottom-nav) .toast { bottom: var(--s-6); }
   font-weight: 600;
 }
 .cc-booked-pill .icon { width: 14px; height: 14px; }
+.cc.cc--cancelled { opacity: 0.6; background: var(--cream-50, #faf6ef); }
+.cc.cc--cancelled .cc-time,
+.cc.cc--cancelled .cc-date-day,
+.cc.cc--cancelled .cc-date-dow,
+.cc.cc--cancelled .cc-date-mon { text-decoration: line-through; }
+.cc-cancelled-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--rose-100, #fde0e7);
+  color: var(--rose-800, #7c1d3c);
+  padding: 4px var(--s-3);
+  border-radius: var(--r-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
 .cc-mode-pill {
   display: inline-flex;
   align-items: center;

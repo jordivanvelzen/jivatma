@@ -36,7 +36,8 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
     isFull = showSpots && spotsLeft <= 0;
   }
   const isBooked = booking && !booking.cancelled_at;
-  const cantBook = isFull || !hasActivePass;
+  const isCancelled = session.status === 'cancelled';
+  const cantBook = isFull || !hasActivePass || isCancelled;
 
   // Booking mode display (hybrid only — for already booked classes)
   const bookedMode = isBooked && isHybrid && booking.attendance_mode
@@ -44,7 +45,9 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
     : '';
 
   let actions;
-  if (isBooked) {
+  if (isCancelled) {
+    actions = `<span class="cc-cancelled-pill">⊘ ${t('schedule.cancelled')}${session.cancellation_reason ? ` · ${session.cancellation_reason}` : ''}</span>`;
+  } else if (isBooked) {
     actions = `
       ${bookedMode}
       <span class="cc-booked-pill">${icon('check', { size: 14 })}${t('schedule.youreSignedUp')}</span>
@@ -64,7 +67,7 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
   }
 
   return `
-    <article class="cc ${isBooked ? 'cc--booked' : ''} ${isFull ? 'cc--full' : ''}" data-session-id="${session.id}">
+    <article class="cc ${isBooked ? 'cc--booked' : ''} ${isFull ? 'cc--full' : ''} ${isCancelled ? 'cc--cancelled' : ''}" data-session-id="${session.id}">
       <div class="cc-date" aria-hidden="true">
         <div class="cc-date-dow">${dow.replace('.', '')}</div>
         <div class="cc-date-day">${day}</div>

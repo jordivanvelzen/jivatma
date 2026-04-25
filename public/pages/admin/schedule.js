@@ -394,13 +394,85 @@ export async function renderAdminSchedule() {
     });
   });
 
+  // Add unavailability
+  onSubmitWithLoading(document.getElementById('add-unavail-form'), async () => {
+    const start_date = document.getElementById('unavail-start').value;
+    const end_date = document.getElementById('unavail-end').value;
+    const reason = document.getElementById('unavail-reason').value || null;
+    try {
+      await api('/api/admin/schedule?type=unavailability', { method: 'POST', body: JSON.stringify({ start_date, end_date, reason }) });
+      showToast(t('admin.unavailAdded'), 'success');
+      // Auto-run generate so cancellations apply immediately to existing future sessions.
+      try { await fetch('/api/cron/generate-sessions', { method: 'POST' }); } catch {}
+      renderAdminSchedule();
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+
+  // Delete unavailability
+  app.querySelectorAll('.delete-unavail').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm(t('admin.deleteConfirm'))) return;
+      return withLoading(btn, async () => {
+        const id = parseInt(btn.dataset.id, 10);
+        try {
+          await api('/api/admin/schedule?type=unavailability', { method: 'DELETE', body: JSON.stringify({ id }) });
+          showToast(t('admin.deleted'), 'info');
+          // Auto-run generate so any auto-cancelled sessions are restored.
+          try { await fetch('/api/cron/generate-sessions', { method: 'POST' }); } catch {}
+          renderAdminSchedule();
+        } catch (err) { showToast(err.message, 'error'); }
+      });
+    });
+  });
+
+  // Preview generate (dry-run)
+  document.getElementById('preview-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
+    try {
+      const res = await fetch('/api/cron/generate-sessions?dryRun=1', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const lines = [
+        `${t('admin.previewWindow')}: ${data.window.from} → ${data.window.to}`,
+        `+ ${data.created} ${t('admin.previewCreated')}`,
+        `⊘ ${data.autoCancelled} ${t('admin.previewAutoCancel')}`,
+        `↺ ${data.restored} ${t('admin.previewRestore')}`,
+        `🗑 ${data.cleanedUp} ${t('admin.previewCleanup')}`,
+      ];
+      if (data.cleanupSkippedWithBookings) lines.push(`⚠ ${data.cleanupSkippedWithBookings} ${t('admin.previewCleanupSkipped')}`);
+      if (data.errors?.length) lines.push(`✗ ${data.errors.length} errors`);
+      alert(lines.join('\n'));
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }));
+
   // Generate sessions
   document.getElementById('generate-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
     try {
       const res = await fetch('/api/cron/generate-sessions', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showToast(t('admin.generated', { n: data.created }), 'success');
+      const summary = `+${data.created} · ⊘${data.autoCancelled} · ↺${data.restored} · 🗑${data.cleanedUp}`;
+      showToast(`${t('admin.generated', { n: data.created })} (${summary})`, 'success');
+      if (data.errors?.length) showToast(`${data.errors.length} errors — see console`, 'error');
+      if (data.errors?.length) console.error('generate-sessions errors:', data.errors);
+      renderAdminSchedule();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }));
+
+  // Resync future sessions to their templates
+  document.getElementById('resync-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
+    if (!confirm(t('admin.resyncConfirm'))) return;
+    try {
+      const data = await api('/api/admin/schedule?action=resync', { method: 'POST', body: '{}' });
+      let msg = t('admin.resyncDone', { n: data.updated });
+      if (data.withBookings?.length) {
+        msg += ` ⚠ ${data.withBookings.length} ${t('admin.resyncWithBookings')}`;
+      }
+      showToast(msg, data.withBookings?.length ? 'info' : 'success');
+      renderAdminSchedule();
     } catch (err) {
       showToast(err.message, 'error');
     }
