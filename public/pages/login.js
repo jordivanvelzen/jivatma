@@ -46,7 +46,6 @@ export async function renderLogin() {
     const { error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
-      // Case 1: Supabase explicitly tells us the email isn't confirmed
       const code = error.code || '';
       const msg = (error.message || '').toLowerCase();
       const unconfirmed = code === 'email_not_confirmed' || msg.includes('not confirmed') || msg.includes('not verified');
@@ -57,23 +56,7 @@ export async function renderLogin() {
         return;
       }
 
-      // Case 2: generic "Invalid login credentials". Could be wrong password OR unconfirmed
-      // email on projects that mask that error. Probe by calling resend — if it succeeds
-      // without error, the user exists but is unconfirmed.
       if (code === 'invalid_credentials' || msg.includes('invalid')) {
-        const { error: resendErr } = await sb.auth.resend({ type: 'signup', email });
-        // If resend succeeds (no error) OR the error is about rate-limiting, the account
-        // most likely exists and is unconfirmed. If it errors with "already confirmed" or
-        // "user not found", it's genuinely bad credentials.
-        const rMsg = (resendErr?.message || '').toLowerCase();
-        const looksUnconfirmed = !resendErr || rMsg.includes('rate') || rMsg.includes('seconds') || rMsg.includes('for security');
-
-        if (looksUnconfirmed) {
-          banner.classList.remove('hidden');
-          showToast(t('auth.emailNotConfirmed'), 'error');
-          return;
-        }
-
         showToast(t('auth.invalidCredentials'), 'error');
         return;
       }

@@ -363,7 +363,7 @@ Configured in `vercel.json`:
 ## Auth Flow
 
 1. **Registration:** User submits name/email/password → `sb.auth.signUp()` → Supabase creates `auth.users` row → `handle_new_user()` trigger auto-creates `profiles` row (master admin emails get `role='admin'`)
-2. **Login:** `sb.auth.signInWithPassword()` → Supabase returns JWT session → stored in browser by Supabase client → frontend checks profile role and redirects to `/admin` or `/dashboard`
+2. **Login:** `sb.auth.signInWithPassword()` → Supabase returns JWT session → stored in browser by Supabase client → frontend checks profile role and redirects to `/admin` or `/dashboard`. On `email_not_confirmed` the login page surfaces a banner with "resend confirmation" (kept for completeness even though email confirmations are currently disabled in Supabase). On `invalid_credentials` it shows "Correo o contraseña incorrectos" verbatim — no probe via `auth.resend`, since that heuristic produced false-positive "email not confirmed" banners for users who simply mistyped their password
 3. **Session management:** Supabase JS client handles token storage and refresh automatically. `getSession()` returns current session or null
 4. **API auth:** `public/lib/api.js` attaches `Authorization: Bearer <access_token>` to all API calls. Server-side `verifyUser()` validates JWT via `supabase.auth.getUser(token)` and fetches profile
 5. **Password reset:** `sb.auth.resetPasswordForEmail()` sends email with link to `/#/reset-password` → `sb.auth.updateUser({ password })`
