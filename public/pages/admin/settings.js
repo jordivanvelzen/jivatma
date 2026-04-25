@@ -1,8 +1,9 @@
-import { sb } from '../../lib/supabase.js';
+import { sb, getSession } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
 import { showConfirm } from '../../components/confirm.js';
 import { t } from '../../lib/i18n.js';
 import { withLoading } from '../../lib/loading.js';
+import { isSuperAdmin } from '../../lib/super-admin.js';
 
 const WA_DEFAULTS = {
   wa_template_approved:
@@ -26,7 +27,11 @@ export async function renderAdminSettings() {
   (allSettings || []).forEach(s => { settings[s.key] = s.value; });
 
   const recipient = (settings.test_mode || 'true') === 'true' ? 'jordi' : 'claudia';
+  const ccOn = (settings.cc_super_admin || 'false') === 'true';
   const tplVal = (k) => (settings[k] && settings[k].length ? settings[k] : WA_DEFAULTS[k]);
+
+  const session = await getSession();
+  const showSuperControls = isSuperAdmin(session?.user?.email);
 
   app.innerHTML = `
     <style>
@@ -192,7 +197,8 @@ export async function renderAdminSettings() {
     <div class="page settings-page">
       <h2>${t('admin.settingsTitle')}</h2>
 
-      <!-- Recipient toggle: most-used control, kept always visible at top -->
+      ${showSuperControls ? `
+      <!-- Recipient toggle (super-admin only): production vs test routing -->
       <div class="recipient-card">
         <h3>${t('admin.recipientTitle')}</h3>
         <p>${t('admin.recipientHelp')}</p>
@@ -200,7 +206,17 @@ export async function renderAdminSettings() {
           <button type="button" data-val="claudia" class="${recipient === 'claudia' ? 'is-active' : ''}">${t('admin.recipientClaudia')}</button>
           <button type="button" data-val="jordi" class="${recipient === 'jordi' ? 'is-active' : ''}">${t('admin.recipientJordi')}</button>
         </div>
+        <div style="margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid rgba(255,255,255,0.18);">
+          <label style="display:flex; align-items:flex-start; gap: var(--s-3); cursor:pointer; color:#fff;">
+            <input type="checkbox" id="cc-super-admin" ${ccOn ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" />
+            <span style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-weight:600; font-size:.95rem;">${t('admin.ccSuperTitle')}</span>
+              <span style="font-size:.8rem; opacity:.85; line-height:1.4;">${t('admin.ccSuperHelp')}</span>
+            </span>
+          </label>
+        </div>
       </div>
+      ` : ''}
 
       <!-- Studio settings -->
       <details class="set-section" id="sec-studio">
@@ -316,17 +332,34 @@ export async function renderAdminSettings() {
     </div>
   `;
 
-  // Recipient toggle — saves immediately on click
+  // Recipient toggle — saves immediately on click. Only present for super admins.
   const toggle = document.getElementById('recipient-toggle');
-  toggle.addEventListener('click', async (ev) => {
-    const btn = ev.target.closest('button[data-val]');
-    if (!btn) return;
-    const val = btn.dataset.val;
-    toggle.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
-    const { error } = await sb.from('settings').upsert({ key: 'test_mode', value: val === 'jordi' ? 'true' : 'false' });
-    if (error) showToast(error.message, 'error');
-    else showToast(val === 'jordi' ? t('admin.recipientToTest') : t('admin.recipientToProd'), 'success');
-  });
+  if (toggle) {
+    toggle.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('button[data-val]');
+      if (!btn) return;
+      const val = btn.dataset.val;
+      toggle.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
+      const { error } = await sb.from('settings').upsert({ key: 'test_mode', value: val === 'jordi' ? 'true' : 'false' });
+      if (error) showToast(error.message, 'error');
+      else showToast(val === 'jordi' ? t('admin.recipientToTest') : t('admin.recipientToProd'), 'success');
+    });
+  }
+
+  // CC super admin toggle — saves immediately on change. Super-admin-only.
+  const ccBox = document.getElementById('cc-super-admin');
+  if (ccBox) {
+    ccBox.addEventListener('change', async () => {
+      const value = ccBox.checked ? 'true' : 'false';
+      const { error } = await sb.from('settings').upsert({ key: 'cc_super_admin', value });
+      if (error) {
+        showToast(error.message, 'error');
+        ccBox.checked = !ccBox.checked; // revert
+      } else {
+        showToast(ccBox.checked ? t('admin.ccSuperOn') : t('admin.ccSuperOff'), 'success');
+      }
+    });
+  }
 
   // Per-section save handlers
   const saveSection = async (section, btn) => {

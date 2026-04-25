@@ -87,15 +87,18 @@ export default async function handler(req, res) {
       const alerts = (passRows || []).filter(p => p.pass_types?.kind !== 'single');
       if (alerts.length > 0) {
         const lines = [`🔔 *Última clase usada*`, ``];
+        const linesEn = [`🔔 *Last class used*`, ``];
         for (const p of alerts) {
           const name = p.profiles?.full_name || 'Alumna';
           const pt = p.pass_types;
           const kind = pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases` : 'Mensual Ilimitado';
+          const kindEn = pt?.kind === 'multi' ? `${pt.class_count}-class pass` : 'Unlimited monthly';
           const waText = await getWaTemplate('wa_template_last_class', { name: name.split(' ')[0], kind });
           const waLink = buildWaLink(p.profiles?.phone, waText);
           lines.push(waLink ? `• ${name} — ${kind} [💬 WhatsApp](${waLink})` : `• ${name} — ${kind} _(sin teléfono)_`);
+          linesEn.push(waLink ? `• ${name} — ${kindEn} [💬 WhatsApp](${waLink})` : `• ${name} — ${kindEn} _(no phone)_`);
         }
-        sendTelegram(lines.join('\n'), { eventType: 'low_classes', recipientName: 'Admin' }).catch(() => {});
+        sendTelegram(lines.join('\n'), { eventType: 'low_classes', recipientName: 'Admin', englishText: linesEn.join('\n') }).catch(() => {});
       }
     }
 

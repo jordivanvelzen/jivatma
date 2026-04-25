@@ -6,6 +6,7 @@ import {
   answerCallbackQuery,
   buildWaLink,
   getWaTemplate,
+  sendCcEvent,
 } from '../lib/telegram.js';
 import { todayStr, addDays } from '../lib/dates.js';
 import { runGenerate } from './cron/generate-sessions.js';
@@ -40,6 +41,43 @@ function methodLabel(m) {
   if (m === 'transfer') return 'Transferencia';
   if (m === 'cash') return 'Efectivo';
   return m || 'N/A';
+}
+
+function methodLabelEn(m) {
+  if (m === 'transfer') return 'Bank transfer';
+  if (m === 'cash') return 'Cash';
+  return m || 'N/A';
+}
+
+function kindLabelEn(pt) {
+  if (!pt) return 'Pass';
+  if (pt.kind === 'single') return 'Single class';
+  if (pt.kind === 'multi') return `${pt.class_count}-class pass`;
+  return 'Unlimited monthly';
+}
+
+function buildRequestMessageEn({ studentName, request }) {
+  const pt = request.pass_types;
+  const priceStr = pt?.price ? `$${parseFloat(pt.price).toFixed(0)} MXN` : '';
+  const paid = (request.notes || '').startsWith('[PAID]');
+  const lines = [
+    `*New pass request* 📬`,
+    ``,
+    `*Student:* ${studentName}`,
+    `*Pass:* ${kindLabelEn(pt)}${priceStr ? ' · ' + priceStr : ''}`,
+    `*Payment:* ${methodLabelEn(request.payment_method)}${paid ? ' ✅ _student marked as paid_' : ''}`,
+  ];
+  if (request.notes) lines.push(`*Notes:* ${request.notes}`);
+  if (request.payment_method === 'transfer') {
+    lines.push('');
+    lines.push(paid
+      ? '⚠️ _Verify in bank before approving._'
+      : '⏳ _Waiting for student to confirm payment._');
+  } else if (request.payment_method === 'cash') {
+    lines.push('');
+    lines.push('💵 _Cash: collect at the studio before approving._');
+  }
+  return lines.join('\n');
 }
 
 function buildRequestMessage({ studentName, request }) {
@@ -194,6 +232,15 @@ async function handleTelegramWebhook(req, res) {
   const cb = update.callback_query;
   if (!cb) return res.json({ ok: true });
 
+  // ---- CC no-op ----
+  // Buttons on Jordi's CC copy carry callback_data prefixed with `cc_noop:`. They
+  // exist so the message looks identical to Claudia's, but tapping them does nothing
+  // beyond a toast. Real actions still come from Claudia's chat.
+  if (String(cb.data || '').startsWith('cc_noop:')) {
+    await answerCallbackQuery(cb.id, 'CC copy — actions go to Claudia.', true);
+    return res.json({ ok: true });
+  }
+
   // ---- Bi-weekly schedule-extend nudge ----
   // Callback data: 'ext:approve:<windowDays>' or 'ext:skip:0'.
   if (String(cb.data || '').startsWith('ext:')) {
@@ -280,6 +327,7 @@ async function handleTelegramWebhook(req, res) {
         `✅ _Rechazo confirmado._`,
         { replyMarkup: { inline_keyboard: [] } });
     }
+    sendCcEvent(`❌ Claudia declined ${studentName}'s pass request. Reason: ${reason}`).catch(() => {});
     await answerCallbackQuery(cb.id, '✅ Rechazada');
     return res.json({ ok: true });
   }
@@ -301,6 +349,7 @@ async function handleTelegramWebhook(req, res) {
     } else {
       await sendTelegram(editedMsg);
     }
+    sendCcEvent(`✅ Claudia approved ${studentName}'s pass request (${kindLabel(request.pass_types)}).`).catch(() => {});
     await answerCallbackQuery(cb.id, '✅ Aprobada');
     return res.json({ ok: true });
   }
@@ -321,6 +370,7 @@ async function handleExtendCallback(cb, res) {
     if (cb.message?.message_id) {
       await editTelegramMessage(cb.message.message_id, '⏭ _Saltado. Te preguntamos otra vez en 2 semanas._', { replyMarkup: { inline_keyboard: [] } });
     }
+    sendCcEvent(`⏭ Claudia skipped the schedule-extend prompt. Next nudge in ~2 weeks.`).catch(() => {});
     await answerCallbackQuery(cb.id, 'OK');
     return res.json({ ok: true });
   }
@@ -343,13 +393,14 @@ async function handleExtendCallback(cb, res) {
     return res.json({ ok: false, error: err.message });
   }
 
+  const summary = `+${result.created || 0} · ⊘${result.autoCancelled || 0} · ↺${result.restored || 0}`;
   if (cb.message?.message_id) {
-    const summary = `+${result.created || 0} · ⊘${result.autoCancelled || 0} · ↺${result.restored || 0}`;
     const errLine = result.errors?.length ? `\n_⚠ ${result.errors.length} error(es) — revisa el log de Vercel_` : '';
     await editTelegramMessage(cb.message.message_id,
       `✅ *Horario extendido* — ventana ${windowDays} días\n${summary}${errLine}`,
       { replyMarkup: { inline_keyboard: [] } });
   }
+  sendCcEvent(`✅ Claudia extended the schedule by ${windowDays} days. Counts: ${summary}.`).catch(() => {});
   return res.json({ ok: true, result });
 }
 
@@ -438,9 +489,10 @@ export default async function handler(req, res) {
 
     const studentName = auth.profile.full_name || auth.user.email;
     const msg = buildRequestMessage({ studentName, request: data });
+    const msgEn = buildRequestMessageEn({ studentName, request: data });
     const keyboard = buildInlineKeyboard(data.id);
     try {
-      const tg = await sendTelegram(msg, { replyMarkup: keyboard, eventType: 'pass_request', recipientName: studentName });
+      const tg = await sendTelegram(msg, { replyMarkup: keyboard, eventType: 'pass_request', recipientName: studentName, englishText: msgEn });
       if (tg.ok && tg.messageId) {
         await supabase.from('pass_requests')
           .update({ telegram_message_id: tg.messageId })
