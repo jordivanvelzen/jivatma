@@ -102,44 +102,49 @@ export async function renderAdminClass() {
     };
 
     attendanceHtml = `
-      <div class="attendance-section">
-        <h3>${activeSession.start_time.slice(0, 5)} · ${t('type.' + activeSession.class_type)}</h3>
-        <p class="muted" style="font-size:0.85rem">${t('admin.attendanceHelp')}</p>
+      <details id="session-details" class="session-att-details" open>
+        <summary class="session-att-summary">
+          <span class="session-att-title">${activeSession.start_time.slice(0, 5)} · ${t('type.' + activeSession.class_type)}</span>
+          <span id="att-saved-badge" class="att-saved-badge" style="display:none"></span>
+        </summary>
+        <div class="attendance-section">
+          <p class="muted" style="font-size:0.85rem">${t('admin.attendanceHelp')}</p>
 
-        <div id="attendance-form">
-          ${visibleBookings.length ? `<h4>${t('admin.booked')}</h4>` : ''}
-          ${visibleBookings.map(b => {
-            const isHybrid = activeSession.class_type === 'hybrid';
-            const mode = b.attendance_mode;
-            const modeBadge = (isHybrid && mode)
-              ? `<span class="cc-mode-pill" title="${t('schedule.mode.' + mode)}">${icon(mode === 'online' ? 'online' : 'in_person', { size: 14 })}${t('schedule.mode.' + mode)}</span>`
-              : '';
-            return `
-              <div class="attendance-row booked">
-                <div class="user-name-wrap">
-                  <span class="user-name">${b.profiles.full_name}</span>
-                  ${modeBadge}
-                  ${unpaidBadge(b.profiles.id)}
+          <div id="attendance-form">
+            ${visibleBookings.length ? `<h4>${t('admin.booked')}</h4>` : ''}
+            ${visibleBookings.map(b => {
+              const isHybrid = activeSession.class_type === 'hybrid';
+              const mode = b.attendance_mode;
+              const modeBadge = (isHybrid && mode)
+                ? `<span class="cc-mode-pill" title="${t('schedule.mode.' + mode)}">${icon(mode === 'online' ? 'online' : 'in_person', { size: 14 })}${t('schedule.mode.' + mode)}</span>`
+                : '';
+              return `
+                <div class="attendance-row booked">
+                  <div class="user-name-wrap">
+                    <span class="user-name">${b.profiles.full_name}</span>
+                    ${modeBadge}
+                    ${unpaidBadge(b.profiles.id)}
+                  </div>
+                  ${stateButtons(b.profiles.id, true)}
                 </div>
-                ${stateButtons(b.profiles.id, true)}
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
 
-          ${unbookedUsers.length ? `<h4>${t('admin.others')}</h4>` : ''}
-          ${unbookedUsers.map(u => `
-            <div class="attendance-row">
-              <div class="user-name-wrap">
-                <span class="user-name">${u.full_name}</span>
-                ${unpaidBadge(u.id)}
+            ${unbookedUsers.length ? `<h4>${t('admin.others')}</h4>` : ''}
+            ${unbookedUsers.map(u => `
+              <div class="attendance-row">
+                <div class="user-name-wrap">
+                  <span class="user-name">${u.full_name}</span>
+                  ${unpaidBadge(u.id)}
+                </div>
+                ${stateButtons(u.id, false)}
               </div>
-              ${stateButtons(u.id, false)}
-            </div>
-          `).join('')}
+            `).join('')}
 
-          <button type="button" id="save-attendance" class="btn btn-primary btn-block">${t('admin.saveAttendance')}</button>
+            <button type="button" id="save-attendance" class="btn btn-primary btn-block">${t('admin.saveAttendance')}</button>
+          </div>
         </div>
-      </div>
+      </details>
     `;
   }
 
@@ -246,6 +251,14 @@ export async function renderAdminClass() {
       if (result.no_shows > 0) parts.push(t('admin.noShowsCount', { n: result.no_shows }));
       if (result.no_pass > 0) parts.push(t('admin.noPass', { n: result.no_pass }));
       showToast(parts.join(' · '), 'success');
+
+      const badge = document.getElementById('att-saved-badge');
+      const details = document.getElementById('session-details');
+      if (badge && details) {
+        badge.textContent = `✓ ${t('admin.checkedIn', { n: result.checked_in, p: result.passes_deducted })}`;
+        badge.style.display = '';
+        details.open = false;
+      }
 
       // Cash-due reminder for any attended student with an unpaid pass
       const cashDebts = [];
