@@ -179,6 +179,30 @@ export async function renderAdminSchedule() {
         display:flex; flex-direction:column; gap: var(--s-4);
         border-top:1px solid var(--ink-100);
       }
+
+      .gen-auto-info {
+        display:flex; align-items:flex-start; gap: var(--s-3);
+        background: var(--green-50, #eef3ee);
+        border: 1px solid var(--green-200, #c3d9c5);
+        border-radius: var(--r-md);
+        padding: var(--s-3) var(--s-4);
+        font-size: .875rem;
+        color: var(--ink-800, var(--ink-900));
+        line-height: 1.5;
+      }
+      .gen-auto-icon { font-size: 1.1rem; flex-shrink:0; margin-top:2px; }
+
+      .gen-action {
+        border: 1px solid var(--ink-100);
+        border-radius: var(--r-md);
+        padding: var(--s-4);
+        background: var(--ink-50, #fafaf7);
+        display:flex; flex-direction:column; gap: var(--s-2);
+      }
+      .gen-action-header { display:flex; align-items:center; gap: var(--s-2); margin-bottom: var(--s-1); }
+      .gen-action-icon { font-size: 1.1rem; flex-shrink:0; }
+      .gen-action-title { font-weight:600; font-size:.95rem; color: var(--ink-900); }
+      .gen-action-desc { margin:0; font-size:.85rem; color: var(--ink-600, var(--ink-500)); line-height:1.55; }
     </style>
 
     <div class="page sched-page">
@@ -346,11 +370,36 @@ export async function renderAdminSchedule() {
           <span class="sec-chev">▾</span>
         </summary>
         <div class="set-body">
-          <p class="muted">${t('admin.generateNote')}</p>
-          <div style="display:flex; gap: var(--s-2); flex-wrap: wrap">
-            <button id="preview-btn" class="btn btn-secondary">${t('admin.previewGenerate')}</button>
-            <button id="generate-btn" class="btn btn-secondary">${t('admin.generateNext2Weeks')}</button>
-            <button id="resync-btn" class="btn btn-secondary">${t('admin.resyncTemplates')}</button>
+          <div class="gen-auto-info">
+            <span class="gen-auto-icon">⏰</span>
+            <span>${t('admin.generateAutoInfo')}</span>
+          </div>
+
+          <div class="gen-action">
+            <div class="gen-action-header">
+              <span class="gen-action-icon">🔍</span>
+              <span class="gen-action-title">${t('admin.generatePreviewTitle')}</span>
+            </div>
+            <p class="gen-action-desc">${t('admin.generatePreviewDesc')}</p>
+            <div><button id="preview-btn" class="btn btn-secondary btn-small">${t('admin.previewGenerate')}</button></div>
+          </div>
+
+          <div class="gen-action">
+            <div class="gen-action-header">
+              <span class="gen-action-icon">📅</span>
+              <span class="gen-action-title">${t('admin.generateNextTitle')}</span>
+            </div>
+            <p class="gen-action-desc">${t('admin.generateNextDesc')}</p>
+            <div><button id="generate-btn" class="btn btn-primary btn-small">${t('admin.generateNext2Weeks')}</button></div>
+          </div>
+
+          <div class="gen-action">
+            <div class="gen-action-header">
+              <span class="gen-action-icon">🔄</span>
+              <span class="gen-action-title">${t('admin.resyncTitle')}</span>
+            </div>
+            <p class="gen-action-desc">${t('admin.resyncDesc')}</p>
+            <div><button id="resync-btn" class="btn btn-secondary btn-small">${t('admin.resyncTemplates')}</button></div>
           </div>
         </div>
       </details>
