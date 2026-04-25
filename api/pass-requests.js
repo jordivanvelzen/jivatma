@@ -162,7 +162,7 @@ async function handleTelegramWebhook(req, res) {
 
     const msg = `❌ *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
     if (request.telegram_message_id) {
-      await editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: null });
+      await editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: { inline_keyboard: [] } });
     }
     await answerCallbackQuery(cb.id, 'Rechazada');
     return res.json({ ok: true });
@@ -180,7 +180,7 @@ async function handleTelegramWebhook(req, res) {
   const editedMsg = buildApprovedMessage({ studentName, request, waLink });
 
   if (request.telegram_message_id) {
-    await editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: null });
+    await editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: { inline_keyboard: [] } });
   } else {
     await sendTelegram(editedMsg);
   }
@@ -297,7 +297,7 @@ export default async function handler(req, res) {
         .eq('id', id);
       if (request.telegram_message_id) {
         const msg = `❌ *Solicitud rechazada*\n\n*Alumna:* ${studentName}\n*Pase:* ${kindLabel(request.pass_types)}`;
-        editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: null }).catch(() => {});
+        editTelegramMessage(request.telegram_message_id, msg, { replyMarkup: { inline_keyboard: [] } }).catch(() => {});
       }
       return res.json({ success: true, status });
     }
@@ -310,7 +310,7 @@ export default async function handler(req, res) {
     const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
     const editedMsg = buildApprovedMessage({ studentName, request, waLink });
     if (request.telegram_message_id) {
-      editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: null }).catch(() => {});
+      editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: { inline_keyboard: [] } }).catch(() => {});
     } else {
       sendTelegram(editedMsg).catch(() => {});
     }
