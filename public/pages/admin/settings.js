@@ -25,7 +25,7 @@ export async function renderAdminSettings() {
 
   app.innerHTML = `
     <style>
-      .settings-page { display:flex; flex-direction:column; gap: var(--s-4); }
+      .settings-page { display:flex; flex-direction:column; gap: var(--s-4); padding-bottom: var(--s-8); overflow-x: hidden; }
       .settings-page > h2 { margin: 0 0 var(--s-2); }
 
       .set-section {
@@ -115,14 +115,16 @@ export async function renderAdminSettings() {
       }
       .pill-toggle button {
         flex:1 1 0;
-        padding: .6rem 1rem;
+        min-width: 0;
+        padding: .6rem .5rem;
         border:0; background:transparent;
         border-radius: var(--r-pill);
-        font-weight:600; font-size: .9rem;
+        font-weight:600; font-size: .85rem;
         color: var(--ink-700);
         cursor:pointer;
         transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
-        white-space:nowrap;
+        text-align: center;
+        line-height: 1.3;
       }
       .pill-toggle button.is-active {
         background: #fff;
@@ -190,13 +192,13 @@ export async function renderAdminSettings() {
         <h3>📩 Destinatario activo</h3>
         <p>Quién recibe las notificaciones de Telegram y los SMS ahora mismo.</p>
         <div class="pill-toggle" role="tablist" id="recipient-toggle">
-          <button type="button" data-val="claudia" class="${recipient === 'claudia' ? 'is-active' : ''}">👩‍🦰 Claudia · producción</button>
-          <button type="button" data-val="jordi" class="${recipient === 'jordi' ? 'is-active' : ''}">🧪 Jordi · pruebas</button>
+          <button type="button" data-val="claudia" class="${recipient === 'claudia' ? 'is-active' : ''}">👩‍🦰 Claudia</button>
+          <button type="button" data-val="jordi" class="${recipient === 'jordi' ? 'is-active' : ''}">🧪 Jordi</button>
         </div>
       </div>
 
       <!-- Studio settings -->
-      <details class="set-section" id="sec-studio" open>
+      <details class="set-section" id="sec-studio">
         <summary>
           <span class="sec-icon">📍</span>
           <span class="sec-title">Estudio<span class="sec-sub">Dirección, enlace de Zoom, ventana de reservas</span></span>
