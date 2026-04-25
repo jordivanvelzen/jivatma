@@ -55,12 +55,12 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
     <div class="nav-inner">
       <a href="#/" class="nav-brand">Jivatma</a>
       <div class="nav-links">
-        <a href="#/admin">${t('nav.dashboard')}</a>
-        <a href="#/admin/class">${t('nav.attendance')}</a>
-        <a href="#/admin/users">${t('nav.users')}</a>
-        <a href="#/admin/passes">${t('nav.passes')}</a>
-        <a href="#/admin/schedule">${t('nav.schedule')}</a>
-        <a href="#/admin/settings">${t('nav.settings')}</a>
+        <a href="#/admin" class="${currentPath() === '/admin' ? 'active' : ''}">${t('nav.dashboard')}</a>
+        <a href="#/admin/class" class="${isActive('/admin/class') ? 'active' : ''}">${t('nav.attendance')}</a>
+        <a href="#/admin/users" class="${isActive('/admin/users') ? 'active' : ''}">${t('nav.users')}</a>
+        <a href="#/admin/passes" class="${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
+        <a href="#/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
+        <a href="#/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
       </div>
       <div class="nav-actions">
         ${masterAdmin ? `
@@ -83,10 +83,10 @@ function renderStudentNav(nav, { masterAdmin, otherLang }) {
     <div class="nav-inner">
       <a href="#/dashboard" class="nav-brand">Jivatma</a>
       <div class="nav-links">
-        <a href="#/dashboard">${t('nav.home')}</a>
-        <a href="#/schedule">${t('nav.classes')}</a>
-        <a href="#/my-passes">${t('nav.myPasses')}</a>
-        <a href="#/my-attendance">${t('nav.history')}</a>
+        <a href="#/schedule" class="${isActive('/schedule') ? 'active' : ''}">${t('nav.classes')}</a>
+        <a href="#/my-passes" class="${isActive('/my-passes') ? 'active' : ''}">${t('nav.myPasses')}</a>
+        <a href="#/dashboard" class="${currentPath() === '/dashboard' ? 'active' : ''}">${t('nav.home')}</a>
+        <a href="#/my-attendance" class="${isActive('/my-attendance') ? 'active' : ''}">${t('nav.history')}</a>
       </div>
       <div class="nav-actions">
         ${masterAdmin ? `
