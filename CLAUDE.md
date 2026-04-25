@@ -360,6 +360,7 @@ Configured in `vercel.json`:
 | `lib/icons.js` | `icon(name, opts)` / `classTypeIcon(type)` | Custom SVG icon set. All icons are 24×24 stroke-based, inherit `currentColor`, and replace what would otherwise be standard emojis. Includes class-type icons (in_person, online, hybrid), nav icons (classes, passes, more, home, history, profile, lang, logout), view-toggle icons (admin/student shields), brand mark (lotus), and status icons (check, x, clock, spots, alert, arrow_right) |
 | `components/pass-card.js` | `renderPassCard(pass, passType)` | Card showing pass kind, classes remaining, expiry date, and status badge (active/expired/used up) |
 | `components/toast.js` | `showToast(message, type)` | Fixed-position toast notification (success/error/info), auto-dismisses after 3s |
+| `components/confirm.js` | `showConfirm({ title, message, confirmText, cancelText, variant, icon })` | App-wide confirmation modal returning `Promise<boolean>`. Replaces the browser-native `window.confirm()` everywhere. Variants: `default` / `warning` / `danger` (changes icon + button color). Backdrop click and Esc cancel; Enter confirms. All defaults pull from i18n (`general.confirm`, `general.cancel`, `confirm.defaultTitle`). Used by: delete template/session/unavailability (schedule.js), delete pass (user-detail.js), resync templates (schedule.js), restore WhatsApp defaults (settings.js) |
 
 ## Auth Flow
 
