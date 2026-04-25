@@ -28,7 +28,7 @@ export async function renderMyPasses() {
   // Fetch user's pass requests
   let requests = [];
   try {
-    requests = await api('/api/pass-requests');
+    requests = await api('/api/pass-requests?mine=true');
   } catch (e) {
     // pass_requests table may not exist yet
   }

@@ -402,7 +402,7 @@ export default async function handler(req, res) {
       .from('pass_requests')
       .select('*, pass_types(*), profiles(full_name)')
       .order('created_at', { ascending: false });
-    if (!isAdmin) query = query.eq('user_id', auth.user.id);
+    if (!isAdmin || req.query?.mine === 'true') query = query.eq('user_id', auth.user.id);
 
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
