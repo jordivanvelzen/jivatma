@@ -2555,6 +2555,11 @@ body.has-bottom-nav #pwa-android-nudge {
   width: clamp(240px, 70vw, 440px);
   height: auto;
 }
+.landing-full-logo {
+  display: block;
+  width: clamp(220px, 60vw, 380px);
+  height: auto;
+}
 .landing-subtitle {
   font-size: clamp(1rem, 3vw, 1.3rem);
   font-weight: 400;

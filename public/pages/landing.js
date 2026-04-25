@@ -84,14 +84,8 @@ export async function renderLanding() {
         <img src="/brand/flyer.svg" alt="" class="landing-hero-mobile-img" aria-hidden="true" />
 
         <div class="landing-hero-content">
-          <!-- Brand mark -->
-          <div class="landing-brand-mark-wrap">
-            <img src="/brand/logo.svg" alt="Jivatma" class="landing-brand-mark" />
-          </div>
-
-          <p class="landing-eyebrow">Yoga Iyengar</p>
           <h1 class="landing-title">
-            <img src="/brand/wordmark.svg" alt="Jivatma" class="landing-title-wordmark" />
+            <img src="/brand/logo-full.svg" alt="Jivatma — Yoga Iyengar" class="landing-full-logo" />
           </h1>
           <p class="landing-subtitle">${t('landing.subtitle')}</p>
 
