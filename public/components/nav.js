@@ -67,11 +67,12 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="#/admin/passes" class="${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
         <a href="#/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="#/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
+        <a href="#/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">
         ${masterAdmin ? renderViewPill(false) : ''}
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
-        <a href="#/profile" class="nav-icon-btn" title="${t('nav.profile')}">${ICON.profile}</a>
+        <a href="#/profile" class="nav-icon-btn nav-icon-btn--desk" title="${t('nav.profile')}">${ICON.profile}</a>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
         <button id="nav-toggle" class="nav-toggle" aria-label="${t('nav.menu')}">☰</button>
       </div>

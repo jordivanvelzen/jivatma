@@ -1506,6 +1506,19 @@ body:not(.has-bottom-nav) .toast { bottom: var(--s-6); }
 }
 .view-pill-btn:hover:not(.active) { color: var(--ink-700); }
 
+/* Compact view-pill on narrow screens — show icon only */
+@media (max-width: 419px) {
+  .view-pill-btn span { display: none; }
+  .view-pill-btn { padding: 5px var(--s-2); }
+}
+
+/* Hide desktop-only icon-buttons on mobile (admin profile is in the hamburger menu) */
+@media (max-width: 767px) {
+  .nav-icon-btn--desk { display: none !important; }
+  .nav-actions { gap: var(--s-1); }
+  .nav-inner { gap: var(--s-2); padding-left: 0; padding-right: 0; }
+}
+
 /* Hide the old emoji label-only spans inside legacy view-toggle (defensive) */
 
 /* ---------- Tweaks for accent on schedule signup ---------- */
