@@ -74,14 +74,6 @@ export async function renderAdminDashboard() {
         }
       </section>
 
-      <section class="section">
-        <h3>${t('admin.quickActions')}</h3>
-        <div class="quick-actions">
-          <a href="#/admin/class" class="btn btn-primary">${t('admin.markAttendance')}</a>
-          <a href="#/admin/users" class="btn btn-secondary">${t('admin.manageUsers')}</a>
-          <a href="#/admin/schedule" class="btn btn-secondary">${t('admin.editSchedule')}</a>
-        </div>
-      </section>
     </div>
   `;
 }

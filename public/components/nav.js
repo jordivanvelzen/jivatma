@@ -109,12 +109,10 @@ function renderBottomNav(mode) {
 
   const items = mode === 'admin'
     ? [
-        { href: '#/admin',              icon: ICON.home,      label: t('nav.panel'),      match: '/admin',        exact: true },
-        { href: '#/admin/class',        icon: ICON.check,     label: t('nav.attendance'), match: '/admin/class' },
-        { href: '#/admin/users',        icon: ICON.spots,     label: t('nav.users'),      match: '/admin/users' },
-        { href: '#/admin/passes',       icon: ICON.passes,    label: t('nav.passes'),     match: '/admin/passes' },
-        { href: '#/admin/settings',     icon: ICON.settings,  label: 'Ajustes',           match: '/admin/settings',
-          extraMatches: ['/admin/schedule', '/admin/notifications'] },
+        { href: '#/admin',        icon: ICON.home,    label: t('nav.panel'),      match: '/admin',      exact: true },
+        { href: '#/admin/class',  icon: ICON.check,   label: t('nav.attendance'), match: '/admin/class' },
+        { href: '#/admin/users',  icon: ICON.spots,   label: t('nav.users'),      match: '/admin/users' },
+        { href: '#/admin/passes', icon: ICON.passes,  label: t('nav.passes'),     match: '/admin/passes' },
       ]
     : [
         { href: '#/dashboard',    icon: ICON.home,      label: t('nav.home'),     match: '/dashboard' },
