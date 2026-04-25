@@ -1,6 +1,7 @@
 import { sb, getSession, getProfile } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { t } from '../lib/i18n.js';
+import { navigate } from '../lib/router.js';
 import { onSubmitWithLoading } from '../lib/loading.js';
 
 export async function renderProfile() {
@@ -29,6 +30,10 @@ export async function renderProfile() {
         </label>
         <button type="submit" class="btn btn-secondary">${t('auth.updatePassword')}</button>
       </form>
+
+      <hr />
+
+      <button id="logout-profile-btn" class="btn btn-danger">${t('nav.logout')}</button>
     </div>
   `;
 
@@ -52,5 +57,10 @@ export async function renderProfile() {
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('auth.passwordUpdated'), 'success');
     document.getElementById('new-password').value = '';
+  });
+
+  document.getElementById('logout-profile-btn').addEventListener('click', async () => {
+    await sb.auth.signOut({ scope: 'local' });
+    navigate('/login');
   });
 }
