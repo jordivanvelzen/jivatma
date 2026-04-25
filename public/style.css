@@ -932,8 +932,15 @@ hr { border: none; border-top: 1px solid var(--ink-100); margin: var(--s-6) 0; }
   margin-bottom: var(--s-4);
   font-size: 0.9rem;
   border: 1px solid #d4e2ec;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
-.meeting-link-note a { color: var(--blue); }
+.meeting-link-note a {
+  color: var(--blue);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
 
 .no-pass-banner {
   background: var(--amber-bg);
