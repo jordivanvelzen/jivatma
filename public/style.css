@@ -436,6 +436,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 .auth-links a { color: var(--green-700); }
 
+.opt-in-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  background: var(--cream-50, #f9f6f0);
+  border: 1px solid var(--green-200, #c6dbc8);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer;
+  margin: var(--s-1) 0;
+}
+.opt-in-label:hover { border-color: var(--green-400, #7aad80); }
+.opt-in-checkbox { margin-top: 2px; accent-color: var(--green-700); flex-shrink: 0; width: 16px; height: 16px; }
+.opt-in-text { display: flex; flex-direction: column; gap: 2px; }
+.opt-in-main { font-size: 0.875rem; color: var(--ink-800, #2a2a2a); font-weight: 500; line-height: 1.4; }
+.opt-in-note { font-size: 0.775rem; color: var(--ink-500, #777); }
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;

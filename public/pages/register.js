@@ -20,9 +20,12 @@ export async function renderRegister() {
         <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
         <input type="tel" id="phone" placeholder="${t('auth.phonePlaceholder')}" required autocomplete="tel" pattern="[0-9+\\s\\-\\(\\)]{7,}" />
         <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
-        <label style="display:flex;align-items:flex-start;gap:.5rem;font-size:.85rem;color:var(--ink-700,#555);cursor:pointer;margin:.25rem 0">
-          <input type="checkbox" id="sms-opt-in" checked style="margin-top:.15rem" />
-          <span>Recibir notificaciones por SMS (aprobación de pase, recordatorios). Puedes desactivarlas en tu perfil.</span>
+        <label class="opt-in-label">
+          <input type="checkbox" id="sms-opt-in" checked class="opt-in-checkbox" />
+          <span class="opt-in-text">
+            <span class="opt-in-main">💬 ${t('auth.smsOptIn')}</span>
+            <span class="opt-in-note">${t('auth.smsOptInNote')}</span>
+          </span>
         </label>
         <button type="submit" class="btn btn-primary">${t('auth.createAccount')}</button>
       </form>
