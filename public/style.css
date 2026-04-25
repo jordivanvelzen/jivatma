@@ -120,13 +120,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* ---------- Top Nav ---------- */
 .nav {
-  background: var(--white);
-  color: var(--ink-900);
+  background: #852519;
+  color: #fffbd2;
   padding: 0 var(--s-4);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--ink-100);
+  border-bottom: none;
   padding-top: env(safe-area-inset-top, 0px);
 }
 .nav.hidden { display: none; }
@@ -140,11 +140,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: var(--s-3);
 }
 .nav-brand {
-  color: var(--green-700);
+  color: #fffbd2;
   text-decoration: none;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
 }
 .nav-links {
   display: none;
@@ -153,16 +152,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   top: 56px;
   left: 0;
   right: 0;
-  background: var(--white);
+  background: #6b1d13;
   padding: var(--s-2) var(--s-4) var(--s-4);
-  border-bottom: 1px solid var(--ink-100);
+  border-bottom: 1px solid rgba(255,251,210,0.15);
   box-shadow: var(--sh-2);
 }
 .nav-links.open { display: flex; }
 /* Admin bottom-nav links are hidden in the hamburger on mobile */
 .nav-links__desktop { display: none; }
 .nav-links a, .nav-links button {
-  color: var(--ink-700);
+  color: #fffbd2;
   text-decoration: none;
   padding: var(--s-3) 0;
   border: none;
@@ -171,14 +170,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  border-bottom: 1px solid var(--ink-100);
+  border-bottom: 1px solid rgba(255,251,210,0.15);
 }
 .nav-links a:last-child, .nav-links button:last-child { border-bottom: none; }
-.nav-links a:hover { color: var(--green-700); }
+.nav-links a:hover { color: #fdb515; }
 .nav-toggle {
   background: none;
   border: none;
-  color: var(--ink-700);
+  color: #fffbd2;
   font-size: 1.5rem;
   cursor: pointer;
   padding: var(--s-1) var(--s-2);
@@ -186,7 +185,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   min-height: 40px;
   border-radius: var(--r-md);
 }
-.nav-toggle:hover { background: var(--ink-50); }
+.nav-toggle:hover { background: rgba(255,251,210,0.1); }
 .nav-actions {
   display: flex;
   align-items: center;
@@ -195,7 +194,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .nav-icon-btn {
   background: none;
   border: none;
-  color: var(--ink-700);
+  color: #fffbd2;
   cursor: pointer;
   padding: var(--s-2);
   border-radius: var(--r-md);
@@ -210,13 +209,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
   font-family: inherit;
 }
-.nav-icon-btn:hover { background: var(--ink-50); color: var(--green-700); }
+.nav-icon-btn:hover { background: rgba(255,251,210,0.1); color: #fdb515; }
 .nav-icon-btn svg { display: block; }
 
 @media (min-width: 768px) {
   .nav { padding: 0 var(--s-6); }
   .nav-inner { height: 64px; max-width: 1100px; gap: var(--s-5); }
-  .nav-brand { font-size: 1.35rem; }
+  .nav-brand svg { height: 32px; }
   .nav-links {
     display: flex !important;
     flex-direction: row;
@@ -234,18 +233,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     border-bottom: none;
     font-size: 0.95rem;
     font-weight: 500;
-    color: var(--ink-700);
+    color: rgba(255,251,210,0.85);
     border-radius: var(--r-md);
     position: relative;
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
   }
   .nav-links a:hover, .nav-links button:hover {
-    background: var(--ink-50);
-    color: var(--green-700);
+    background: rgba(255,251,210,0.1);
+    color: #fdb515;
   }
   .nav-links a.active {
-    color: var(--green-700);
-    background: var(--green-50);
+    color: #fdb515;
+    background: rgba(255,251,210,0.1);
     font-weight: 600;
   }
   .nav-toggle { display: none; }
@@ -378,7 +377,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   border-color: var(--blue);
 }
 .view-toggle--student:hover { background: #2471a3; }
-.nav-student-view { border-bottom-color: var(--blue); }
+.nav-student-view { border-bottom: 3px solid var(--blue); }
 
 /* ---------- Layout ---------- */
 .page {
