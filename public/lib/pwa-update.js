@@ -16,7 +16,10 @@ import { t } from './i18n.js';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      // updateViaCache: 'none' forces the browser to bypass HTTP cache for /sw.js itself
+      // when checking for updates. Without this, a cached sw.js can hide a fresh deploy
+      // for up to 24h depending on Cache-Control headers from the CDN.
+      const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
 
       // Already a waiting SW from a previous tab/session.
       if (reg.waiting && navigator.serviceWorker.controller) {
