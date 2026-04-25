@@ -810,6 +810,8 @@ hr { border: none; border-top: 1px solid var(--ink-100); margin: var(--s-6) 0; }
   flex-wrap: wrap;
 }
 .no-pass-banner p { margin: 0; font-size: 0.9rem; color: var(--amber-fg); }
+.no-pass-banner--urgent { background: #fee2e2; border-color: #fca5a5; }
+.no-pass-banner--urgent p { color: #b91c1c; }
 
 /* ---------- Back link ---------- */
 .back-link {

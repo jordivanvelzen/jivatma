@@ -12,15 +12,18 @@ export async function renderSchedule() {
   const userId = session.user.id;
   const today = todayStr();
 
-  // Active pass?
-  const { data: activePasses } = await sb
+  // Fetch non-expired passes to derive active status and expiry warnings
+  const { data: myPasses } = await sb
     .from('user_passes')
-    .select('id')
+    .select('id, classes_remaining, expires_at, pass_types(kind)')
     .eq('user_id', userId)
     .gte('expires_at', today)
-    .or('classes_remaining.gt.0,classes_remaining.is.null')
-    .limit(1);
-  const hasActivePass = activePasses && activePasses.length > 0;
+    .order('expires_at', { ascending: true });
+
+  const activePasses = (myPasses || []).filter(p =>
+    p.pass_types?.kind === 'unlimited' || p.classes_remaining > 0
+  );
+  const hasActivePass = activePasses.length > 0;
 
   // Sign-up window
   const { data: windowSetting } = await sb
@@ -96,12 +99,29 @@ export async function renderSchedule() {
     return renderClassCard(sessionWithCap, bookingMap[s.id], spotsLeft, hasActivePass);
   }).join('');
 
-  const noPassBanner = !hasActivePass ? `
-    <div class="no-pass-banner">
-      <p>${t('schedule.noPassBanner')}</p>
-      <a href="#/my-passes" class="btn btn-primary btn-small">${t('schedule.getPasses')}</a>
-    </div>
-  ` : '';
+  function buildScheduleBanner() {
+    if (!hasActivePass) {
+      const outOfClasses = (myPasses || []).filter(p =>
+        p.pass_types?.kind !== 'unlimited' && p.classes_remaining === 0
+      );
+      const msg = outOfClasses.length > 0 ? t('banner.outOfClasses') : t('schedule.noPassBanner');
+      const urgent = outOfClasses.length > 0;
+      return `<div class="no-pass-banner${urgent ? ' no-pass-banner--urgent' : ''}">
+        <p>${msg}</p>
+        <a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a>
+      </div>`;
+    }
+    // Active pass — check if expiring soon
+    const soonest = activePasses[0];
+    if (soonest?.expires_at) {
+      const daysLeft = Math.ceil((new Date(soonest.expires_at) - new Date(today)) / 86400000);
+      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+    }
+    return '';
+  }
+  const noPassBanner = buildScheduleBanner();
 
   app.innerHTML = `
     <div class="page">

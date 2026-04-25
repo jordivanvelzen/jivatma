@@ -22,6 +22,29 @@ export async function renderDashboard() {
   );
   const pending = pendingRequests || [];
 
+  // Compute pass status banner
+  function buildPassBanner() {
+    if (activePasses.length > 0) {
+      // Sort by soonest expiry; unlimited passes (null expires_at not possible here) are fine
+      const soonest = activePasses[0];
+      if (!soonest.expires_at) return '';
+      const daysLeft = Math.ceil((new Date(soonest.expires_at) - new Date(today)) / 86400000);
+      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      return '';
+    }
+    // No active pass — check if they have passes with 0 classes (not expired)
+    const outOfClasses = (passes || []).filter(p =>
+      p.pass_types?.kind !== 'unlimited' && p.classes_remaining === 0
+    );
+    if (outOfClasses.length > 0) {
+      return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.outOfClasses')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+    }
+    return '';
+  }
+  const passBanner = buildPassBanner();
+
   function kindLabel(pt) {
     if (!pt) return '';
     if (pt.kind === 'single') return t('passes.singleClass');
@@ -70,6 +93,7 @@ export async function renderDashboard() {
     <div class="page">
       <h2>${t('dash.welcome')}${firstName ? `, ${firstName}` : ''}</h2>
 
+      ${passBanner}
       ${onboardingHtml}
 
       <section class="section">
