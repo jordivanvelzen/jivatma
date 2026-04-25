@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase.js';
-import { sendTelegram, buildWaLink } from '../../lib/telegram.js';
+import { sendTelegram, buildWaLink, getWaTemplate } from '../../lib/telegram.js';
 import { todayStr } from '../../lib/dates.js';
 
 function passKindLabel(pt) {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     for (const p of expiringToday) {
       const name = p.profiles?.full_name || 'Alumna';
       const kind = passKindLabel(p.pass_types);
-      const waText = `Hola ${name.split(' ')[0]}, tu pase de ${kind} en Jivatma vence hoy. ¡Renuévalo antes de tu próxima clase! 🧘`;
+      const waText = await getWaTemplate('wa_template_expiring', { name: name.split(' ')[0], kind });
       const waLink = buildWaLink(p.profiles?.phone, waText);
       lines.push(waLink ? `• ${name} — ${kind} [💬 WhatsApp](${waLink})` : `• ${name} — ${kind} _(sin teléfono)_`);
     }

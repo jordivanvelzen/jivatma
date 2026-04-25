@@ -5,17 +5,21 @@ import {
   editTelegramMessage,
   answerCallbackQuery,
   buildWaLink,
+  getWaTemplate,
 } from '../lib/telegram.js';
 import { todayStr, addDays } from '../lib/dates.js';
 
 // ---------- text builders ----------
 
 function buildDeclineWaText(firstName, reason) {
-  return `Hola ${firstName}, tu solicitud de pase en Jivatma no fue aprobada. Motivo: ${reason}. Si tienes preguntas, escríbenos. 🙏`;
+  return getWaTemplate('wa_template_declined', { name: firstName, reason });
 }
 
 function buildApprovedWaText(firstName, request) {
-  return `Hola ${firstName}, ¡tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. 🧘`;
+  return getWaTemplate('wa_template_approved', {
+    name: firstName,
+    kind: kindLabel(request.pass_types),
+  });
 }
 
 // ---------- helpers ----------
@@ -255,7 +259,7 @@ async function handleTelegramWebhook(req, res) {
       return res.json({ ok: true });
     }
     const firstName = studentName.split(' ')[0];
-    const waLink = buildWaLink(request.profiles?.phone, buildDeclineWaText(firstName, reason));
+    const waLink = buildWaLink(request.profiles?.phone, await buildDeclineWaText(firstName, reason));
     const finalMsg = buildDeclinedMessage({ studentName, request, reason, waLink });
 
     if (request.telegram_message_id) {
@@ -281,7 +285,7 @@ async function handleTelegramWebhook(req, res) {
       return res.json({ ok: true });
     }
     const firstName = studentName.split(' ')[0];
-    const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
+    const waLink = buildWaLink(request.profiles?.phone, await buildApprovedWaText(firstName, request));
     const editedMsg = buildApprovedMessage({ studentName, request, waLink });
 
     if (request.telegram_message_id) {
@@ -322,7 +326,7 @@ async function handleDeclineReply(message, res) {
 
   const studentName = request.profiles?.full_name || 'Alumna';
   const firstName = studentName.split(' ')[0];
-  const waLink = buildWaLink(request.profiles?.phone, buildDeclineWaText(firstName, reason));
+  const waLink = buildWaLink(request.profiles?.phone, await buildDeclineWaText(firstName, reason));
   const previewMsg = buildDeclinePreviewMessage({ studentName, reason, waLink });
   await sendTelegram(previewMsg, { replyMarkup: buildDeclineConfirmKeyboard(requestId) });
   return res.json({ ok: true });
@@ -430,7 +434,7 @@ export default async function handler(req, res) {
     if (!result.ok) return res.status(500).json({ error: result.reason });
 
     const firstName = studentName.split(' ')[0];
-    const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
+    const waLink = buildWaLink(request.profiles?.phone, await buildApprovedWaText(firstName, request));
     const editedMsg = buildApprovedMessage({ studentName, request, waLink });
     if (request.telegram_message_id) {
       editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: { inline_keyboard: [] } }).catch(() => {});

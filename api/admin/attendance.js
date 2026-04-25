@@ -1,7 +1,7 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 import { findActivePass, deductPass, reverseDeduction } from '../../lib/passes.js';
-import { sendTelegram, buildWaLink } from '../../lib/telegram.js';
+import { sendTelegram, buildWaLink, getWaTemplate } from '../../lib/telegram.js';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
           const name = p.profiles?.full_name || 'Alumna';
           const pt = p.pass_types;
           const kind = pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases` : 'Mensual Ilimitado';
-          const waText = `Hola ${name.split(' ')[0]}, acabas de usar tu última clase del ${kind} en Jivatma. ¡Renueva tu pase para seguir reservando! 🧘`;
+          const waText = await getWaTemplate('wa_template_last_class', { name: name.split(' ')[0], kind });
           const waLink = buildWaLink(p.profiles?.phone, waText);
           lines.push(waLink ? `• ${name} — ${kind} [💬 WhatsApp](${waLink})` : `• ${name} — ${kind} _(sin teléfono)_`);
         }
