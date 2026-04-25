@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   // User passes
   if (req.method === 'GET') {
     const userId = req.query.user_id;
-    let query = supabase.from('user_passes').select('*, pass_types(*), profiles(full_name)').order('created_at', { ascending: false });
+    let query = supabase.from('user_passes').select('*, pass_types(*), profiles!user_id(full_name)').order('created_at', { ascending: false });
     if (userId) query = query.eq('user_id', userId);
     const { data, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
