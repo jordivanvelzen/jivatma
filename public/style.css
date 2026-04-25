@@ -855,6 +855,50 @@ hr { border: none; border-top: 1px solid var(--ink-100); margin: var(--s-6) 0; }
   background: var(--ink-100); color: var(--ink-700);
 }
 
+.session-att-details {
+  background: var(--white);
+  border: 1px solid var(--ink-200);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+}
+.session-att-details > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: var(--s-4);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 44px;
+  user-select: none;
+}
+.session-att-details > summary::-webkit-details-marker { display: none; }
+.session-att-details > summary::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--ink-500);
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  transition: transform var(--t-fast) var(--ease);
+}
+.session-att-details[open] > summary::after { transform: rotate(90deg); }
+.session-att-title { font-weight: 600; font-size: 1rem; flex: 1; }
+.att-saved-badge {
+  background: var(--green-50);
+  color: var(--green-700);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55vw;
+}
+.session-att-details .attendance-section {
+  padding: 0 var(--s-4) var(--s-4);
+  border-top: 1px solid var(--ink-100);
+}
+
 /* ---------- Quick actions ---------- */
 .quick-actions {
   display: flex;
