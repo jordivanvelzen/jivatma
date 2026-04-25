@@ -114,6 +114,8 @@ CREATE TABLE class_templates (
   duration_min  INT NOT NULL DEFAULT 60,
   class_type    TEXT NOT NULL CHECK (class_type IN ('online', 'in_person', 'hybrid')),
   capacity      INT,
+  capacity_inperson INT,
+  capacity_online   INT,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -128,6 +130,8 @@ CREATE TABLE class_sessions (
   start_time    TIME NOT NULL,
   class_type    TEXT NOT NULL CHECK (class_type IN ('online', 'in_person', 'hybrid')),
   capacity      INT,
+  capacity_inperson INT,
+  capacity_online   INT,
   status        TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
   notes         TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),

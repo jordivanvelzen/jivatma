@@ -1,6 +1,7 @@
 import { sb, getSession, getProfile } from '../lib/supabase.js';
 import { showToast } from '../components/toast.js';
 import { t } from '../lib/i18n.js';
+import { onSubmitWithLoading } from '../lib/loading.js';
 
 export async function renderProfile() {
   const app = document.getElementById('app');
@@ -15,6 +16,10 @@ export async function renderProfile() {
         </label>
         <label>${t('profile.phone')}
           <input type="tel" id="phone" value="${profile?.phone || ''}" placeholder="${t('profile.phoneOptional')}" />
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;cursor:pointer;margin:.5rem 0">
+          <input type="checkbox" id="sms-opt-in" ${profile?.sms_opt_in !== false ? 'checked' : ''} style="margin-top:.2rem" />
+          <span>📱 Recibir notificaciones por SMS (aprobación de pase, recordatorios de vencimiento).</span>
         </label>
         <button type="submit" class="btn btn-primary">${t('profile.save')}</button>
       </form>
@@ -31,27 +36,24 @@ export async function renderProfile() {
     </div>
   `;
 
-  document.getElementById('profile-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('profile-form'), async () => {
     const fullName = document.getElementById('full-name').value;
     const phone = document.getElementById('phone').value;
+    const smsOptIn = document.getElementById('sms-opt-in').checked;
 
     const session = await getSession();
     const { error } = await sb
       .from('profiles')
-      .update({ full_name: fullName, phone: phone || null })
+      .update({ full_name: fullName, phone: phone || null, sms_opt_in: smsOptIn })
       .eq('id', session.user.id);
 
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('profile.updated'), 'success');
   });
 
-  document.getElementById('password-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('password-form'), async () => {
     const password = document.getElementById('new-password').value;
-
     const { error } = await sb.auth.updateUser({ password });
-
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('auth.passwordUpdated'), 'success');
     document.getElementById('new-password').value = '';

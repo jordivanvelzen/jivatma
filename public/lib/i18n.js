@@ -205,6 +205,10 @@ const translations = {
     'admin.noTemplates': 'Aún no hay clases configuradas.',
     'admin.day': 'Día',
     'admin.capacity': 'Capacidad',
+    'admin.capacityInPerson': 'Cupo presencial',
+    'admin.capacityOnline': 'Cupo en línea',
+    'admin.inPersonShort': 'pres.',
+    'admin.onlineShort': 'en línea',
     'admin.disable': 'Desactivar',
     'admin.enable': 'Activar',
     'admin.delete': 'Eliminar',
@@ -289,6 +293,7 @@ const translations = {
     'general.edit': 'Editar',
     'general.delete': 'Eliminar',
     'general.confirmDelete': '¿Estás seguro?',
+    'general.loading': 'Cargando…',
 
     // Payment instructions
     'payment.title': 'Instrucciones de Pago',
@@ -600,6 +605,10 @@ const translations = {
     'admin.noTemplates': 'No classes set up yet.',
     'admin.day': 'Day',
     'admin.capacity': 'Capacity',
+    'admin.capacityInPerson': 'In-person spots',
+    'admin.capacityOnline': 'Online spots',
+    'admin.inPersonShort': 'in-person',
+    'admin.onlineShort': 'online',
     'admin.disable': 'Disable',
     'admin.enable': 'Enable',
     'admin.delete': 'Delete',
@@ -684,6 +693,7 @@ const translations = {
     'general.edit': 'Edit',
     'general.delete': 'Delete',
     'general.confirmDelete': 'Are you sure?',
+    'general.loading': 'Loading…',
 
     // Payment instructions
     'payment.title': 'Payment Instructions',

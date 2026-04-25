@@ -18,11 +18,25 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
   const typeLabel = t(`type.${type}.label`);
   const typeMod = type === 'online' ? 'cc-type--online' : type === 'hybrid' ? 'cc-type--hybrid' : 'cc-type--in-person';
 
+  const isHybrid = type === 'hybrid';
+  const ipLeft = session._spotsLeftInPerson;
+  const olLeft = session._spotsLeftOnline;
+  const hasPerModeCaps = isHybrid && (ipLeft != null || olLeft != null);
+  const ipFull = ipLeft != null && ipLeft <= 0;
+  const olFull = olLeft != null && olLeft <= 0;
+
   const showSpots = type !== 'online';
-  const isFull = showSpots && spotsLeft <= 0;
+  let isFull;
+  if (hasPerModeCaps) {
+    // Class is unbookable only if every available mode is full.
+    const ipBlocked = ipLeft == null ? false : ipFull;
+    const olBlocked = olLeft == null ? false : olFull;
+    isFull = ipBlocked && olBlocked;
+  } else {
+    isFull = showSpots && spotsLeft <= 0;
+  }
   const isBooked = booking && !booking.cancelled_at;
   const cantBook = isFull || !hasActivePass;
-  const isHybrid = type === 'hybrid';
 
   // Booking mode display (hybrid only — for already booked classes)
   const bookedMode = isBooked && isHybrid && booking.attendance_mode
@@ -62,7 +76,10 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
           <span class="cc-type-badge ${typeMod}">${icon(classTypeIcon(type), { size: 14 })} ${typeLabel}</span>
         </div>
         <div class="cc-meta">
-          ${showSpots ? `<span class="cc-spots ${isFull ? 'full' : ''}">${icon('spots', { size: 14 })} ${spotsLeft}/${session.capacity} ${t('schedule.spots')}</span>` : ''}
+          ${hasPerModeCaps ? `
+            ${ipLeft != null ? `<span class="cc-spots ${ipFull ? 'full' : ''}">${icon('in_person', { size: 14 })} ${Math.max(ipLeft, 0)}/${session.capacity_inperson}</span>` : ''}
+            ${olLeft != null ? `<span class="cc-spots ${olFull ? 'full' : ''}">${icon('online', { size: 14 })} ${Math.max(olLeft, 0)}/${session.capacity_online}</span>` : ''}
+          ` : showSpots ? `<span class="cc-spots ${isFull ? 'full' : ''}">${icon('spots', { size: 14 })} ${spotsLeft}/${session.capacity} ${t('schedule.spots')}</span>` : ''}
         </div>
         <div class="cc-actions">${actions}</div>
       </div>

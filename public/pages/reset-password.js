@@ -2,6 +2,7 @@ import { sb } from '../lib/supabase.js';
 import { navigate } from '../lib/router.js';
 import { showToast } from '../components/toast.js';
 import { t, toggleLang } from '../lib/i18n.js';
+import { onSubmitWithLoading } from '../lib/loading.js';
 
 export async function renderResetPassword() {
   const app = document.getElementById('app');
@@ -18,8 +19,7 @@ export async function renderResetPassword() {
 
   document.getElementById('lang-toggle').addEventListener('click', () => toggleLang());
 
-  document.getElementById('reset-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('reset-form'), async () => {
     const password = document.getElementById('password').value;
 
     const { error } = await sb.auth.updateUser({ password });

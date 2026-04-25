@@ -6,7 +6,18 @@ import {
   answerCallbackQuery,
   buildWaLink,
 } from '../lib/telegram.js';
+import { sendSms } from '../lib/sms.js';
 import { todayStr, addDays } from '../lib/dates.js';
+
+function buildApprovedSmsText(firstName, request) {
+  const pt = request.pass_types;
+  const kindStr = pt?.kind === 'single'
+    ? 'Clase Única'
+    : pt?.kind === 'multi'
+    ? `Pase de ${pt.class_count} Clases`
+    : 'Mensual Ilimitado';
+  return `Hola ${firstName}, ¡tu pase de ${kindStr} ya está aprobado en Jivatma! Ya puedes reservar tus clases. Nos vemos pronto 🧘`;
+}
 
 // ---------- helpers ----------
 
@@ -173,6 +184,17 @@ async function handleTelegramWebhook(req, res) {
   } else {
     await sendTelegram(editedMsg);
   }
+
+  // Notify the student by SMS (best-effort, non-blocking on errors).
+  // Skipped automatically if student opted out, has no phone, or Twilio isn't configured.
+  if (request.profiles?.phone) {
+    sendSms(
+      request.profiles.phone,
+      buildApprovedSmsText(firstName, request),
+      { userId: request.user_id }
+    ).catch(() => {});
+  }
+
   await answerCallbackQuery(cb.id, '✅ Aprobada');
   return res.json({ ok: true });
 }
@@ -291,6 +313,15 @@ export default async function handler(req, res) {
       editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: null }).catch(() => {});
     } else {
       sendTelegram(editedMsg).catch(() => {});
+    }
+
+    // SMS the student that their pass is approved (best-effort)
+    if (request.profiles?.phone) {
+      sendSms(
+        request.profiles.phone,
+        buildApprovedSmsText(firstName, request),
+        { userId: request.user_id }
+      ).catch(() => {});
     }
 
     return res.json({ success: true, status });

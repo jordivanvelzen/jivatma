@@ -2,15 +2,23 @@ import { sb } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t, getLocale } from '../../lib/i18n.js';
+import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
 
 export async function renderAdminPassTypes() {
   const app = document.getElementById('app');
 
-  const [{ data: passTypes }, userPasses, requests] = await Promise.all([
+  let userPassesRaw = [];
+  let userPassesError = null;
+  const [{ data: passTypes }, requests] = await Promise.all([
     sb.from('pass_types').select('*').order('kind'),
-    api('/api/admin/passes').catch(() => []),
     api('/api/pass-requests').catch(() => []),
   ]);
+  try {
+    userPassesRaw = await api('/api/admin/passes');
+  } catch (err) {
+    userPassesError = err.message || 'Error loading passes';
+  }
+  const userPasses = Array.isArray(userPassesRaw) ? userPassesRaw : [];
 
   const pendingRequests = (requests || []).filter(r => r.status === 'pending');
   const processedRequests = (requests || []).filter(r => r.status !== 'pending');
@@ -72,6 +80,7 @@ export async function renderAdminPassTypes() {
     return Math.round((target - today) / 86400000);
   };
   const isActivePass = (p) => {
+    if (!p.expires_at) return false;
     const daysLeft = daysBetween(p.expires_at);
     if (daysLeft < 0) return false;
     if (p.classes_remaining !== null && p.classes_remaining <= 0) return false;
@@ -139,38 +148,53 @@ export async function renderAdminPassTypes() {
         ${(passTypes || []).map(passTypeCard).join('')}
       </div>
 
-      <details class="section-collapsible" style="margin-top:1.5rem">
-        <summary><strong>${t('admin.addPassType')}</strong></summary>
-        <form id="add-pass-form" class="form" style="margin-top:0.75rem">
-          <div class="form-row">
-            <label>${t('admin.kind')}
-              <select id="pt-kind" required>
-                <option value="single">${t('passes.singleClass')}</option>
-                <option value="multi">${t('passes.multiClass', { n: '' })}</option>
-                <option value="unlimited">${t('passes.unlimited')}</option>
-              </select>
-            </label>
-            <label>${t('admin.classes')}
-              <input type="number" id="pt-count" placeholder="e.g. 10" min="1" />
-            </label>
+      <div class="add-pt-wrap">
+        <button class="btn btn-secondary add-pt-open" id="add-pt-open">+ ${t('admin.addPassType')}</button>
+        <div class="add-pt-card" id="add-pt-card" hidden>
+          <div class="add-pt-card-header">
+            <span>${t('admin.addPassType')}</span>
+            <button type="button" class="add-pt-close-btn" id="add-pt-close" aria-label="Cerrar">✕</button>
           </div>
-          <div class="form-row">
-            <label>${t('admin.validDays')}
-              <input type="number" id="pt-days" required min="1" value="30" />
-            </label>
-            <label>${t('admin.price')} (MXN)
-              <input type="number" id="pt-price" required min="0" step="0.01" />
-            </label>
-          </div>
-          <button type="submit" class="btn btn-primary">${t('admin.add')}</button>
-        </form>
-      </details>
+          <form id="add-pass-form">
+            <div class="kind-pills" role="group" aria-label="${t('admin.kind')}">
+              <label class="kind-pill">
+                <input type="radio" name="add-kind" value="single" checked>
+                <span>${t('passes.singleClass')}</span>
+              </label>
+              <label class="kind-pill">
+                <input type="radio" name="add-kind" value="multi">
+                <span>${t('passes.multiClass', { n: 'N' })}</span>
+              </label>
+              <label class="kind-pill">
+                <input type="radio" name="add-kind" value="unlimited">
+                <span>${t('passes.unlimited')}</span>
+              </label>
+            </div>
+            <div id="add-pt-count-row" class="add-pt-count-row" hidden>
+              <label class="add-pt-field-label">${t('admin.classes')}
+                <input type="number" id="pt-count" min="1" placeholder="10" inputmode="numeric" />
+              </label>
+            </div>
+            <div class="add-pt-row">
+              <label class="add-pt-field-label">${t('admin.validDays')}
+                <input type="number" id="pt-days" required min="1" value="1" inputmode="numeric" />
+              </label>
+              <label class="add-pt-field-label">${t('admin.price')} (MXN)
+                <input type="number" id="pt-price" required min="0" step="0.01" inputmode="decimal" placeholder="0" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%">${t('admin.add')}</button>
+          </form>
+        </div>
+      </div>
 
       <section class="section" style="margin-top: 2rem;">
         <div class="active-passes-head">
           <h3>${t('admin.activePasses')} ${activePasses.length ? `(${activePasses.length})` : ''}</h3>
         </div>
-        ${!activePasses.length
+        ${userPassesError
+          ? `<p class="error-line">Error loading passes: ${userPassesError}</p>`
+          : !activePasses.length
           ? `<p class="muted">${t('admin.activePassesNone')}</p>`
           : `
             <div class="filter-chips" id="active-pass-filters">
@@ -255,14 +279,35 @@ export async function renderAdminPassTypes() {
     </div>
   `;
 
-  // Kind change -> auto-fill defaults
-  document.getElementById('pt-kind').addEventListener('change', (e) => {
-    const kind = e.target.value;
-    const countInput = document.getElementById('pt-count');
-    const daysInput = document.getElementById('pt-days');
-    if (kind === 'single') { countInput.value = 1; daysInput.value = 1; }
-    else if (kind === 'multi') { countInput.value = 10; daysInput.value = 90; }
-    else { countInput.value = ''; daysInput.value = 30; }
+  // Add pass type form toggle
+  document.getElementById('add-pt-open').addEventListener('click', () => {
+    document.getElementById('add-pt-card').hidden = false;
+    document.getElementById('add-pt-open').hidden = true;
+  });
+  document.getElementById('add-pt-close').addEventListener('click', () => {
+    document.getElementById('add-pt-card').hidden = true;
+    document.getElementById('add-pt-open').hidden = false;
+  });
+
+  // Kind radio -> update count/days defaults
+  app.querySelectorAll('[name="add-kind"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const kind = radio.value;
+      const countRow = document.getElementById('add-pt-count-row');
+      const countInput = document.getElementById('pt-count');
+      const daysInput = document.getElementById('pt-days');
+      if (kind === 'single') {
+        countRow.hidden = true;
+        daysInput.value = 1;
+      } else if (kind === 'multi') {
+        countRow.hidden = false;
+        countInput.value = 10;
+        daysInput.value = 90;
+      } else {
+        countRow.hidden = true;
+        daysInput.value = 30;
+      }
+    });
   });
 
   // Pass type cards: save / toggle. Stop propagation on clicks so the
@@ -273,33 +318,39 @@ export async function renderAdminPassTypes() {
       body.addEventListener('click', (e) => e.stopPropagation());
     });
 
-    card.querySelector('.save-pt').addEventListener('click', async (e) => {
+    card.querySelector('.save-pt').addEventListener('click', (e) => {
       e.stopPropagation();
-      const countEl = card.querySelector('.pt-edit-count');
-      const daysEl = card.querySelector('.pt-edit-days');
-      const priceEl = card.querySelector('.pt-edit-price');
-      const updates = {
-        id,
-        class_count: countEl.disabled ? null : (countEl.value ? parseInt(countEl.value, 10) : null),
-        validity_days: parseInt(daysEl.value, 10),
-        price: parseFloat(priceEl.value),
-      };
-      try {
-        await api('/api/admin/passes?type=types', {
-          method: 'PATCH',
-          body: JSON.stringify(updates),
-        });
-        showToast(t('admin.passTypeUpdated'), 'success');
-        renderAdminPassTypes();
-      } catch (err) { showToast(err.message, 'error'); }
+      const btn = e.currentTarget;
+      return withLoading(btn, async () => {
+        const countEl = card.querySelector('.pt-edit-count');
+        const daysEl = card.querySelector('.pt-edit-days');
+        const priceEl = card.querySelector('.pt-edit-price');
+        const updates = {
+          id,
+          class_count: countEl.disabled ? null : (countEl.value ? parseInt(countEl.value, 10) : null),
+          validity_days: parseInt(daysEl.value, 10),
+          price: parseFloat(priceEl.value),
+        };
+        try {
+          await api('/api/admin/passes?type=types', {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+          });
+          showToast(t('admin.passTypeUpdated'), 'success');
+          renderAdminPassTypes();
+        } catch (err) { showToast(err.message, 'error'); }
+      });
     });
 
-    card.querySelector('.toggle-active').addEventListener('click', async (e) => {
+    card.querySelector('.toggle-active').addEventListener('click', (e) => {
       e.stopPropagation();
-      const currentlyActive = card.querySelector('.toggle-active').dataset.active === 'true';
-      const { error } = await sb.from('pass_types').update({ is_active: !currentlyActive }).eq('id', id);
-      if (error) { showToast(error.message, 'error'); return; }
-      renderAdminPassTypes();
+      const btn = e.currentTarget;
+      return withLoading(btn, async () => {
+        const currentlyActive = btn.dataset.active === 'true';
+        const { error } = await sb.from('pass_types').update({ is_active: !currentlyActive }).eq('id', id);
+        if (error) { showToast(error.message, 'error'); return; }
+        renderAdminPassTypes();
+      });
     });
   });
 
@@ -319,10 +370,10 @@ export async function renderAdminPassTypes() {
   }
 
   // Add pass type
-  document.getElementById('add-pass-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const kind = document.getElementById('pt-kind').value;
-    const classCount = document.getElementById('pt-count').value ? parseInt(document.getElementById('pt-count').value, 10) : null;
+  onSubmitWithLoading(document.getElementById('add-pass-form'), async () => {
+    const kind = app.querySelector('[name="add-kind"]:checked')?.value || 'single';
+    const countInput = document.getElementById('pt-count');
+    const classCount = kind === 'unlimited' ? null : (countInput.value ? parseInt(countInput.value, 10) : null);
     const validityDays = parseInt(document.getElementById('pt-days').value, 10);
     const price = parseFloat(document.getElementById('pt-price').value);
 
@@ -336,7 +387,7 @@ export async function renderAdminPassTypes() {
 
   // Approve/decline
   app.querySelectorAll('.approve-req').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => withLoading(btn, async () => {
       try {
         await api('/api/pass-requests', {
           method: 'PATCH',
@@ -345,11 +396,11 @@ export async function renderAdminPassTypes() {
         showToast(t('requests.requestApproved'), 'success');
         renderAdminPassTypes();
       } catch (err) { showToast(err.message, 'error'); }
-    });
+    }));
   });
 
   app.querySelectorAll('.decline-req').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => withLoading(btn, async () => {
       try {
         await api('/api/pass-requests', {
           method: 'PATCH',
@@ -358,6 +409,6 @@ export async function renderAdminPassTypes() {
         showToast(t('requests.requestDeclined'), 'success');
         renderAdminPassTypes();
       } catch (err) { showToast(err.message, 'error'); }
-    });
+    }));
   });
 }

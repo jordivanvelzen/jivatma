@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'attendance_mode must be online or in_person' });
     }
 
-    const check = await canBook(session_id, auth.user.id);
+    const check = await canBook(session_id, auth.user.id, attendance_mode);
     if (!check.ok) return res.status(400).json({ error: check.reason });
 
     // Check if there's a cancelled booking to reactivate

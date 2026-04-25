@@ -4,6 +4,7 @@ import { renderPassCard } from '../components/pass-card.js';
 import { showToast } from '../components/toast.js';
 import { t, getLocale } from '../lib/i18n.js';
 import { todayStr } from '../lib/dates.js';
+import { withLoading, onSubmitWithLoading } from '../lib/loading.js';
 
 export async function renderMyPasses() {
   const app = document.getElementById('app');
@@ -164,17 +165,13 @@ export async function renderMyPasses() {
 
   // Handle single pass selection
   app.querySelectorAll('.btn-select-single:not(.disabled)').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      btn.textContent = '...';
+    btn.addEventListener('click', () => withLoading(btn, async () => {
       const passTypeId = parseInt(btn.dataset.typeId, 10);
-
       try {
         await api('/api/me/select-pass', {
           method: 'POST',
           body: JSON.stringify({ pass_type_id: passTypeId }),
         });
-
         showToast(t('passes.singleSelected'), 'success');
         renderMyPasses();
       } catch (err) {
@@ -184,7 +181,7 @@ export async function renderMyPasses() {
         showToast(msg, 'error');
         renderMyPasses();
       }
-    });
+    }));
   });
 
   // Request button handlers (for multi/unlimited passes)
@@ -230,8 +227,7 @@ export async function renderMyPasses() {
     document.getElementById('request-modal').classList.add('hidden');
   });
 
-  document.getElementById('request-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('request-form'), async () => {
     const passTypeId = parseInt(document.getElementById('req-pass-type-id').value, 10);
     const paymentMethod = document.getElementById('req-payment').value;
     const notes = document.getElementById('req-notes').value.trim();

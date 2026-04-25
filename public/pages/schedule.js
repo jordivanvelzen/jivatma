@@ -4,6 +4,7 @@ import { showToast } from '../components/toast.js';
 import { t } from '../lib/i18n.js';
 import { todayStr } from '../lib/dates.js';
 import { icon } from '../lib/icons.js';
+import { withLoading } from '../lib/loading.js';
 
 export async function renderSchedule() {
   const app = document.getElementById('app');
@@ -54,11 +55,16 @@ export async function renderSchedule() {
     .from('bookings').select('*').eq('user_id', userId).in('session_id', sessionIds);
 
   const { data: allBookings } = await sb
-    .from('bookings').select('session_id').in('session_id', sessionIds).is('cancelled_at', null);
+    .from('bookings').select('session_id, attendance_mode').in('session_id', sessionIds).is('cancelled_at', null);
 
   const bookingCounts = {};
+  const modeCounts = {}; // { sessionId: { in_person: N, online: M } }
   (allBookings || []).forEach(b => {
     bookingCounts[b.session_id] = (bookingCounts[b.session_id] || 0) + 1;
+    if (!modeCounts[b.session_id]) modeCounts[b.session_id] = { in_person: 0, online: 0 };
+    if (b.attendance_mode === 'in_person' || b.attendance_mode === 'online') {
+      modeCounts[b.session_id][b.attendance_mode]++;
+    }
   });
 
   const { data: capSetting } = await sb
@@ -77,7 +83,15 @@ export async function renderSchedule() {
     const cap = s.capacity || defaultCapacity;
     const booked = bookingCounts[s.id] || 0;
     const spotsLeft = cap - booked;
-    const sessionWithCap = { ...s, capacity: cap };
+    const counts = modeCounts[s.id] || { in_person: 0, online: 0 };
+    const spotsLeftInPerson = s.capacity_inperson != null ? s.capacity_inperson - counts.in_person : null;
+    const spotsLeftOnline = s.capacity_online != null ? s.capacity_online - counts.online : null;
+    const sessionWithCap = {
+      ...s,
+      capacity: cap,
+      _spotsLeftInPerson: spotsLeftInPerson,
+      _spotsLeftOnline: spotsLeftOnline,
+    };
     sessionMap[s.id] = sessionWithCap;
     return renderClassCard(sessionWithCap, bookingMap[s.id], spotsLeft, hasActivePass);
   }).join('');
@@ -119,6 +133,17 @@ export async function renderSchedule() {
 
   function pickHybridMode(sessionId) {
     return new Promise((resolve) => {
+      const s = sessionMap[sessionId] || {};
+      const ipLeft = s._spotsLeftInPerson;
+      const olLeft = s._spotsLeftOnline;
+      const ipFull = ipLeft != null && ipLeft <= 0;
+      const olFull = olLeft != null && olLeft <= 0;
+      const ipSub = ipLeft != null
+        ? (ipFull ? t('schedule.full') : `${ipLeft} ${t('schedule.spots')}`)
+        : t('schedule.pickModeInPersonSub');
+      const olSub = olLeft != null
+        ? (olFull ? t('schedule.full') : `${olLeft} ${t('schedule.spots')}`)
+        : t('schedule.pickModeOnlineSub');
       const wrap = document.createElement('div');
       wrap.className = 'modal';
       wrap.innerHTML = `
@@ -126,15 +151,15 @@ export async function renderSchedule() {
           <h3>${t('schedule.pickModeTitle')}</h3>
           <p class="muted" style="margin-bottom: var(--s-3, 0.75rem)">${t('schedule.pickModeBody')}</p>
           <div class="mode-picker">
-            <button type="button" class="mode-option mode-option--in-person" data-mode="in_person">
+            <button type="button" class="mode-option mode-option--in-person" data-mode="in_person" ${ipFull ? 'disabled' : ''}>
               <span class="icon-circle">${icon('in_person', { size: 24 })}</span>
               <span>${t('schedule.pickModeInPerson')}</span>
-              <span class="mode-sub">${t('schedule.pickModeInPersonSub')}</span>
+              <span class="mode-sub">${ipSub}</span>
             </button>
-            <button type="button" class="mode-option mode-option--online" data-mode="online">
+            <button type="button" class="mode-option mode-option--online" data-mode="online" ${olFull ? 'disabled' : ''}>
               <span class="icon-circle">${icon('online', { size: 24 })}</span>
               <span>${t('schedule.pickModeOnline')}</span>
-              <span class="mode-sub">${t('schedule.pickModeOnlineSub')}</span>
+              <span class="mode-sub">${olSub}</span>
             </button>
           </div>
           <div class="form-actions" style="justify-content: flex-end; margin-top: var(--s-4, 1rem)">
@@ -149,7 +174,10 @@ export async function renderSchedule() {
         resolve(mode);
       };
       wrap.querySelectorAll('.mode-option').forEach((b) => {
-        b.addEventListener('click', () => close(b.dataset.mode));
+        b.addEventListener('click', () => {
+          if (b.disabled) return;
+          close(b.dataset.mode);
+        });
       });
       wrap.querySelector('[data-cancel]').addEventListener('click', () => close(null));
       wrap.addEventListener('click', (e) => { if (e.target === wrap) close(null); });
@@ -170,12 +198,12 @@ export async function renderSchedule() {
       } else if (type === 'in_person') {
         mode = 'in_person';
       }
-      await doBook(sessionId, mode);
+      await withLoading(btn, () => doBook(sessionId, mode));
     });
   });
 
   app.querySelectorAll('.btn-cancel').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => withLoading(btn, async () => {
       const sessionId = parseInt(btn.dataset.sessionId, 10);
       const booking = bookingMap[sessionId];
       if (!booking) return;
@@ -186,6 +214,6 @@ export async function renderSchedule() {
       if (error) { showToast(error.message, 'error'); return; }
       showToast(t('schedule.bookingCancelled'), 'info');
       renderSchedule();
-    });
+    }));
   });
 }

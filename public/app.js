@@ -20,11 +20,19 @@ import { renderAdminPassTypes } from './pages/admin/pass-types.js';
 import { renderAdminSchedule } from './pages/admin/schedule.js';
 import { renderAdminSettings } from './pages/admin/settings.js';
 
+// Show a centered spinner in #app while the next page is loading.
+// The renderFn overwrites #app via innerHTML, so this clears on render.
+function showPageLoading() {
+  const app = document.getElementById('app');
+  if (app) app.innerHTML = `<div class="page-loading"><span class="spinner"></span> ${t('general.loading')}</div>`;
+}
+
 // Auth guard: redirect to login if not logged in
 async function requireAuth(renderFn, params) {
   const session = await getSession();
   if (!session) { navigate('/login'); return; }
   await renderNav();
+  showPageLoading();
   await renderFn(params);
 }
 
@@ -36,6 +44,7 @@ async function requireAdmin(renderFn, params) {
   if (profile?.role !== 'admin') { navigate('/dashboard'); return; }
   if (isStudentView()) { navigate('/dashboard'); return; }
   await renderNav();
+  showPageLoading();
   await renderFn(params);
 }
 

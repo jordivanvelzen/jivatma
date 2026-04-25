@@ -3,6 +3,7 @@ import { navigate } from '../lib/router.js';
 import { renderNav } from '../components/nav.js';
 import { showToast } from '../components/toast.js';
 import { t, toggleLang } from '../lib/i18n.js';
+import { withLoading, onSubmitWithLoading } from '../lib/loading.js';
 
 export async function renderLogin() {
   const app = document.getElementById('app');
@@ -30,18 +31,15 @@ export async function renderLogin() {
   const banner = document.getElementById('unconfirmed-banner');
   const resendBtn = document.getElementById('resend-confirmation');
 
-  resendBtn.addEventListener('click', async () => {
+  resendBtn.addEventListener('click', () => withLoading(resendBtn, async () => {
     const email = document.getElementById('email').value;
     if (!email) return;
-    resendBtn.disabled = true;
     const { error } = await sb.auth.resend({ type: 'signup', email });
-    resendBtn.disabled = false;
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('auth.confirmationResent'), 'success');
-  });
+  }));
 
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('login-form'), async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 

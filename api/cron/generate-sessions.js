@@ -44,6 +44,8 @@ export default async function handler(req, res) {
         start_time: tmpl.start_time,
         class_type: tmpl.class_type,
         capacity: tmpl.capacity || defaultCap,
+        capacity_inperson: tmpl.capacity_inperson ?? null,
+        capacity_online: tmpl.capacity_online ?? null,
       });
 
       if (!error) created++;

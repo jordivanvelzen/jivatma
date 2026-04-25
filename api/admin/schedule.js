@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       return res.json(data);
     }
     if (req.method === 'POST') {
-      const { date, start_time, class_type, capacity, notes } = req.body;
+      const { date, start_time, class_type, capacity, capacity_inperson, capacity_online, notes } = req.body;
       if (!date || !start_time || !class_type) {
         return res.status(400).json({ error: 'date, start_time, class_type required' });
       }
@@ -27,6 +27,8 @@ export default async function handler(req, res) {
           template_id: null,
           date, start_time, class_type,
           capacity: capacity || null,
+          capacity_inperson: capacity_inperson ?? null,
+          capacity_online: capacity_online ?? null,
           notes: notes || null,
         })
         .select().single();
@@ -58,8 +60,12 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { day_of_week, start_time, duration_min, class_type, capacity } = req.body;
-    const { data, error } = await supabase.from('class_templates').insert({ day_of_week, start_time, duration_min: duration_min || 60, class_type, capacity }).select().single();
+    const { day_of_week, start_time, duration_min, class_type, capacity, capacity_inperson, capacity_online } = req.body;
+    const { data, error } = await supabase.from('class_templates').insert({
+      day_of_week, start_time, duration_min: duration_min || 60, class_type, capacity,
+      capacity_inperson: capacity_inperson ?? null,
+      capacity_online: capacity_online ?? null,
+    }).select().single();
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   }

@@ -4,6 +4,7 @@ import { showToast } from '../../components/toast.js';
 import { t } from '../../lib/i18n.js';
 import { todayStr, parseLocalDate } from '../../lib/dates.js';
 import { icon } from '../../lib/icons.js';
+import { withLoading } from '../../lib/loading.js';
 
 export async function renderAdminClass() {
   const app = document.getElementById('app');
@@ -201,32 +202,31 @@ export async function renderAdminClass() {
 
   // One-tap "mark paid" on a user's unpaid pass right from the attendance list
   app.querySelectorAll('.mark-paid-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const passId = parseInt(btn.dataset.pass, 10);
-      btn.disabled = true;
-      try {
-        await api('/api/admin/passes', {
-          method: 'PATCH',
-          body: JSON.stringify({ id: passId, is_paid: true }),
-        });
-        showToast(t('admin.markedPaid'), 'success');
-        // Remove the badge + button from the row
-        const row = btn.closest('.attendance-row');
-        row?.querySelectorAll('.badge-unpaid-inline, .mark-paid-btn').forEach(el => el.remove());
-        // Also drop from unpaidMap so the post-save toast is accurate
-        for (const uid in unpaidMap) {
-          if (unpaidMap[uid].id === passId) delete unpaidMap[uid];
+      return withLoading(btn, async () => {
+        const passId = parseInt(btn.dataset.pass, 10);
+        try {
+          await api('/api/admin/passes', {
+            method: 'PATCH',
+            body: JSON.stringify({ id: passId, is_paid: true }),
+          });
+          showToast(t('admin.markedPaid'), 'success');
+          // Remove the badge + button from the row
+          const row = btn.closest('.attendance-row');
+          row?.querySelectorAll('.badge-unpaid-inline, .mark-paid-btn').forEach(el => el.remove());
+          for (const uid in unpaidMap) {
+            if (unpaidMap[uid].id === passId) delete unpaidMap[uid];
+          }
+        } catch (err) {
+          showToast(err.message, 'error');
         }
-      } catch (err) {
-        btn.disabled = false;
-        showToast(err.message, 'error');
-      }
+      });
     });
   });
 
   // Save attendance
-  document.getElementById('save-attendance')?.addEventListener('click', async () => {
+  document.getElementById('save-attendance')?.addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
     const records = [];
     const attendedUserIds = [];
     app.querySelectorAll('.att-seg').forEach(seg => {
@@ -262,5 +262,5 @@ export async function renderAdminClass() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  });
+  }));
 }

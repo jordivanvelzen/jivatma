@@ -3,6 +3,7 @@ import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { t, getLocale } from '../../lib/i18n.js';
 import { todayStr, parseLocalDate, formatDbDate } from '../../lib/dates.js';
+import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
 
 export async function renderAdminUserDetail(params) {
   const app = document.getElementById('app');
@@ -151,13 +152,13 @@ export async function renderAdminUserDetail(params) {
   `;
 
   // Role toggle
-  document.getElementById('toggle-role')?.addEventListener('click', async () => {
+  document.getElementById('toggle-role')?.addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
     const newRole = user.role === 'admin' ? 'user' : 'admin';
     const { error } = await sb.from('profiles').update({ role: newRole }).eq('id', userId);
     if (error) { showToast(error.message, 'error'); return; }
     showToast(t('admin.roleChanged', { role: newRole }), 'success');
     renderAdminUserDetail(params);
-  });
+  }));
 
   // Show-in-attendance toggle (admins only)
   document.getElementById('toggle-show-attendance')?.addEventListener('change', async (e) => {
@@ -183,8 +184,7 @@ export async function renderAdminUserDetail(params) {
   });
 
   // Assign pass
-  document.getElementById('assign-pass-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmitWithLoading(document.getElementById('assign-pass-form'), async () => {
     const passTypeId = parseInt(document.getElementById('pass-type-select').value, 10);
     const paymentMethod = document.getElementById('payment-method').value;
     const isPaid = document.getElementById('is-paid').checked || paymentMethod === 'gift';
@@ -208,7 +208,7 @@ export async function renderAdminUserDetail(params) {
   app.querySelectorAll('.pass-admin-card').forEach(card => {
     const id = parseInt(card.dataset.passId, 10);
 
-    card.querySelector('.save-pass').addEventListener('click', async () => {
+    card.querySelector('.save-pass').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
       const remainingVal = card.querySelector('.pass-edit-remaining').value;
       const updates = {
         id,
@@ -221,31 +221,33 @@ export async function renderAdminUserDetail(params) {
         showToast(t('passes.passUpdated'), 'success');
         renderAdminUserDetail(params);
       } catch (err) { showToast(err.message, 'error'); }
-    });
+    }));
 
-    card.querySelector('.credit-pass').addEventListener('click', async () => {
+    card.querySelector('.credit-pass').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
       try {
         await api('/api/admin/passes', { method: 'PUT', body: JSON.stringify({ id, action: 'credit' }) });
         showToast(t('passes.creditAdded'), 'success');
         renderAdminUserDetail(params);
       } catch (err) { showToast(err.message, 'error'); }
-    });
+    }));
 
-    card.querySelector('.extend-pass').addEventListener('click', async () => {
+    card.querySelector('.extend-pass').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
       try {
         await api('/api/admin/passes', { method: 'PUT', body: JSON.stringify({ id, action: 'extend', days: 7 }) });
         showToast(t('passes.extended'), 'success');
         renderAdminUserDetail(params);
       } catch (err) { showToast(err.message, 'error'); }
-    });
+    }));
 
-    card.querySelector('.delete-pass').addEventListener('click', async () => {
+    card.querySelector('.delete-pass').addEventListener('click', (ev) => {
       if (!confirm(t('passes.deleteConfirm'))) return;
-      try {
-        await api('/api/admin/passes', { method: 'DELETE', body: JSON.stringify({ id }) });
-        showToast(t('passes.passDeleted'), 'info');
-        renderAdminUserDetail(params);
-      } catch (err) { showToast(err.message, 'error'); }
+      return withLoading(ev.currentTarget, async () => {
+        try {
+          await api('/api/admin/passes', { method: 'DELETE', body: JSON.stringify({ id }) });
+          showToast(t('passes.passDeleted'), 'info');
+          renderAdminUserDetail(params);
+        } catch (err) { showToast(err.message, 'error'); }
+      });
     });
   });
 }

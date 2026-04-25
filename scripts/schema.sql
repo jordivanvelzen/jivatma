@@ -80,7 +80,9 @@ CREATE TABLE class_templates (
   start_time    TIME NOT NULL,
   duration_min  INT NOT NULL DEFAULT 60,
   class_type    TEXT NOT NULL CHECK (class_type IN ('online', 'in_person', 'hybrid')),
-  capacity      INT,              -- NULL = use default from settings
+  capacity      INT,              -- NULL = use default from settings (used for non-hybrid)
+  capacity_inperson INT,           -- per-mode cap for hybrid classes
+  capacity_online   INT,           -- per-mode cap for hybrid classes
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -95,6 +97,8 @@ CREATE TABLE class_sessions (
   start_time    TIME NOT NULL,
   class_type    TEXT NOT NULL CHECK (class_type IN ('online', 'in_person', 'hybrid')),
   capacity      INT,
+  capacity_inperson INT,
+  capacity_online   INT,
   status        TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
   notes         TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),

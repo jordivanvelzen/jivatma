@@ -3,6 +3,15 @@
 ## Self-Maintenance
 This file is the single source of truth for the Jivatma project. Every Claude Code session that changes the codebase MUST update this file to reflect the changes before finishing. This includes: adding new features to the feature list, updating the schema section if tables change, adding new API routes, updating the status of features, and noting any new known issues. When in doubt, update CLAUDE.md.
 
+## Workflow — always deploy
+There is no staging environment and no PR review step. The only branch is `main`. **After any code change, automatically commit to `main` and deploy to Vercel** — do not ask the user for permission first. The standard sequence at the end of a working session is:
+
+1. `git add -A && git commit -m "<message>"` — concise message describing the change
+2. `git push origin main` — triggers Vercel auto-deploy from GitHub
+3. (Or, equivalently, `vercel --prod` to deploy directly without going through GitHub)
+
+This applies to every code change unless the user explicitly says "don't deploy yet". Database migrations applied via the Supabase MCP are already live the moment they run, so always pair a deploy with the migration so frontend/backend code that depends on the new schema goes out together.
+
 ## Overview
 
 Yoga studio management web app for Jivatma in Medellin, Colombia. Students can register, view the class schedule, book classes, and track their passes and attendance. Admins manage the schedule, mark attendance (which auto-deducts class passes), assign passes, and configure studio settings.
@@ -55,6 +64,7 @@ scripts/                → SQL scripts (schema, seed, migrations — run in Sup
   - `verifyUser(req)` — returns `{ user, profile }` or `null`
   - `verifyAdmin(req)` — same but also checks `profile.role === 'admin'`
 - Business logic modules: `lib/bookings.js` (booking validation), `lib/passes.js` (pass deduction/reversal)
+- Notification modules: `lib/telegram.js` (admin Telegram bot — supports test-mode rerouting to Jordi's chat), `lib/sms.js` (Twilio SMS to students — respects per-user `sms_opt_in` and test-mode rerouting to `jordi_test_phone`)
 
 ### Data Flow
 
@@ -76,6 +86,7 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `phone` | TEXT | Optional |
 | `role` | TEXT | `'admin'` or `'user'` (default `'user'`) |
 | `show_in_attendance` | BOOLEAN | Default `TRUE`. When `FALSE`, the user is hidden from the admin attendance page's student list (both "booked" and "others" sections). Used to exclude teaching admins like Claudia from appearing as a checkable student. Users with an existing attendance record for a given session still appear for that session regardless of the flag, so past data stays editable |
+| `sms_opt_in` | BOOLEAN | Default `TRUE`. When `FALSE`, `lib/sms.js` skips this user — pass-approval texts and expiry-reminder texts are not sent. Set on registration via a checkbox (defaults checked) and editable on the profile page |
 | `created_at` | TIMESTAMPTZ | |
 
 **`pass_types`** — Pass templates configured by admin
@@ -112,7 +123,9 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `start_time` | TIME | |
 | `duration_min` | INT | Default 60 |
 | `class_type` | TEXT | `'online'`, `'in_person'`, or `'hybrid'` |
-| `capacity` | INT | NULL = use default from settings |
+| `capacity` | INT | NULL = use default from settings (used for non-hybrid classes) |
+| `capacity_inperson` | INT | Per-mode cap for hybrid classes — limit on `attendance_mode='in_person'` bookings |
+| `capacity_online` | INT | Per-mode cap for hybrid classes — limit on `attendance_mode='online'` bookings |
 | `is_active` | BOOLEAN | |
 | `created_at` | TIMESTAMPTZ | |
 
@@ -124,7 +137,9 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `date` | DATE | |
 | `start_time` | TIME | |
 | `class_type` | TEXT | `'online'`, `'in_person'`, or `'hybrid'` |
-| `capacity` | INT | |
+| `capacity` | INT | Used for non-hybrid sessions |
+| `capacity_inperson` | INT | Per-mode cap for hybrid sessions (in-person bookings) |
+| `capacity_online` | INT | Per-mode cap for hybrid sessions (online bookings) |
 | `status` | TEXT | `'scheduled'`, `'completed'`, or `'cancelled'` |
 | `notes` | TEXT | |
 | `created_at` | TIMESTAMPTZ | |
@@ -181,11 +196,22 @@ All tables live in Supabase (PostgreSQL). Schema defined in `scripts/schema.sql`
 | `telegram_bot_token` | Telegram bot token (from @BotFather) | `''` |
 | `telegram_chat_id` | Telegram chat ID to notify on new pass requests | `''` |
 | `telegram_webhook_secret` | Secret token Telegram includes in the `X-Telegram-Bot-Api-Secret-Token` header on every webhook call. Generated when admin taps "Activar botones" | `''` |
+| `test_mode` | `'true'` routes all Telegram messages to `jordi_telegram_chat_id` (with a `[TEST]` prefix) and reroutes all SMS sends to `jordi_test_phone`. Toggled via radio on admin settings page ("Destinatario activo: Claudia / Jordi") | `'true'` |
+| `jordi_telegram_chat_id` | Jordi's personal Telegram chat_id, used as the destination when `test_mode='true'` | `''` |
+| `jordi_test_phone` | Jordi's phone in E.164 (e.g. `+525578923883`), used as the destination for SMS when `test_mode='true'` | `''` |
+
+**`sms_log`** — Throttle log so the daily expiry cron doesn't spam students with the same nudge twice
+| Column | Type | Notes |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `user_pass_id` | INT FK | → `user_passes(id)` ON DELETE CASCADE |
+| `kind` | TEXT | `'expiring'` or `'low_classes'` (one row per pass per kind = sent at most once) |
+| `sent_at` | TIMESTAMPTZ | Default `now()` |
 
 ### Database Functions & Triggers
 
 - `is_master_admin(email)` — Returns true for hardcoded master admin emails (`chaudy@gmail.com`, `jordi.vanvelzen@gmail.com`)
-- `handle_new_user()` — Trigger on `auth.users` INSERT: auto-creates a `profiles` row (including `phone` from signup metadata); master admins get `role='admin'` automatically
+- `handle_new_user()` — Trigger on `auth.users` INSERT: auto-creates a `profiles` row (including `phone` and `sms_opt_in` from signup metadata; defaults `sms_opt_in=TRUE` when not provided); master admins get `role='admin'` automatically
 - `protect_master_admin()` — Trigger on `profiles` UPDATE: prevents demoting master admins
 - `is_admin()` — Helper for RLS policies: checks if `auth.uid()` has admin role
 
@@ -238,6 +264,7 @@ All endpoints are Vercel serverless functions.
 | PATCH | `/api/pass-requests` | Admin | Approve/decline a request (`{ id, status }`) — auto-creates user_pass on approve; also edits the original Telegram message in place |
 | POST | `/api/pass-requests?webhook=telegram` | Telegram (secret header) | Telegram webhook for inline Approve/Decline buttons. Validates `X-Telegram-Bot-Api-Secret-Token` against `telegram_webhook_secret`. Processes `callback_query` updates, runs approve/decline, edits the message, answers the callback |
 | POST | `/api/admin/settings` `{ action: 'register-webhook' }` | Admin | Generates a fresh `telegram_webhook_secret`, persists it, and calls Telegram `setWebhook` pointing at `/api/pass-requests?webhook=telegram`. Run once per bot-token change |
+| POST | `/api/admin/settings` `{ action: 'sms-test', to? }` | Admin | Sends a test SMS via Twilio. In `test_mode='true'`, reroutes to `jordi_test_phone` automatically. In production mode, requires explicit `to` in body (E.164) so we never accidentally text a real student |
 
 ## Cron Jobs
 
@@ -246,7 +273,7 @@ Configured in `vercel.json`:
 | Schedule | Path | Description |
 |---|---|---|
 | `0 7 * * *` (daily 7AM UTC) | `/api/cron/generate-sessions` | Generates class sessions for the next 14 days from active templates (skips if session already exists for that template+date) |
-| `0 8 * * *` (daily 8AM UTC) | `/api/cron/expire-passes` | Checks for passes expiring within 3 days and passes with 1-2 classes remaining. Also scans for stale unpaid passes (>3 days old, still `is_paid=false`, still active) and sends a `💵 Cobros pendientes` Telegram digest listing who owes cash |
+| `0 8 * * *` (daily 8AM UTC) | `/api/cron/expire-passes` | (1) SMS each student whose pass expires in ≤3 days ("tu pase vence en N días"), (2) SMS each student with 1–2 classes left ("te quedan N clases"), (3) Telegram digest to admin listing stale unpaid passes (>3 days old, still `is_paid=false`, still active). SMS sends are throttled via `sms_log` so each (pass, kind) pair only fires once |
 
 ## Frontend Pages
 
@@ -316,6 +343,10 @@ Configured in `vercel.json`:
 | `SUPABASE_URL` | Server (`.env`) | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Client (hardcoded in `public/lib/supabase.js`) | Supabase anon/public key (safe for browser) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server (`.env`) | Supabase service role key (bypasses RLS, server-only) |
+| `TWILIO_ACCOUNT_SID` | Server (Vercel env) | Twilio account SID for SMS (starts with `AC`) |
+| `TWILIO_AUTH_TOKEN` | Server (Vercel env) | Twilio auth token (32 hex) — used by `lib/sms.js` for HTTP basic auth |
+| `TWILIO_FROM_NUMBER` | Server (Vercel env) | Twilio sender phone in E.164 (e.g. `+19786257620`) |
+| `DEFAULT_COUNTRY_CODE` | Server (Vercel env) | Country code prepended when normalizing student phones without `+` (e.g. `52` for Mexico, `57` for Colombia) |
 
 ## Development
 
@@ -353,14 +384,19 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | User Registration & Login | Built | Email/password via Supabase Auth with email confirmation |
 | Master Admin Auto-Assignment | Built | Hardcoded emails get admin role on signup, cannot be demoted |
 | Role-Based Access Control | Built | Two roles (admin/user) enforced via RLS and frontend guards |
-| Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity. Admin can edit templates inline (day/time/type/capacity) without deleting |
+| Class Schedule Templates | Built | Recurring weekly templates with day, time, type, capacity. Admin schedule page renders templates as collapsed cards (title `Day · HH:MM`, meta `type · capacity summary`, active/inactive badge). Tap to expand → stacked editable fields (day/time/type/capacity, per-mode pair shown for hybrid) plus Save / Disable / Delete actions. Upcoming sessions list rebuilt as compact `session-row` cards instead of a wide table so both sections read well on 320px-wide phones |
 | One-off Sessions | Built | Admin can add ad-hoc class sessions not tied to a template (e.g. special workshops). Appears in upcoming sessions list and can be deleted individually |
 | Session Generation (Cron) | Built | Daily cron generates sessions for next 14 days, manual trigger available |
 | Delete Sessions | Built | Admin can delete individual upcoming sessions from the schedule page |
 | Class Booking | Built | Book/cancel within configurable sign-up window, capacity enforcement, requires active pass. Single-class passes can be self-selected (pay at class); multi/unlimited passes must be assigned by admin |
 | Hybrid Attendance Mode | Built | When a student signs up for a hybrid class, a mode-picker modal opens with two large card-buttons ("In-person — at the studio" / "Online — join via Zoom"). Choice is stored in `bookings.attendance_mode`. The booked pill on the class card surfaces it, the dashboard upcoming list appends it, and the admin attendance page shows a small mode pill next to each booked student. Online and in-person sessions auto-fill the mode without a picker |
+<<<<<<< HEAD
 | Visual Refresh & Bottom Nav | Built | Mobile-first design system using CSS custom-property tokens (deep forest sage brand, warm honey accent, cream-bone background). Custom SVG icon set in `lib/icons.js` replaces standard emojis. Class card redesigned with a calendar-block date and custom type badge. Master-admin view switcher is a segmented `[Admin \| Student]` pill. Both views get a fixed mobile bottom-nav with 4 tabs each — **Student:** Inicio / Clases / Mis Pases / Perfil, **Admin:** Panel / Asistencia / Usuarios / Pases. Schedule and Settings live in the admin top-bar dropdown (hamburger remains on admin mobile) |
 | Master Admin View Toggle | Built | Master admins (`chaudy@gmail.com`, `jordi.vanvelzen@gmail.com`) get a segmented `[Admin \| Student]` pill in the top bar. Tapping the inactive side flips view mode and navigates to that view's home (`/admin` ↔ `/dashboard`). State persists in `sessionStorage` (`jivatma_student_view`) so it survives reloads within the session and resets on logout/new tab. `requireAdmin` redirects to `/dashboard` when student view is active, so admin-only URLs auto-bounce when toggled |
+=======
+| Per-Mode Capacity (hybrid) | Built | Hybrid classes now have separate `capacity_inperson` and `capacity_online` limits on both `class_templates` and `class_sessions`. Admin schedule UI shows two capacity inputs when class type is hybrid (one for non-hybrid). Class card displays per-mode spot counts side by side. The hybrid mode-picker modal shows remaining spots per mode and disables a mode when its limit is reached. The class is only marked "full" when every mode with a cap is full. Server-side `canBook` enforces per-mode caps using `attendance_mode`. Non-hybrid sessions continue to use the single `capacity` column |
+| Visual Refresh & Bottom Nav | Built | Mobile-first design system using CSS custom-property tokens (deep forest sage brand, warm honey accent, cream-bone background). Custom SVG icon set in `lib/icons.js` replaces standard emojis. Class card redesigned with a calendar-block date and custom type badge. Master-admin view switcher is a segmented `[Admin \| Student]` pill. Students get a fixed bottom-nav (Classes, My Passes, More) on mobile, with secondary items (Home, History, Profile, language, logout) in a More bottom sheet |
+>>>>>>> 4b29194 (Mobile-friendly admin schedule editing)
 | Pass Management | Built | Three types (single, multi, unlimited) with pricing and validity. Pass types can be edited inline (price/classes/days) by admin |
 | Stackable Single-Class Passes | Built | Students can self-select multiple single-class passes; each valid for 30 days. FIFO deduction (oldest-expiring first) |
 | Pass Assignment | Built | Admin assigns passes with payment method (cash/transfer/other/gift) and paid status tracking. Gift passes auto-mark as paid |
@@ -383,7 +419,9 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Pass Requests | Built | Students can request passes from the passes page. Shows available pass types with MXN prices, request button opens modal with payment method and notes. Modal shows studio bank details (holder/bank/account/CLABE/card) configured in admin settings — clicking a value copies it. Student can check "I've made the payment" which prepends `[PAID]` to notes. Students see their request history with status badges. Pending requests also surface on the student dashboard as a yellow-bordered "waiting for Claudia to verify" card, so students get immediate feedback after submitting. Admins see pending requests on the pass types page with approve/decline buttons. Approving auto-creates the user_pass assignment and marks it `is_paid=true` — approval is Claudia's confirmation that payment has been verified (transfer) or collected (cash). For cash the expected workflow is: student brings cash to the studio → Claudia collects → Claudia taps Approve. |
 | Payment Instructions | Built | Admin configures bank details (holder, bank name, account, CLABE, card number, free-form instructions) in settings. Shown to students in pass-request modal with copy-on-click |
 | Icon Nav | Built | Logout, language, profile are icon-only buttons grouped on the right side of the nav. Main section links remain in the collapsible list. Language button shows the *other* language code (ES/EN) |
-| Pass Expiry Notifications | Not Built | Could reuse the Telegram helper; cron currently logs counts only |
+| SMS to Students (Twilio) | Built | `lib/sms.js` sends transactional SMS via Twilio. Triggered on (1) pass-request approval — student gets "tu pase está aprobado" SMS; (2) expiring-soon cron — students with passes expiring in ≤3 days get a nudge; (3) low-classes cron — students with 1–2 classes left get a nudge. Throttled via `sms_log` (one SMS per pass per kind, lifetime). Respects per-user `sms_opt_in` flag. Twilio credentials are env vars in Vercel (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `DEFAULT_COUNTRY_CODE`). Phone normalization helper `toE164()` prepends default country code when missing |
+| SMS Opt-in | Built | `profiles.sms_opt_in` defaults to `TRUE`. Checkbox on registration (defaults checked, with text "Recibir notificaciones por SMS"). Toggle on profile page. Trigger `handle_new_user()` reads `sms_opt_in` from signup metadata. The SMS lib short-circuits with `reason: 'opted_out'` when the flag is false (admin-only sends bypass via `bypassOptIn: true`) |
+| Test-Mode Routing | Built | A single `test_mode` setting (toggleable from admin settings page as a radio between "👩‍🦰 Claudia (producción)" and "🧪 Jordi (pruebas)") reroutes ALL outgoing notifications. When on: Telegram messages go to `jordi_telegram_chat_id` with a `🧪 [TEST]` prefix; SMS go to `jordi_test_phone` with a `[TEST]` prefix. Lets Jordi safely test approval flow / cron without spamming Claudia or real students. Settings page also has "Enviar SMS de prueba" button that respects the toggle |
 | Admin Notifications (new pass request) | Built | Telegram notification fires on every new `pass_requests` insert. Message is branched by payment method: transfer shows `⚠️ verify in bank before approving`, cash shows `💵 collect at studio before approving`. Each message has inline `✅ Aprobar` / `❌ Rechazar` buttons. Admin taps once — request is processed, the pass is created as paid, and the message edits in place to show approval + a WhatsApp deeplink. Requires one-time "Activar botones" in admin settings to register the Telegram webhook. Legacy PATCH path (approve from web UI) still works and also edits the Telegram message |
 | Cash-Pending Attendance UX | Built | On attendance page, students with an unpaid active pass (e.g. a manually-assigned pass left unpaid, or a self-selected single-class pass) show a `💵 cobrar $X` badge next to their name + a one-tap "Marcar pagado" button. After saving attendance, any checked-in student who still had an unpaid pass triggers a second toast listing names + amounts to collect. Approved pass requests are always marked paid and never trigger this. |
 | Stale Cash Nudge (cron) | Built | Daily `expire-passes` cron scans `user_passes` where `is_paid=false`, `created_at > 3 days ago`, still active. Sends digest to Telegram listing who owes what. Catches self-selected single-class passes or manually-assigned unpaid passes that never got collected |
