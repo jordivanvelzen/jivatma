@@ -20,6 +20,7 @@ import { renderAdminPassTypes } from './pages/admin/pass-types.js';
 import { renderAdminSchedule } from './pages/admin/schedule.js';
 import { renderAdminSettings } from './pages/admin/settings.js';
 import { renderAdminNotifications } from './pages/admin/notifications.js';
+import { maybeShowIosInstallNudge } from './lib/pwa-update.js';
 
 // Show a centered spinner in #app while the next page is loading.
 // The renderFn overwrites #app via innerHTML, so this clears on render.
@@ -35,6 +36,7 @@ async function requireAuth(renderFn, params) {
   await renderNav();
   showPageLoading();
   await renderFn(params);
+  maybeShowIosInstallNudge();
 }
 
 // Admin guard: redirect if not admin or if in student view mode
