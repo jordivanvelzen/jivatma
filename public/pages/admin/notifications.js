@@ -1,38 +1,56 @@
 import { api } from '../../lib/api.js';
+import { t, getLocale } from '../../lib/i18n.js';
 
 const CHANNEL_META = {
   sms:      { label: 'SMS',      glyph: '📱' },
   telegram: { label: 'Telegram', glyph: '✈️' },
 };
 
-const EVENT_LABELS = {
-  pass_request:     'Solicitud de pase',
-  pass_approved:    'Pase aprobado',
-  pass_declined:    'Pase rechazado',
-  expiry_reminder:  'Aviso vencimiento',
-  low_classes:      'Pocas clases',
-  stale_unpaid:     'Cobros pendientes',
-  class_cancelled:  'Clase cancelada',
-  new_signup:       'Nuevo registro',
-  test:             'Prueba',
-  unknown:          'Desconocido',
+const EVENT_KEYS = {
+  pass_request:     'notifications.event.pass_request',
+  pass_approved:    'notifications.event.pass_approved',
+  pass_declined:    'notifications.event.pass_declined',
+  expiry_reminder:  'notifications.event.expiry_reminder',
+  low_classes:      'notifications.event.low_classes',
+  stale_unpaid:     'notifications.event.stale_unpaid',
+  class_cancelled:  'notifications.event.class_cancelled',
+  new_signup:       'notifications.event.new_signup',
+  test:             'notifications.event.test',
+  unknown:          'notifications.event.unknown',
 };
 
-function eventLabel(t) {
-  if (!t) return 'Desconocido';
-  if (t.startsWith('cc:')) return `CC · ${EVENT_LABELS[t.slice(3)] || t.slice(3)}`;
-  return EVENT_LABELS[t] || t;
+function eventLabel(type) {
+  if (!type) return t('notifications.event.unknown');
+  if (type.startsWith('cc:')) return `CC · ${t(EVENT_KEYS[type.slice(3)] || 'notifications.event.unknown')}`;
+  return t(EVENT_KEYS[type] || 'notifications.event.unknown');
 }
 
-const STATUS_META = {
-  sent:               { label: 'Enviado',         tone: 'ok'      },
-  failed:             { label: 'Error',           tone: 'err'     },
-  opted_out:          { label: 'No opt-in',       tone: 'warn'    },
-  not_configured:     { label: 'Sin config',      tone: 'warn'    },
-  test_phone_not_set: { label: 'Sin tel prueba',  tone: 'warn'    },
-  invalid_phone:      { label: 'Tel inválido',    tone: 'err'     },
-  skipped:            { label: 'Omitido',         tone: 'neutral' },
+const STATUS_TONE = {
+  sent:               'ok',
+  failed:             'err',
+  opted_out:          'warn',
+  not_configured:     'warn',
+  test_phone_not_set: 'warn',
+  invalid_phone:      'err',
+  skipped:            'neutral',
 };
+
+const STATUS_KEYS = {
+  sent:               'notifications.status.sent',
+  failed:             'notifications.status.failed',
+  opted_out:          'notifications.status.opted_out',
+  not_configured:     'notifications.status.not_configured',
+  test_phone_not_set: 'notifications.status.test_phone_not_set',
+  invalid_phone:      'notifications.status.invalid_phone',
+  skipped:            'notifications.status.skipped',
+};
+
+function statusMeta(status) {
+  return {
+    label: t(STATUS_KEYS[status] || status),
+    tone:  STATUS_TONE[status] || 'neutral',
+  };
+}
 
 function escHtml(s) {
   return String(s ?? '')
@@ -46,7 +64,6 @@ function escHtml(s) {
 function parseError(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
-  // Try JSON first.
   try {
     const j = JSON.parse(s);
     const msg = j.message || j.error || j.description || s;
@@ -62,26 +79,26 @@ function relTime(ts) {
   const d = new Date(ts);
   const diffMs = Date.now() - d.getTime();
   const min = Math.round(diffMs / 60000);
-  if (min < 1) return 'ahora';
-  if (min < 60) return `hace ${min} min`;
+  if (min < 1) return t('notifications.timeNow');
+  if (min < 60) return t('notifications.timeMinutes', { n: min });
   const hrs = Math.round(min / 60);
-  if (hrs < 24) return `hace ${hrs} h`;
+  if (hrs < 24) return t('notifications.timeHours', { n: hrs });
   const days = Math.round(hrs / 24);
-  if (days === 1) return 'ayer';
-  if (days < 7) return `hace ${days} d`;
-  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+  if (days === 1) return t('notifications.timeYesterday');
+  if (days < 7) return t('notifications.timeDays', { n: days });
+  return d.toLocaleDateString(getLocale(), { day: '2-digit', month: 'short' });
 }
 
 function fullDate(ts) {
   if (!ts) return '';
   const d = new Date(ts);
-  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-    + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(getLocale(), { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 function renderCard(r) {
   const ch     = CHANNEL_META[r.channel] || { label: r.channel, glyph: '•' };
-  const status = STATUS_META[r.status]   || { label: r.status,  tone: 'neutral' };
+  const status = statusMeta(r.status);
   const err    = parseError(r.error_detail);
   const isFailed = status.tone === 'err';
 
@@ -97,16 +114,16 @@ function renderCard(r) {
 
   const detailsParts = [];
   if (r.message_preview) {
-    detailsParts.push(`<div class="ncard__det-label">Mensaje</div><pre class="ncard__pre">${escHtml(r.message_preview)}</pre>`);
+    detailsParts.push(`<div class="ncard__det-label">${t('notifications.message')}</div><pre class="ncard__pre">${escHtml(r.message_preview)}</pre>`);
   }
   if (err && err.raw && err.raw !== err.short) {
-    detailsParts.push(`<div class="ncard__det-label">Error completo</div><pre class="ncard__pre ncard__pre--err">${escHtml(err.raw)}</pre>`);
+    detailsParts.push(`<div class="ncard__det-label">${t('notifications.fullError')}</div><pre class="ncard__pre ncard__pre--err">${escHtml(err.raw)}</pre>`);
   }
-  detailsParts.push(`<div class="ncard__det-label">Fecha exacta</div><div class="ncard__det-text">${escHtml(fullDate(r.created_at))}</div>`);
+  detailsParts.push(`<div class="ncard__det-label">${t('notifications.exactDate')}</div><div class="ncard__det-text">${escHtml(fullDate(r.created_at))}</div>`);
 
   const details = detailsParts.length
     ? `<details class="ncard__details">
-         <summary>Detalles</summary>
+         <summary>${t('notifications.details')}</summary>
          <div class="ncard__det-body">${detailsParts.join('')}</div>
        </details>` : '';
 
@@ -134,7 +151,7 @@ function renderCard(r) {
 
 export async function renderAdminNotifications() {
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="page"><h2>Notificaciones</h2><div class="page-loading"><span class="spinner"></span></div></div>`;
+  app.innerHTML = `<div class="page"><h2>${t('notifications.title')}</h2><div class="page-loading"><span class="spinner"></span></div></div>`;
 
   let channel = '';
   let event_type = '';
@@ -159,15 +176,15 @@ export async function renderAdminNotifications() {
   async function render() {
     const rows = await load();
     if (rows === null) {
-      app.innerHTML = `<div class="page"><h2>Notificaciones</h2><p class="muted">Error al cargar el historial.</p></div>`;
+      app.innerHTML = `<div class="page"><h2>${t('notifications.title')}</h2><p class="muted">${t('notifications.loadError')}</p></div>`;
       return;
     }
 
     const channelOpts = ['', 'sms', 'telegram'].map(v =>
-      `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? `${CHANNEL_META[v].glyph} ${CHANNEL_META[v].label}` : 'Todos los canales'}</option>`
+      `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? `${CHANNEL_META[v].glyph} ${CHANNEL_META[v].label}` : t('notifications.allChannels')}</option>`
     ).join('');
-    const eventOpts = ['', ...Object.keys(EVENT_LABELS)].map(v =>
-      `<option value="${v}" ${event_type === v ? 'selected' : ''}>${v ? EVENT_LABELS[v] : 'Todos los eventos'}</option>`
+    const eventOpts = ['', ...Object.keys(EVENT_KEYS)].map(v =>
+      `<option value="${v}" ${event_type === v ? 'selected' : ''}>${v ? eventLabel(v) : t('notifications.allEvents')}</option>`
     ).join('');
 
     const hasPrev = offset > 0;
@@ -176,14 +193,18 @@ export async function renderAdminNotifications() {
     const to      = Math.min(offset + limit, total);
 
     const cardsHtml = rows.length === 0
-      ? `<div class="ncard-empty">Sin registros</div>`
+      ? `<div class="ncard-empty">${t('notifications.noRecords')}</div>`
       : rows.map(renderCard).join('');
+
+    const countLabel = total === 0
+      ? t('notifications.noResults')
+      : t('notifications.countRange', { from, to, total });
 
     app.innerHTML = `
       <div class="page nlog-page">
         <div class="nlog-header">
-          <h2>Notificaciones</h2>
-          <div class="nlog-count">${total === 0 ? 'Sin resultados' : `${from}–${to} de ${total}`}</div>
+          <h2>${t('notifications.title')}</h2>
+          <div class="nlog-count">${countLabel}</div>
         </div>
 
         <div class="nlog-filters">
@@ -194,8 +215,8 @@ export async function renderAdminNotifications() {
         <div class="nlog-list">${cardsHtml}</div>
 
         <div class="nlog-pagination">
-          <button id="btn-prev" class="btn btn-secondary btn-small" ${hasPrev ? '' : 'disabled'}>← Anterior</button>
-          <button id="btn-next" class="btn btn-secondary btn-small" ${hasNext ? '' : 'disabled'}>Siguiente →</button>
+          <button id="btn-prev" class="btn btn-secondary btn-small" ${hasPrev ? '' : 'disabled'}>${t('notifications.prev')}</button>
+          <button id="btn-next" class="btn btn-secondary btn-small" ${hasNext ? '' : 'disabled'}>${t('notifications.next')}</button>
         </div>
       </div>
     `;
