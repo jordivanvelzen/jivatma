@@ -12,13 +12,13 @@ const EVENT_LABELS = {
   unknown:         'Desconocido',
 };
 const STATUS_CLASS = {
-  sent:              'badge-active',
-  failed:            'badge-expired',
-  opted_out:         'badge-pending',
-  not_configured:    'badge-pending',
-  test_phone_not_set:'badge-pending',
-  invalid_phone:     'badge-pending',
-  skipped:           'badge-pending',
+  sent:               'badge-active',
+  failed:             'badge-expired',
+  opted_out:          'badge-pending',
+  not_configured:     'badge-pending',
+  test_phone_not_set: 'badge-pending',
+  invalid_phone:      'badge-pending',
+  skipped:            'badge-pending',
 };
 
 function fmtDate(ts) {
@@ -32,16 +32,51 @@ function statusLabel(s) {
   const map = {
     sent: 'Enviado', failed: 'Error', opted_out: 'No opt-in',
     not_configured: 'Sin config', test_phone_not_set: 'Sin tel prueba',
-    invalid_phone: 'Tel inválido', skipped: 'Omitido', unknown: s,
+    invalid_phone: 'Tel inválido', skipped: 'Omitido',
   };
   return map[s] || s;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderCard(r) {
+  const statusBadge = `<span class="badge ${STATUS_CLASS[r.status] || 'badge-pending'}">${statusLabel(r.status)}</span>`;
+  const testBadge   = r.test_mode ? `<span class="badge" style="background:var(--amber-bg);color:var(--orange)">TEST</span>` : '';
+  const errorRow    = r.error_detail
+    ? `<div class="notif-card__error">${escHtml(r.error_detail)}</div>` : '';
+  const preview     = r.message_preview
+    ? `<details class="notif-card__preview"><summary>Ver mensaje</summary><pre>${escHtml(r.message_preview)}</pre></details>` : '';
+  const phone       = r.recipient_phone
+    ? `<span class="notif-card__phone">${escHtml(r.recipient_phone)}</span>` : '';
+
+  return `
+    <div class="notif-card ${r.status === 'failed' ? 'notif-card--failed' : ''}">
+      <div class="notif-card__top">
+        <span class="notif-card__channel">${CHANNEL_LABELS[r.channel] || r.channel}${testBadge}</span>
+        <span class="notif-card__date">${fmtDate(r.created_at)}</span>
+      </div>
+      <div class="notif-card__mid">
+        <span class="notif-card__event">${EVENT_LABELS[r.event_type] || r.event_type}</span>
+        <div class="notif-card__recipient">${escHtml(r.recipient_name || '—')}${phone}</div>
+      </div>
+      <div class="notif-card__bot">
+        ${statusBadge}
+        ${errorRow}
+        ${preview}
+      </div>
+    </div>`;
 }
 
 export async function renderAdminNotifications() {
   const app = document.getElementById('app');
   app.innerHTML = `<div class="page"><h2>Notificaciones enviadas</h2><div class="page-loading"><span class="spinner"></span></div></div>`;
 
-  // State
   let channel = '';
   let event_type = '';
   let offset = 0;
@@ -52,14 +87,13 @@ export async function renderAdminNotifications() {
     const params = new URLSearchParams({ type: 'notifications', limit, offset });
     if (channel)    params.set('channel',    channel);
     if (event_type) params.set('event_type', event_type);
-
     try {
       const data = await api(`/api/admin/settings?${params}`);
       total = data.total ?? 0;
       return data.rows || [];
-    } catch (err) {
+    } catch {
       total = 0;
-      return null; // signal error
+      return null;
     }
   }
 
@@ -73,44 +107,28 @@ export async function renderAdminNotifications() {
     const channelOpts = ['', 'sms', 'telegram'].map(v =>
       `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? CHANNEL_LABELS[v] : 'Todos los canales'}</option>`
     ).join('');
-
     const eventOpts = ['', ...Object.keys(EVENT_LABELS)].map(v =>
       `<option value="${v}" ${event_type === v ? 'selected' : ''}>${v ? EVENT_LABELS[v] : 'Todos los eventos'}</option>`
     ).join('');
 
-    const tableRows = rows.length === 0
-      ? `<tr><td colspan="6" style="text-align:center;color:var(--ink-400);padding:var(--s-6)">Sin registros</td></tr>`
-      : rows.map(r => {
-          const statusBadge = `<span class="badge ${STATUS_CLASS[r.status] || 'badge-pending'}">${statusLabel(r.status)}</span>`;
-          const testBadge   = r.test_mode ? `<span class="badge" style="background:var(--amber-bg);color:var(--orange);margin-left:4px">TEST</span>` : '';
-          const preview     = r.message_preview
-            ? `<details><summary style="cursor:pointer;color:var(--ink-500);font-size:0.8rem">Ver mensaje</summary><pre style="margin-top:4px;white-space:pre-wrap;font-size:0.75rem;color:var(--ink-700)">${escHtml(r.message_preview)}</pre></details>`
-            : '—';
-          return `
-            <tr>
-              <td style="white-space:nowrap;font-size:0.8rem">${fmtDate(r.created_at)}</td>
-              <td>${CHANNEL_LABELS[r.channel] || r.channel}${testBadge}</td>
-              <td>${EVENT_LABELS[r.event_type] || r.event_type}</td>
-              <td>${escHtml(r.recipient_name || '—')}${r.recipient_phone ? `<br><span style="font-size:0.75rem;color:var(--ink-400)">${escHtml(r.recipient_phone)}</span>` : ''}</td>
-              <td>${statusBadge}${r.error_detail ? `<br><span style="font-size:0.72rem;color:var(--red)">${escHtml(r.error_detail)}</span>` : ''}</td>
-              <td>${preview}</td>
-            </tr>`;
-        }).join('');
-
     const hasPrev = offset > 0;
     const hasNext = offset + limit < total;
-    const from = total === 0 ? 0 : offset + 1;
-    const to   = Math.min(offset + limit, total);
+    const from    = total === 0 ? 0 : offset + 1;
+    const to      = Math.min(offset + limit, total);
+
+    const cardsHtml = rows.length === 0
+      ? `<p class="muted" style="text-align:center;padding:var(--s-8) 0">Sin registros</p>`
+      : rows.map(renderCard).join('');
 
     app.innerHTML = `
       <div class="page">
         <h2>Notificaciones enviadas</h2>
 
-        <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-bottom:var(--s-4)">
-          <select id="filter-channel" class="input" style="width:auto">
+        <div class="notif-filters">
+          <select id="filter-channel" class="input">
             ${channelOpts}
           </select>
-          <select id="filter-event" class="input" style="width:auto">
+          <select id="filter-event" class="input">
             ${eventOpts}
           </select>
         </div>
@@ -119,23 +137,9 @@ export async function renderAdminNotifications() {
           ${total === 0 ? 'Sin resultados' : `Mostrando ${from}–${to} de ${total}`}
         </p>
 
-        <div style="overflow-x:auto">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Canal</th>
-                <th>Evento</th>
-                <th>Destinatario</th>
-                <th>Estado</th>
-                <th>Mensaje</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
-        </div>
+        <div class="notif-list">${cardsHtml}</div>
 
-        <div style="display:flex;gap:var(--s-2);margin-top:var(--s-4);align-items:center">
+        <div class="notif-pagination">
           <button id="btn-prev" class="btn btn-secondary" ${hasPrev ? '' : 'disabled'}>← Anterior</button>
           <button id="btn-next" class="btn btn-secondary" ${hasNext ? '' : 'disabled'}>Siguiente →</button>
         </div>
@@ -152,17 +156,9 @@ export async function renderAdminNotifications() {
       offset = Math.max(0, offset - limit); render();
     });
     document.getElementById('btn-next')?.addEventListener('click', () => {
-      offset = offset + limit; render();
+      offset += limit; render();
     });
   }
 
   await render();
-}
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
