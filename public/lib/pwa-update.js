@@ -51,6 +51,62 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// iOS Safari "Add to Home Screen" nudge — fires after app is loaded and
+// user is authenticated (i.e. not on the login/register screen).
+function isIosSafari() {
+  const ua = navigator.userAgent;
+  return (
+    /iphone|ipad|ipod/i.test(ua) &&
+    /safari/i.test(ua) &&
+    !/crios|fxios|opios|chromium/i.test(ua) &&
+    window.navigator.standalone !== true
+  );
+}
+
+export function maybeShowIosInstallNudge() {
+  if (!isIosSafari()) return;
+  if (localStorage.getItem('jivatma_ios_nudge_dismissed')) return;
+  if (document.getElementById('pwa-ios-nudge')) return;
+
+  const label = (() => {
+    try {
+      return {
+        prefix: t('pwa.iosInstall'),
+        suffix: t('pwa.iosInstallSuffix'),
+        dismiss: t('pwa.iosDismiss'),
+      };
+    } catch {
+      return {
+        prefix: 'Instala la app: toca',
+        suffix: 'y elige «Agregar a inicio»',
+        dismiss: 'No, gracias',
+      };
+    }
+  })();
+
+  // iOS share icon SVG (matches the actual Safari share button shape)
+  const shareIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;vertical-align:middle">
+    <path d="M8 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/>
+    <polyline points="16 6 12 2 8 6"/>
+    <line x1="12" y1="2" x2="12" y2="15"/>
+  </svg>`;
+
+  const bar = document.createElement('div');
+  bar.id = 'pwa-ios-nudge';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `
+    <span class="pwa-ios-msg">${label.prefix} ${shareIcon} ${label.suffix}</span>
+    <button type="button" class="pwa-ios-dismiss">${label.dismiss}</button>
+  `;
+  document.body.appendChild(bar);
+
+  bar.querySelector('.pwa-ios-dismiss').addEventListener('click', () => {
+    localStorage.setItem('jivatma_ios_nudge_dismissed', '1');
+    bar.classList.add('pwa-ios-hiding');
+    bar.addEventListener('animationend', () => bar.remove(), { once: true });
+  });
+}
+
 function showUpdateBanner(waitingWorker) {
   if (document.getElementById('pwa-update-banner')) return;
 

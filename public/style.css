@@ -2133,3 +2133,56 @@ body.has-bottom-nav #pwa-update-banner {
 @media (min-width: 640px) {
   #pwa-update-banner { left: auto; right: 16px; max-width: 380px; }
 }
+
+/* iOS "Add to Home Screen" nudge */
+#pwa-ios-nudge {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 9998;
+  background: var(--ink-900, #1d2520);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  font-size: 14px;
+  animation: pwa-update-in 220ms ease-out;
+}
+body.has-bottom-nav #pwa-ios-nudge {
+  bottom: calc(72px + env(safe-area-inset-bottom));
+}
+.pwa-ios-msg {
+  flex: 1;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pwa-ios-dismiss {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 36px;
+  white-space: nowrap;
+}
+.pwa-ios-dismiss:hover { background: rgba(255,255,255,0.25); }
+.pwa-ios-hiding {
+  animation: pwa-ios-out 200ms ease-in forwards;
+}
+@keyframes pwa-ios-out {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+@media (min-width: 640px) {
+  #pwa-ios-nudge { left: auto; right: 16px; max-width: 380px; }
+}

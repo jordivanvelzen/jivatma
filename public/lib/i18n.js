@@ -385,6 +385,9 @@ const translations = {
     'general.loading': 'Cargando…',
     'pwa.updateAvailable': 'Nueva versión disponible',
     'pwa.reload': 'Recargar',
+    'pwa.iosInstall': 'Instala la app: toca',
+    'pwa.iosInstallSuffix': 'y elige «Agregar a inicio»',
+    'pwa.iosDismiss': 'No, gracias',
 
     // Confirm modal
     'confirm.defaultTitle': '¿Estás seguro?',
@@ -931,6 +934,9 @@ const translations = {
     'general.loading': 'Loading…',
     'pwa.updateAvailable': 'New version available',
     'pwa.reload': 'Reload',
+    'pwa.iosInstall': 'Install the app: tap',
+    'pwa.iosInstallSuffix': 'then choose "Add to Home Screen"',
+    'pwa.iosDismiss': 'No thanks',
 
     // Confirm modal
     'confirm.defaultTitle': 'Are you sure?',
