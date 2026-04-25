@@ -67,7 +67,6 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="#/admin/passes" class="${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
         <a href="#/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="#/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
-<<<<<<< HEAD
         <a href="#/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">
@@ -75,16 +74,6 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
         <a href="#/profile" class="nav-icon-btn nav-icon-btn--desk" title="${t('nav.profile')}">${ICON.profile}</a>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
-=======
-        <button id="nav-links-lang-btn" class="nav-links-mobile-only" type="button">${t('lang.switch')} (${otherLang})</button>
-        <button id="nav-links-logout-btn" class="nav-links-mobile-only" type="button">${t('nav.logout')}</button>
-      </div>
-      <div class="nav-actions">
-        ${masterAdmin ? renderViewPill(false) : ''}
-        <button id="lang-btn" class="nav-icon-btn nav-icon-desktop-only" title="${t('lang.switch')}">${otherLang}</button>
-        <a href="#/profile" class="nav-icon-btn" title="${t('nav.profile')}">${ICON.profile}</a>
-        <button id="logout-btn" class="nav-icon-btn nav-icon-desktop-only" title="${t('nav.logout')}">${ICON.logout}</button>
->>>>>>> 4b29194 (Mobile-friendly admin schedule editing)
         <button id="nav-toggle" class="nav-toggle" aria-label="${t('nav.menu')}">☰</button>
       </div>
     </div>
@@ -214,28 +203,11 @@ function wireCommonHandlers(nav) {
     });
   });
 
-<<<<<<< HEAD
   nav.querySelector('#lang-btn')?.addEventListener('click', () => {
     toggleLang();
   });
 
   nav.querySelector('#logout-btn')?.addEventListener('click', async () => {
-=======
-  document.getElementById('lang-btn')?.addEventListener('click', () => {
-    toggleLang();
-  });
-  document.getElementById('nav-links-lang-btn')?.addEventListener('click', () => {
-    nav.querySelector('.nav-links')?.classList.remove('open');
-    toggleLang();
-  });
-
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    await sb.auth.signOut();
-    navigate('/login');
-    renderNav();
-  });
-  document.getElementById('nav-links-logout-btn')?.addEventListener('click', async () => {
->>>>>>> 4b29194 (Mobile-friendly admin schedule editing)
     await sb.auth.signOut();
     navigate('/login');
     renderNav();

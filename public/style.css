@@ -253,23 +253,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .nav-icon-desktop-only { display: inline-flex; }
 }
 
-<<<<<<< HEAD
 /* ---------- Bottom Nav (mobile only) ---------- */
-=======
-/* On mobile: hide lang/logout from the top action bar (they live in the hamburger instead) */
-.nav-icon-desktop-only { display: none; }
-
-/* Hide hamburger and lang/profile/logout icons in top bar when bottom-nav is in use (mobile only) */
-body.has-bottom-nav .nav-toggle { display: none; }
-body.has-bottom-nav .nav-links { display: none !important; }
-body.has-bottom-nav .nav-actions .nav-icon-btn { display: none; }
-@media (min-width: 768px) {
-  body.has-bottom-nav .nav-links { display: flex !important; }
-  body.has-bottom-nav .nav-actions .nav-icon-btn { display: inline-flex; }
-}
-
-/* ---------- Bottom Nav (students, mobile) ---------- */
->>>>>>> 4b29194 (Mobile-friendly admin schedule editing)
 .bottom-nav {
   position: fixed;
   inset: auto 0 0 0;
