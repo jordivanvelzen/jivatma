@@ -8,9 +8,10 @@ import { icon } from '../lib/icons.js';
 const ICON = {
   classes: icon('classes', { size: 24 }),
   passes:  icon('passes',  { size: 24 }),
-  more:    icon('more',    { size: 24 }),
-  home:    icon('home',    { size: 20 }),
-  history: icon('history', { size: 20 }),
+  home:    icon('home',    { size: 24 }),
+  check:   icon('check',   { size: 24 }),
+  spots:   icon('spots',   { size: 24 }),
+  profile24: icon('profile', { size: 24 }),
   profile: icon('profile', { size: 20 }),
   lang:    icon('lang',    { size: 20 }),
   logout:  icon('logout',  { size: 20 }),
@@ -27,8 +28,8 @@ export async function renderNav() {
   const nav = document.getElementById('nav');
   const profile = await getProfile();
 
-  // Clean up any existing bottom-nav / sheet from previous render
-  document.querySelectorAll('.bottom-nav, .sheet, .sheet-backdrop').forEach((el) => el.remove());
+  // Clean up any existing bottom-nav from previous render
+  document.querySelectorAll('.bottom-nav').forEach((el) => el.remove());
   document.body.classList.remove('has-bottom-nav');
 
   if (!profile) {
@@ -48,8 +49,10 @@ export async function renderNav() {
 
   if (showAdminNav) {
     renderAdminNav(nav, { masterAdmin, otherLang });
+    renderBottomNav('admin');
   } else {
     renderStudentNav(nav, { masterAdmin, otherLang });
+    renderBottomNav('student');
   }
 }
 
@@ -78,92 +81,58 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
 }
 
 function renderStudentNav(nav, { masterAdmin, otherLang }) {
-  // Slim top bar (brand only on mobile; full nav on desktop)
   nav.innerHTML = `
     <div class="nav-inner">
       <a href="#/dashboard" class="nav-brand">Jivatma</a>
       <div class="nav-links">
+        <a href="#/dashboard" class="${currentPath() === '/dashboard' ? 'active' : ''}">${t('nav.home')}</a>
         <a href="#/schedule" class="${isActive('/schedule') ? 'active' : ''}">${t('nav.classes')}</a>
         <a href="#/my-passes" class="${isActive('/my-passes') ? 'active' : ''}">${t('nav.myPasses')}</a>
-        <a href="#/dashboard" class="${currentPath() === '/dashboard' ? 'active' : ''}">${t('nav.home')}</a>
         <a href="#/my-attendance" class="${isActive('/my-attendance') ? 'active' : ''}">${t('nav.history')}</a>
+        <a href="#/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">
         ${masterAdmin ? renderViewPill(true) : ''}
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
-        <a href="#/profile" class="nav-icon-btn" title="${t('nav.profile')}">${ICON.profile}</a>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
       </div>
     </div>
   `;
-
-  // Bottom nav (mobile) — hidden via CSS at ≥768px
-  document.body.classList.add('has-bottom-nav');
-  const bottomNav = document.createElement('nav');
-  bottomNav.className = 'bottom-nav';
-  bottomNav.innerHTML = `
-    <a href="#/schedule" class="bottom-nav-item ${isActive('/schedule') ? 'active' : ''}">
-      ${ICON.classes}<span>${t('nav.classes')}</span>
-    </a>
-    <a href="#/my-passes" class="bottom-nav-item ${isActive('/my-passes') ? 'active' : ''}">
-      ${ICON.passes}<span>${t('nav.myPasses')}</span>
-    </a>
-    <button id="more-btn" class="bottom-nav-item" type="button">
-      ${ICON.more}<span>${t('nav.more')}</span>
-    </button>
-  `;
-  document.body.appendChild(bottomNav);
-
-  // Sheet
-  const backdrop = document.createElement('div');
-  backdrop.className = 'sheet-backdrop';
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
-  sheet.setAttribute('role', 'dialog');
-  sheet.setAttribute('aria-label', t('nav.more'));
-  sheet.innerHTML = `
-    <div class="sheet-handle"></div>
-    <div class="sheet-list">
-      <a href="#/dashboard" class="sheet-item" data-close>${ICON.home}<span>${t('nav.home')}</span></a>
-      <a href="#/my-attendance" class="sheet-item" data-close>${ICON.history}<span>${t('nav.history')}</span></a>
-      <a href="#/profile" class="sheet-item" data-close>${ICON.profile}<span>${t('nav.profile')}</span></a>
-      <button class="sheet-item" id="sheet-lang" type="button">${ICON.lang}<span>${t('lang.switch')}</span><span class="sheet-item-trail">${otherLang}</span></button>
-      <button class="sheet-item" id="sheet-logout" type="button">${ICON.logout}<span>${t('nav.logout')}</span></button>
-    </div>
-  `;
-  document.body.appendChild(backdrop);
-  document.body.appendChild(sheet);
-
-  const openSheet = () => {
-    backdrop.classList.add('open');
-    requestAnimationFrame(() => sheet.classList.add('open'));
-  };
-  const closeSheet = () => {
-    sheet.classList.remove('open');
-    backdrop.classList.remove('open');
-  };
-
-  bottomNav.querySelector('#more-btn').addEventListener('click', openSheet);
-  backdrop.addEventListener('click', closeSheet);
-  sheet.querySelectorAll('[data-close]').forEach((el) => {
-    el.addEventListener('click', closeSheet);
-  });
-  sheet.querySelector('#sheet-lang').addEventListener('click', () => {
-    closeSheet();
-    toggleLang();
-  });
-  sheet.querySelector('#sheet-logout').addEventListener('click', async () => {
-    closeSheet();
-    await sb.auth.signOut();
-    navigate('/login');
-    renderNav();
-  });
-
   wireCommonHandlers(nav);
 }
 
+function renderBottomNav(mode) {
+  document.body.classList.add('has-bottom-nav');
+
+  const items = mode === 'admin'
+    ? [
+        { href: '#/admin',        icon: ICON.home,      label: t('nav.panel'),      match: '/admin',        exact: true },
+        { href: '#/admin/class',  icon: ICON.check,     label: t('nav.attendance'), match: '/admin/class' },
+        { href: '#/admin/users',  icon: ICON.spots,     label: t('nav.users'),      match: '/admin/users' },
+        { href: '#/admin/passes', icon: ICON.passes,    label: t('nav.passes'),     match: '/admin/passes' },
+      ]
+    : [
+        { href: '#/dashboard',    icon: ICON.home,      label: t('nav.home'),     match: '/dashboard' },
+        { href: '#/schedule',     icon: ICON.classes,   label: t('nav.classes'),  match: '/schedule' },
+        { href: '#/my-passes',    icon: ICON.passes,    label: t('nav.myPasses'), match: '/my-passes' },
+        { href: '#/profile',      icon: ICON.profile24, label: t('nav.profile'),  match: '/profile' },
+      ];
+
+  const path = currentPath();
+  const itemActive = (it) => it.exact ? path === it.match : (path === it.match || path.startsWith(it.match + '/'));
+
+  const bottomNav = document.createElement('nav');
+  bottomNav.className = 'bottom-nav';
+  bottomNav.setAttribute('aria-label', t('nav.viewToggle'));
+  bottomNav.innerHTML = items.map((it) => `
+    <a href="${it.href}" class="bottom-nav-item ${itemActive(it) ? 'active' : ''}">
+      ${it.icon}<span>${it.label}</span>
+    </a>
+  `).join('');
+  document.body.appendChild(bottomNav);
+}
+
 function renderViewPill(isStudent) {
-  // Segmented pill: [Admin | Student]
   return `
     <div class="view-pill" role="group" aria-label="${t('nav.viewToggle')}">
       <button type="button" class="view-pill-btn ${!isStudent ? 'active' : ''}" data-view="admin" title="${t('nav.adminView')}">
@@ -177,10 +146,10 @@ function renderViewPill(isStudent) {
 }
 
 function wireCommonHandlers(nav) {
-  const navToggle = document.getElementById('nav-toggle');
+  const navToggle = nav.querySelector('#nav-toggle');
   if (navToggle) {
     navToggle.addEventListener('click', () => {
-      nav.querySelector('.nav-links').classList.toggle('open');
+      nav.querySelector('.nav-links')?.classList.toggle('open');
     });
   }
   nav.querySelectorAll('.nav-links a').forEach((a) => {
@@ -192,21 +161,25 @@ function wireCommonHandlers(nav) {
   // Segmented view-pill — clicking the inactive side flips
   nav.querySelectorAll('.view-pill-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (btn.classList.contains('active')) return;
       const wantStudent = btn.dataset.view === 'student';
       const currentlyStudent = isStudentView();
-      if (wantStudent !== currentlyStudent) {
-        const nowStudent = toggleStudentView();
-        navigate(nowStudent ? '/dashboard' : '/admin');
+      if (wantStudent === currentlyStudent) return;
+      const nowStudent = toggleStudentView();
+      const target = nowStudent ? '/dashboard' : '/admin';
+      // If the hash is already the target, set hash to '' first to force resolve()
+      if (currentPath() === target) {
+        renderNav();
+      } else {
+        navigate(target);
       }
     });
   });
 
-  document.getElementById('lang-btn').addEventListener('click', () => {
+  nav.querySelector('#lang-btn')?.addEventListener('click', () => {
     toggleLang();
   });
 
-  document.getElementById('logout-btn').addEventListener('click', async () => {
+  nav.querySelector('#logout-btn')?.addEventListener('click', async () => {
     await sb.auth.signOut();
     navigate('/login');
     renderNav();

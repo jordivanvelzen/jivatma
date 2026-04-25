@@ -5,6 +5,7 @@ const translations = {
   es: {
     // Nav
     'nav.dashboard': 'Inicio',
+    'nav.panel': 'Panel',
     'nav.attendance': 'Asistencia',
     'nav.users': 'Usuarios',
     'nav.passes': 'Pases',
@@ -399,6 +400,7 @@ const translations = {
   en: {
     // Nav
     'nav.dashboard': 'Dashboard',
+    'nav.panel': 'Dashboard',
     'nav.attendance': 'Attendance',
     'nav.users': 'Users',
     'nav.passes': 'Passes',

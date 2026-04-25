@@ -249,16 +249,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .nav-toggle { display: none; }
 }
 
-/* Hide hamburger and lang/profile/logout icons in top bar when bottom-nav is in use (mobile only) */
-body.has-bottom-nav .nav-toggle { display: none; }
-body.has-bottom-nav .nav-links { display: none !important; }
-body.has-bottom-nav .nav-actions .nav-icon-btn { display: none; }
-@media (min-width: 768px) {
-  body.has-bottom-nav .nav-links { display: flex !important; }
-  body.has-bottom-nav .nav-actions .nav-icon-btn { display: inline-flex; }
-}
-
-/* ---------- Bottom Nav (students, mobile) ---------- */
+/* ---------- Bottom Nav (mobile only) ---------- */
 .bottom-nav {
   position: fixed;
   inset: auto 0 0 0;
