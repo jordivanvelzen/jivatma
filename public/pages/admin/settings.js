@@ -82,8 +82,10 @@ export async function renderAdminSettings() {
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">${t('admin.saveSettings')}</button>
           <button type="button" id="tg-test" class="btn btn-secondary">${t('admin.telegramTest')}</button>
+          <button type="button" id="tg-webhook" class="btn btn-secondary">🔘 ${t('admin.telegramWebhook')}</button>
           <button type="button" id="sms-test" class="btn btn-secondary">📱 Enviar SMS de prueba</button>
         </div>
+        <p class="muted" style="font-size:0.8rem;margin-top:0.4rem">${t('admin.telegramWebhookHelp')}</p>
       </form>
     </div>
   `;
@@ -134,6 +136,23 @@ export async function renderAdminSettings() {
         });
         if (result.ok) showToast('📱 SMS enviado', 'success');
         else showToast(`SMS: ${result.error || result.reason}`, 'error');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  });
+
+  // Telegram webhook activator — saves current token first, then registers the webhook
+  document.getElementById('tg-webhook').addEventListener('click', (ev) => {
+    const btn = ev.currentTarget;
+    const token = document.getElementById('s-tg-token').value.trim();
+    if (!token) { showToast(t('admin.telegramNeedBoth'), 'error'); return; }
+    return withLoading(btn, async () => {
+      try {
+        await sb.from('settings').upsert({ key: 'telegram_bot_token', value: token });
+        const result = await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ action: 'register-webhook' }) });
+        if (result.ok) showToast(t('admin.telegramWebhookOk'), 'success');
+        else showToast(`Webhook: ${result.error || result.reason}`, 'error');
       } catch (err) {
         showToast(err.message, 'error');
       }
