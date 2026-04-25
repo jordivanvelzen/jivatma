@@ -218,6 +218,26 @@ export async function renderAdminSettings() {
       </div>
       ` : ''}
 
+      ${showSuperControls ? `
+      <!-- Admin permissions (super-admin only) -->
+      <details class="set-section" id="sec-permissions">
+        <summary>
+          <span class="sec-icon">🔐</span>
+          <span class="sec-title">${t('admin.permissionsSection')}<span class="sec-sub">${t('admin.permissionsSectionSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          <label style="display:flex; align-items:flex-start; gap: var(--s-3); cursor:pointer;">
+            <input type="checkbox" id="perm-claudia-generate" ${(settings.claudia_can_generate_sessions || 'true') === 'true' ? 'checked' : ''} style="margin-top:3px; width:18px; height:18px; flex-shrink:0;" />
+            <span style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-weight:600; font-size:.95rem; color: var(--ink-900);">${t('admin.claudiaCanGenerate')}</span>
+              <span style="font-size:.8rem; color: var(--ink-500); line-height:1.4;">${t('admin.claudiaCanGenerateHelp')}</span>
+            </span>
+          </label>
+        </div>
+      </details>
+      ` : ''}
+
       <!-- Studio settings -->
       <details class="set-section" id="sec-studio">
         <summary>
@@ -357,6 +377,21 @@ export async function renderAdminSettings() {
         ccBox.checked = !ccBox.checked; // revert
       } else {
         showToast(ccBox.checked ? t('admin.ccSuperOn') : t('admin.ccSuperOff'), 'success');
+      }
+    });
+  }
+
+  // Claudia can generate sessions — saves immediately on change. Super-admin-only.
+  const permClaudiaGenerate = document.getElementById('perm-claudia-generate');
+  if (permClaudiaGenerate) {
+    permClaudiaGenerate.addEventListener('change', async () => {
+      const value = permClaudiaGenerate.checked ? 'true' : 'false';
+      const { error } = await sb.from('settings').upsert({ key: 'claudia_can_generate_sessions', value });
+      if (error) {
+        showToast(error.message, 'error');
+        permClaudiaGenerate.checked = !permClaudiaGenerate.checked;
+      } else {
+        showToast(t('admin.permissionSaved'), 'success');
       }
     });
   }

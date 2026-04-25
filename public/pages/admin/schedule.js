@@ -1,22 +1,28 @@
-import { sb } from '../../lib/supabase.js';
+import { sb, getSession } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
 import { showConfirm } from '../../components/confirm.js';
 import { t, getLocale } from '../../lib/i18n.js';
 import { todayStr } from '../../lib/dates.js';
 import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
+import { isSuperAdmin } from '../../lib/super-admin.js';
 
 export async function renderAdminSchedule() {
   const app = document.getElementById('app');
   const today = todayStr();
 
-  const [{ data: templates }, { data: capSetting }, { data: sessions }, { data: unavailability }] = await Promise.all([
+  const [{ data: templates }, { data: capSetting }, { data: sessions }, { data: unavailability }, { data: generatePermSetting }, session] = await Promise.all([
     sb.from('class_templates').select('*').order('day_of_week').order('start_time'),
     sb.from('settings').select('value').eq('key', 'default_capacity').single(),
     sb.from('class_sessions').select('*').gte('date', today).order('date').order('start_time'),
     sb.from('unavailability').select('*').gte('end_date', today).order('start_date', { ascending: true }),
+    sb.from('settings').select('value').eq('key', 'claudia_can_generate_sessions').single(),
+    getSession(),
   ]);
   const defaultCap = capSetting?.value || '15';
+  const userIsSuperAdmin = isSuperAdmin(session?.user?.email);
+  const claudiaCanGenerate = (generatePermSetting?.value ?? 'true') === 'true';
+  const showGenerateSection = userIsSuperAdmin || claudiaCanGenerate;
   const locale = getLocale();
 
   const capSummary = (tmpl) => {
@@ -362,6 +368,7 @@ export async function renderAdminSchedule() {
         </div>
       </details>
 
+      ${showGenerateSection ? `
       <!-- Generate & sync -->
       <details class="set-section" id="sec-generate">
         <summary>
@@ -403,6 +410,7 @@ export async function renderAdminSchedule() {
           </div>
         </div>
       </details>
+      ` : ''}
     </div>
   `;
 
@@ -656,7 +664,7 @@ export async function renderAdminSchedule() {
   });
 
   // Preview generate (dry-run)
-  document.getElementById('preview-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
+  document.getElementById('preview-btn')?.addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
     try {
       const res = await fetch('/api/cron/generate-sessions?dryRun=1', { method: 'POST' });
       const data = await res.json();
@@ -677,7 +685,7 @@ export async function renderAdminSchedule() {
   }));
 
   // Generate sessions
-  document.getElementById('generate-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
+  document.getElementById('generate-btn')?.addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
     try {
       const res = await fetch('/api/cron/generate-sessions', { method: 'POST' });
       const data = await res.json();
@@ -693,7 +701,7 @@ export async function renderAdminSchedule() {
   }));
 
   // Resync future sessions to their templates
-  document.getElementById('resync-btn').addEventListener('click', async (ev) => {
+  document.getElementById('resync-btn')?.addEventListener('click', async (ev) => {
     const ok = await showConfirm({
       title: t('confirm.resyncTitle'),
       message: t('confirm.resyncMessage'),
