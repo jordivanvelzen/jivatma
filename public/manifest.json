@@ -17,6 +17,29 @@
     { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tu panel: pases activos y próximas clases"
+    },
+    {
+      "src": "/screenshots/schedule.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Horario de clases — reserva en un toque"
+    },
+    {
+      "src": "/screenshots/my-passes.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tus pases y tipos disponibles"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Horario de clases",
