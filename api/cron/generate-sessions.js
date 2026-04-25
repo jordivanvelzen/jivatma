@@ -2,23 +2,24 @@ import { supabase } from '../../lib/supabase.js';
 import { todayStr, addDays } from '../../lib/dates.js';
 import { notifySessionsCancelled } from '../../lib/telegram.js';
 
-const WINDOW_DAYS = 14;
+const DEFAULT_WINDOW_DAYS = 14;
 const DEFAULT_REASON = 'Teacher unavailable';
 
 // Run the generate / auto-cancel / auto-restore / cleanup pass.
 // Pass { dryRun: true } to compute the plan without writing anything.
+// Pass { windowDays: N } to extend the look-ahead window (default 14).
 //
 // Cron starts from tomorrow so a manually-deleted "today" session doesn't get re-created the
 // same day. The admin button calls the same handler.
-export async function runGenerate({ dryRun = false } = {}) {
+export async function runGenerate({ dryRun = false, windowDays = DEFAULT_WINDOW_DAYS } = {}) {
   const errors = [];
   const today = todayStr();
   const startDay = addDays(today, 1); // skip today
-  const endDay = addDays(today, WINDOW_DAYS);
+  const endDay = addDays(today, windowDays);
 
   // Build the list of dates in the window with their day-of-week.
   const windowDates = [];
-  for (let offset = 1; offset <= WINDOW_DAYS; offset++) {
+  for (let offset = 1; offset <= windowDays; offset++) {
     const dateStr = addDays(today, offset);
     const [y, m, d] = dateStr.split('-').map(Number);
     const dayOfWeek = new Date(y, m - 1, d).getDay();

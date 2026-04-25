@@ -8,6 +8,7 @@ import {
   getWaTemplate,
 } from '../lib/telegram.js';
 import { todayStr, addDays } from '../lib/dates.js';
+import { runGenerate } from './cron/generate-sessions.js';
 
 // ---------- text builders ----------
 
@@ -193,6 +194,12 @@ async function handleTelegramWebhook(req, res) {
   const cb = update.callback_query;
   if (!cb) return res.json({ ok: true });
 
+  // ---- Bi-weekly schedule-extend nudge ----
+  // Callback data: 'ext:approve:<windowDays>' or 'ext:skip:0'.
+  if (String(cb.data || '').startsWith('ext:')) {
+    return handleExtendCallback(cb, res);
+  }
+
   const [action, idStr] = String(cb.data || '').split(':');
   const requestId = parseInt(idStr, 10);
   const known = ['approve', 'decline', 'decline_send', 'decline_cancel'];
@@ -299,6 +306,51 @@ async function handleTelegramWebhook(req, res) {
   }
 
   return res.json({ ok: true });
+}
+
+// Bi-weekly schedule-extend nudge — handle the inline button taps from the
+// Telegram message sent by the expire-passes cron on Monday mornings.
+//
+// callback_data: 'ext:approve:<windowDays>' or 'ext:skip:0'
+async function handleExtendCallback(cb, res) {
+  const parts = String(cb.data || '').split(':');
+  const verb = parts[1];
+  const windowDays = Math.max(parseInt(parts[2], 10) || 0, 14);
+
+  if (verb === 'skip') {
+    if (cb.message?.message_id) {
+      await editTelegramMessage(cb.message.message_id, '⏭ _Saltado. Te preguntamos otra vez en 2 semanas._', { replyMarkup: { inline_keyboard: [] } });
+    }
+    await answerCallbackQuery(cb.id, 'OK');
+    return res.json({ ok: true });
+  }
+
+  if (verb !== 'approve') {
+    await answerCallbackQuery(cb.id, 'Acción inválida');
+    return res.json({ ok: true });
+  }
+
+  await answerCallbackQuery(cb.id, 'Generando…');
+  let result;
+  try {
+    result = await runGenerate({ windowDays });
+  } catch (err) {
+    if (cb.message?.message_id) {
+      await editTelegramMessage(cb.message.message_id,
+        `❌ _Error al extender: ${err.message}_`,
+        { replyMarkup: { inline_keyboard: [] } });
+    }
+    return res.json({ ok: false, error: err.message });
+  }
+
+  if (cb.message?.message_id) {
+    const summary = `+${result.created || 0} · ⊘${result.autoCancelled || 0} · ↺${result.restored || 0}`;
+    const errLine = result.errors?.length ? `\n_⚠ ${result.errors.length} error(es) — revisa el log de Vercel_` : '';
+    await editTelegramMessage(cb.message.message_id,
+      `✅ *Horario extendido* — ventana ${windowDays} días\n${summary}${errLine}`,
+      { replyMarkup: { inline_keyboard: [] } });
+  }
+  return res.json({ ok: true, result });
 }
 
 // Step 2 of decline: admin replied to our prompt — store reason, send preview

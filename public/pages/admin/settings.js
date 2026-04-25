@@ -15,6 +15,8 @@ const WA_DEFAULTS = {
     'Hola {name}, acabas de usar tu última clase del {kind} en Jivatma. ¡Renueva tu pase para seguir reservando! 🧘',
   wa_template_class_cancelled:
     'Hola {name}, te avisamos que la clase del {date} a las {time} en Jivatma fue cancelada{reason}. Lamentamos las molestias. Avísanos si quieres reagendar. 🙏',
+  wa_template_welcome:
+    '¡Hola {name}! 🙏 Bienvenida/o a Jivatma. Ya puedes entrar a la app y elegir tu pase. Si necesitas ayuda, escríbenos por aquí. 🧘',
 };
 
 export async function renderAdminSettings() {
@@ -266,6 +268,11 @@ export async function renderAdminSettings() {
             <textarea id="s-tpl-class-cancelled" rows="3">${tplVal('wa_template_class_cancelled')}</textarea>
           </div>
 
+          <div class="tpl-group">
+            <div class="tpl-label">${t('admin.tplWelcome')} <span class="muted" style="font-weight:400">{name}</span></div>
+            <textarea id="s-tpl-welcome" rows="3">${tplVal('wa_template_welcome')}</textarea>
+          </div>
+
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" data-restore="wa">${t('admin.restoreDefaults')}</button>
             <button type="button" class="btn btn-primary" data-save="wa">${t('admin.saveSettings')}</button>
@@ -351,6 +358,7 @@ export async function renderAdminSettings() {
     document.getElementById('s-tpl-expiring').value = WA_DEFAULTS.wa_template_expiring;
     document.getElementById('s-tpl-last-class').value = WA_DEFAULTS.wa_template_last_class;
     document.getElementById('s-tpl-class-cancelled').value = WA_DEFAULTS.wa_template_class_cancelled;
+    document.getElementById('s-tpl-welcome').value = WA_DEFAULTS.wa_template_welcome;
     showToast(t('admin.restoredToast'), 'info');
   });
 }
@@ -381,6 +389,7 @@ function collectSection(section) {
       wa_template_expiring: document.getElementById('s-tpl-expiring').value,
       wa_template_last_class: document.getElementById('s-tpl-last-class').value,
       wa_template_class_cancelled: document.getElementById('s-tpl-class-cancelled').value,
+      wa_template_welcome: document.getElementById('s-tpl-welcome').value,
     };
   }
   return {};

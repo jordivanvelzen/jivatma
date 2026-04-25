@@ -1,5 +1,6 @@
 import { verifyUser } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
+import { notifyNewSignup } from '../../lib/telegram.js';
 
 export default async function handler(req, res) {
   const auth = await verifyUser(req);
@@ -7,6 +8,28 @@ export default async function handler(req, res) {
 
   // Route by query param: /api/me?action=passes or /api/me?action=attendance
   const action = req.query.action || 'profile';
+
+  if (action === 'notify-signup') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    // Idempotent: skip if we've already logged a `new_signup` for this email.
+    const email = auth.user?.email || '';
+    if (email) {
+      const { data: existing } = await supabase
+        .from('notification_log')
+        .select('id')
+        .eq('event_type', 'new_signup')
+        .ilike('message_preview', `%${email}%`)
+        .limit(1);
+      if (existing?.length) return res.json({ ok: true, skipped: 'already_notified' });
+    }
+
+    const result = await notifyNewSignup({
+      full_name: auth.profile?.full_name,
+      email,
+      phone: auth.profile?.phone,
+    });
+    return res.json({ ok: !!result?.ok });
+  }
 
   if (action === 'profile') {
     if (req.method === 'GET') return res.json(auth.profile);

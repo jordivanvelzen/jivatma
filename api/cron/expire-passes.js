@@ -1,6 +1,60 @@
 import { supabase } from '../../lib/supabase.js';
 import { sendTelegram, buildWaLink, getWaTemplate } from '../../lib/telegram.js';
-import { todayStr } from '../../lib/dates.js';
+import { todayStr, addDays } from '../../lib/dates.js';
+
+// Bi-weekly Monday nudge: ask Claudia if she wants to extend the schedule by 2 more weeks.
+// Runs from inside the daily expire-passes cron (we're at the Vercel Hobby function limit so
+// this can't be its own endpoint). Cadence is enforced via settings.extend_nudge_last_sent —
+// fires only on Mondays (studio TZ) and only if 13+ days have passed since the last send.
+async function maybeSendExtendNudge() {
+  const today = todayStr();
+  // Day-of-week in studio TZ. We anchored to en-CA so the parts come back stable.
+  const [y, m, d] = today.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  if (dow !== 1) return { skipped: 'not_monday' };
+
+  const { data: lastRow } = await supabase
+    .from('settings').select('value').eq('key', 'extend_nudge_last_sent').maybeSingle();
+  const lastSent = lastRow?.value || '';
+  if (lastSent && addDays(lastSent, 13) > today) {
+    return { skipped: 'too_soon', lastSent };
+  }
+
+  // Find the latest scheduled session date so the message gives Claudia useful context.
+  const { data: latest } = await supabase
+    .from('class_sessions')
+    .select('date')
+    .eq('status', 'scheduled')
+    .gte('date', today)
+    .order('date', { ascending: false })
+    .limit(1);
+  const latestDate = latest?.[0]?.date || today;
+
+  const fmt = (d) => new Date(d + 'T00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const text = [
+    `🗓 *¿Extender el horario?*`,
+    ``,
+    `Hoy hay clases hasta el *${fmt(latestDate)}*.`,
+    `¿Generar 2 semanas más para que los alumnos puedan reservar más adelante?`,
+  ].join('\n');
+
+  const res = await sendTelegram(text, {
+    eventType: 'extend_nudge',
+    recipientName: 'Admin',
+    replyMarkup: {
+      inline_keyboard: [[
+        { text: '✅ Sí, extender 2 semanas', callback_data: 'ext:approve:28' },
+        { text: '⏭ Ahora no', callback_data: 'ext:skip:0' },
+      ]],
+    },
+  });
+
+  if (res?.ok) {
+    await supabase.from('settings').upsert({ key: 'extend_nudge_last_sent', value: today });
+  }
+  return { sent: !!res?.ok, latestDate };
+}
 
 function passKindLabel(pt) {
   if (!pt) return 'Pase';
@@ -54,8 +108,12 @@ export default async function handler(req, res) {
     sendTelegram(lines.join('\n'), { eventType: 'stale_unpaid', recipientName: 'Admin' }).catch(() => {});
   }
 
+  let extendNudge = { skipped: 'error' };
+  try { extendNudge = await maybeSendExtendNudge(); } catch (err) { extendNudge = { error: err.message }; }
+
   return res.json({
     expiring_today: expiringToday?.length || 0,
     stale_unpaid: staleUnpaid?.length || 0,
+    extend_nudge: extendNudge,
   });
 }

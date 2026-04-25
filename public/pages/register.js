@@ -3,6 +3,7 @@ import { navigate } from '../lib/router.js';
 import { showToast } from '../components/toast.js';
 import { t, toggleLang } from '../lib/i18n.js';
 import { onSubmitWithLoading } from '../lib/loading.js';
+import { api } from '../lib/api.js';
 
 export async function renderRegister() {
   const app = document.getElementById('app');
@@ -71,6 +72,12 @@ export async function renderRegister() {
     // Best-effort: save phone + opt-in to profile (trigger may have created it already)
     if (data?.user) {
       await sb.from('profiles').update({ full_name: fullName, phone, sms_opt_in: smsOptIn }).eq('id', data.user.id);
+    }
+
+    // Fire-and-forget: notify Claudia in Telegram about the new signup.
+    // Only works when there's a session (email confirmation off). No-op otherwise.
+    if (data?.session) {
+      api('/api/me?action=notify-signup', { method: 'POST' }).catch(() => {});
     }
 
     showToast(t('auth.accountCreated'), 'success');
