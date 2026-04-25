@@ -20,7 +20,8 @@ import { renderAdminPassTypes } from './pages/admin/pass-types.js';
 import { renderAdminSchedule } from './pages/admin/schedule.js';
 import { renderAdminSettings } from './pages/admin/settings.js';
 import { renderAdminNotifications } from './pages/admin/notifications.js';
-import { maybeShowIosInstallNudge } from './lib/pwa-update.js';
+import { maybeShowIosInstallNudge, maybeShowAndroidInstallPrompt } from './lib/pwa-update.js';
+import { renderLanding } from './pages/landing.js';
 
 // Show a centered spinner in #app while the next page is loading.
 // The renderFn overwrites #app via innerHTML, so this clears on render.
@@ -37,6 +38,7 @@ async function requireAuth(renderFn, params) {
   showPageLoading();
   await renderFn(params);
   maybeShowIosInstallNudge();
+  maybeShowAndroidInstallPrompt();
 }
 
 // Admin guard: redirect if not admin or if in student view mode
@@ -97,10 +99,14 @@ route('/admin/schedule', (p) => requireAdmin(renderAdminSchedule, p));
 route('/admin/settings', (p) => requireAdmin(renderAdminSettings, p));
 route('/admin/notifications', (p) => requireAdmin(renderAdminNotifications, p));
 
-// Default route
+// Default route — landing page for visitors, dashboard/admin for logged-in users
 route('/', async () => {
   const session = await getSession();
-  if (!session) { navigate('/login'); return; }
+  if (!session) {
+    document.getElementById('nav').classList.add('hidden');
+    await renderLanding();
+    return;
+  }
   const profile = await getProfile();
   const isAdminNormal = profile?.role === 'admin' && !isStudentView();
   navigate(isAdminNormal ? '/admin' : '/dashboard');
@@ -115,7 +121,7 @@ setNotFound(() => {
 // If the refresh token dies mid-session (revoked, past max lifetime, etc.),
 // Supabase fires SIGNED_OUT. Bounce to /login so we don't leave an authed UI
 // pointing at a dead session. Only act when we're on a guarded page.
-const PUBLIC_PATHS = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/reset-password']);
 sb.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT' && !PUBLIC_PATHS.has(window.location.pathname)) {
     navigate('/login');

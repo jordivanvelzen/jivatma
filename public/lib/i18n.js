@@ -549,6 +549,27 @@ const translations = {
     'notifications.status.test_phone_not_set': 'Sin tel prueba',
     'notifications.status.invalid_phone': 'Tel inválido',
     'notifications.status.skipped': 'Omitido',
+
+    // Landing page
+    'landing.subtitle': 'con Claudia Ontiveros',
+    'landing.type': 'Virtual y presencial',
+    'landing.cta.signup': 'Crear cuenta',
+    'landing.cta.login': 'Iniciar sesión',
+    'landing.schedule.title': 'Horarios',
+    'landing.schedule.monwed': 'Lunes & Miércoles',
+    'landing.schedule.tuesat': 'Martes & Sábados',
+    'landing.schedule.note': 'Clases en línea y presenciales · Xico, Coatepec & Xalapa',
+    'landing.about.eyebrow': 'Sobre el método',
+    'landing.about.title': '¿Qué es el Yoga Iyengar?',
+    'landing.about.body': 'El Yoga Iyengar es una forma de Hatha Yoga que pone énfasis en la precisión, el alineamiento y la consciencia corporal. Fundado por B.K.S. Iyengar, este método utiliza apoyos como sillas, blocks y cintas para que cada estudiante alcance la postura correcta de forma segura y progresiva, sin importar su nivel o condición física.',
+    'landing.location.eyebrow': 'Ubicación',
+    'landing.location.cities': 'Xico · Coatepec · Xalapa',
+    'landing.location.contact': 'Informes',
+
+    // PWA Android install
+    'pwa.androidInstall': 'Instala Jivatma en tu dispositivo',
+    'pwa.androidInstallBtn': 'Instalar',
+    'pwa.androidDismiss': 'No, gracias',
   },
 
   en: {
@@ -1098,6 +1119,27 @@ const translations = {
     'notifications.status.test_phone_not_set': 'Test phone not set',
     'notifications.status.invalid_phone': 'Invalid phone',
     'notifications.status.skipped': 'Skipped',
+
+    // Landing page
+    'landing.subtitle': 'with Claudia Ontiveros',
+    'landing.type': 'In-person & Online',
+    'landing.cta.signup': 'Create account',
+    'landing.cta.login': 'Log in',
+    'landing.schedule.title': 'Schedule',
+    'landing.schedule.monwed': 'Monday & Wednesday',
+    'landing.schedule.tuesat': 'Tuesday & Saturday',
+    'landing.schedule.note': 'In-person & online classes · Xico, Coatepec & Xalapa',
+    'landing.about.eyebrow': 'About the method',
+    'landing.about.title': 'What is Iyengar Yoga?',
+    'landing.about.body': 'Iyengar Yoga is a form of Hatha Yoga that emphasizes precision, alignment, and body awareness. Founded by B.K.S. Iyengar, this method uses props such as chairs, blocks, and belts so that each student can achieve the correct posture safely and progressively, regardless of their level or physical condition.',
+    'landing.location.eyebrow': 'Location',
+    'landing.location.cities': 'Xico · Coatepec · Xalapa',
+    'landing.location.contact': 'Contact',
+
+    // PWA Android install
+    'pwa.androidInstall': 'Install Jivatma on your device',
+    'pwa.androidInstallBtn': 'Install',
+    'pwa.androidDismiss': 'Not now',
   },
 };
 

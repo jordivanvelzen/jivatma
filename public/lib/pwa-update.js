@@ -13,6 +13,14 @@
 
 import { t } from './i18n.js';
 
+// Capture Android "Add to Home Screen" prompt early — before the user is logged in.
+// We stash it and only show the UI from maybeShowAndroidInstallPrompt() (post-login).
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
@@ -54,8 +62,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// iOS Safari "Add to Home Screen" nudge — fires after app is loaded and
-// user is authenticated (i.e. not on the login/register screen).
+// iOS Safari "Add to Home Screen" nudge — only called after the user is authenticated.
 function isIosSafari() {
   const ua = navigator.userAgent;
   return (
@@ -105,6 +112,57 @@ export function maybeShowIosInstallNudge() {
 
   bar.querySelector('.pwa-ios-dismiss').addEventListener('click', () => {
     localStorage.setItem('jivatma_ios_nudge_dismissed', '1');
+    bar.classList.add('pwa-ios-hiding');
+    bar.addEventListener('animationend', () => bar.remove(), { once: true });
+  });
+}
+
+// Android "Add to Home Screen" nudge — only called after the user is authenticated.
+// Uses the Web App Install Banner API (beforeinstallprompt event captured above).
+export function maybeShowAndroidInstallPrompt() {
+  if (!deferredInstallPrompt) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (localStorage.getItem('jivatma_android_nudge_dismissed')) return;
+  if (document.getElementById('pwa-android-nudge')) return;
+
+  const label = (() => {
+    try {
+      return {
+        message: t('pwa.androidInstall'),
+        install: t('pwa.androidInstallBtn'),
+        dismiss: t('pwa.androidDismiss'),
+      };
+    } catch {
+      return {
+        message: 'Instala la app en tu dispositivo',
+        install: 'Instalar',
+        dismiss: 'No, gracias',
+      };
+    }
+  })();
+
+  const bar = document.createElement('div');
+  bar.id = 'pwa-android-nudge';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `
+    <span class="pwa-ios-msg">${label.message}</span>
+    <button type="button" class="pwa-android-install-btn" id="pwa-android-install">${label.install}</button>
+    <button type="button" class="pwa-android-dismiss-btn" id="pwa-android-dismiss">${label.dismiss}</button>
+  `;
+  document.body.appendChild(bar);
+
+  document.getElementById('pwa-android-install').addEventListener('click', async () => {
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    bar.remove();
+    if (outcome === 'accepted') {
+      localStorage.setItem('jivatma_android_nudge_dismissed', '1');
+    }
+  });
+
+  document.getElementById('pwa-android-dismiss').addEventListener('click', () => {
+    localStorage.setItem('jivatma_android_nudge_dismissed', '1');
     bar.classList.add('pwa-ios-hiding');
     bar.addEventListener('animationend', () => bar.remove(), { once: true });
   });
