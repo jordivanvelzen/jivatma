@@ -82,7 +82,7 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
           ${hasPerModeCaps ? `
             ${ipLeft != null ? `<span class="cc-spots ${ipFull ? 'full' : ''}">${icon('in_person', { size: 14 })} ${Math.max(ipLeft, 0)}/${session.capacity_inperson}</span>` : ''}
             ${olLeft != null ? `<span class="cc-spots ${olFull ? 'full' : ''}">${icon('online', { size: 14 })} ${Math.max(olLeft, 0)}/${session.capacity_online}</span>` : ''}
-          ` : showSpots ? `<span class="cc-spots ${isFull ? 'full' : ''}">${icon('spots', { size: 14 })} ${spotsLeft}/${session.capacity} ${t('schedule.spots')}</span>` : ''}
+          ` : showSpots ? `<span class="cc-spots ${isFull ? 'full' : ''}">${icon(type === 'online' ? 'online' : 'in_person', { size: 14 })} ${spotsLeft}/${session.capacity} ${t('schedule.spots')}</span>` : ''}
         </div>
         <div class="cc-actions">${actions}</div>
       </div>
