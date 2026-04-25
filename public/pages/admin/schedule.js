@@ -185,7 +185,7 @@ export async function renderAdminSchedule() {
       <h2>${t('admin.weeklySchedule')}</h2>
 
       <!-- Weekly templates -->
-      <details class="set-section" open id="sec-templates">
+      <details class="set-section" id="sec-templates">
         <summary>
           <span class="sec-icon">📅</span>
           <span class="sec-title">${t('admin.weeklySchedule')}<span class="sec-sub">${t('admin.weeklyScheduleSub')}</span></span>
@@ -294,7 +294,7 @@ export async function renderAdminSchedule() {
       </details>
 
       <!-- Upcoming sessions -->
-      <details class="set-section" open id="sec-sessions">
+      <details class="set-section" id="sec-sessions">
         <summary>
           <span class="sec-icon">📋</span>
           <span class="sec-title">${t('admin.upcomingSessions')}<span class="sec-sub">${t('admin.upcomingSessionsSub')}</span></span>
@@ -356,6 +356,19 @@ export async function renderAdminSchedule() {
       </details>
     </div>
   `;
+
+  // Persist open/closed state of each section card across page visits.
+  const SCHED_STORE = 'sched_sections';
+  const sectionState = (() => {
+    try { return JSON.parse(localStorage.getItem(SCHED_STORE) || '{}'); } catch { return {}; }
+  })();
+  app.querySelectorAll('details.set-section[id]').forEach(el => {
+    if (el.id in sectionState) el.open = sectionState[el.id];
+    el.addEventListener('toggle', () => {
+      sectionState[el.id] = el.open;
+      localStorage.setItem(SCHED_STORE, JSON.stringify(sectionState));
+    });
+  });
 
   // Toggle per-mode/generic capacity inputs in template cards when type changes.
   app.querySelectorAll('.pt-card .tmpl-edit-type').forEach(sel => {
