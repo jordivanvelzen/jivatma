@@ -6,45 +6,22 @@ import {
   answerCallbackQuery,
   buildWaLink,
 } from '../lib/telegram.js';
-import { sendSms } from '../lib/sms.js';
 import { todayStr, addDays } from '../lib/dates.js';
 
-function buildApprovedSmsText(firstName, request) {
-  const pt = request.pass_types;
-  const kindStr = pt?.kind === 'single'
-    ? 'Clase Única'
-    : pt?.kind === 'multi'
-    ? `Pase de ${pt.class_count} Clases`
-    : 'Mensual Ilimitado';
-  return `Hola ${firstName}, ¡tu pase de ${kindStr} ya está aprobado en Jivatma! Ya puedes reservar tus clases. Nos vemos pronto 🧘`;
+// ---------- text builders ----------
+
+function buildDeclineWaText(firstName, reason) {
+  return `Hola ${firstName}, tu solicitud de pase en Jivatma no fue aprobada. Motivo: ${reason}. Si tienes preguntas, escríbenos. 🙏`;
 }
 
-function buildDeclineSmsText(firstName, reason) {
-  return `Hola ${firstName}, tu solicitud de pase en Jivatma no fue aprobada. Motivo: ${reason}. Si tienes preguntas, escríbenos.`;
+function buildApprovedWaText(firstName, request) {
+  return `Hola ${firstName}, ¡tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. 🧘`;
 }
 
 // ---------- helpers ----------
 
-// Escape Telegram legacy-Markdown special chars in user-supplied text
 function escMd(s) {
   return String(s || '').replace(/([_*`\[\]])/g, '\\$1');
-}
-
-const SMS_REASON_LABEL = {
-  not_configured: 'Twilio no configurado',
-  opted_out: 'la alumna desactivó SMS',
-  invalid_phone: 'teléfono inválido',
-  test_phone_not_set: 'teléfono de prueba no configurado',
-  send_failed: 'error de envío',
-  exception: 'error inesperado',
-};
-
-function buildSmsLine(text, hasPhone, result) {
-  if (!hasPhone) return '📱 _SMS no enviada \\(sin teléfono\\)_';
-  if (!result) return '📱 _SMS no enviada_';
-  if (result.ok) return `📱 *SMS enviada:*\n«${escMd(text)}»`;
-  const why = SMS_REASON_LABEL[result.reason] || result.reason || 'desconocido';
-  return `📱 _SMS no enviada \\(${escMd(why)}\\)_`;
 }
 
 function kindLabel(pt) {
@@ -95,36 +72,32 @@ function buildInlineKeyboard(requestId) {
   };
 }
 
-function buildApprovedMessage({ studentName, request, waLink, smsLine }) {
+function buildApprovedMessage({ studentName, request, waLink }) {
   const lines = [
     `✅ *Pase aprobado*`,
     ``,
     `*Alumna:* ${studentName}`,
     `*Pase:* ${kindLabel(request.pass_types)}`,
+    ``,
+    waLink
+      ? `[\u{1F4AC} Avisar por WhatsApp](${waLink})`
+      : `_(Sin teléfono — avisar a mano)_`,
   ];
-  if (smsLine) {
-    lines.push('');
-    lines.push(smsLine);
-  }
-  lines.push('');
-  lines.push(waLink
-    ? `[\u{1F4AC} Avisar por WhatsApp](${waLink})`
-    : `_(Sin teléfono — avisar a mano)_`);
   return lines.join('\n');
 }
 
-function buildDeclinedMessage({ studentName, request, reason, smsLine }) {
+function buildDeclinedMessage({ studentName, request, reason, waLink }) {
   const lines = [
     `❌ *Solicitud rechazada*`,
     ``,
     `*Alumna:* ${studentName}`,
     `*Pase:* ${kindLabel(request.pass_types)}`,
     `*Motivo:* ${escMd(reason)}`,
+    ``,
+    waLink
+      ? `[\u{1F4AC} Avisar por WhatsApp](${waLink})`
+      : `_(Sin teléfono — avisar a mano)_`,
   ];
-  if (smsLine) {
-    lines.push('');
-    lines.push(smsLine);
-  }
   return lines.join('\n');
 }
 
@@ -134,61 +107,35 @@ function buildDeclinePromptMessage(requestId, studentName) {
     ``,
     `*Alumna:* ${studentName}`,
     ``,
-    `_Responde a este mensaje con el motivo. Verás una vista previa del SMS antes de enviarlo a la alumna._`,
+    `_Responde a este mensaje con el motivo. Verás una vista previa del mensaje de WhatsApp antes de confirmar._`,
     ``,
     `[#REQ-${requestId}]`,
   ].join('\n');
 }
 
-function buildDeclinePreviewMessage({ studentName, reason, smsText }) {
-  return [
-    `✍️ *Vista previa del SMS de rechazo*`,
+function buildDeclinePreviewMessage({ studentName, reason, waLink }) {
+  const lines = [
+    `✍️ *Vista previa del rechazo*`,
     ``,
     `*Alumna:* ${studentName}`,
     `*Motivo:* ${escMd(reason)}`,
     ``,
-    `*Mensaje al enviar:*`,
-    `«${escMd(smsText)}»`,
-    ``,
-    `_Confirma para rechazar y enviar el SMS, o cancela._`,
-  ].join('\n');
+    `_Confirma para marcar como rechazado y enviar el aviso por WhatsApp._`,
+  ];
+  if (waLink) {
+    lines.push('');
+    lines.push(`[\u{1F4AC} Abrir WhatsApp](${waLink})`);
+  }
+  return lines.join('\n');
 }
 
 function buildDeclineConfirmKeyboard(requestId) {
   return {
     inline_keyboard: [[
-      { text: '✅ Confirmar y enviar', callback_data: `decline_send:${requestId}` },
+      { text: '✅ Confirmar rechazo', callback_data: `decline_send:${requestId}` },
       { text: '❌ Cancelar', callback_data: `decline_cancel:${requestId}` },
     ]],
   };
-}
-
-function buildApprovedWaText(firstName, request) {
-  return `Hola ${firstName}, ¡tu pase de *${kindLabel(request.pass_types)}* ya está aprobado! Nos vemos pronto en Jivatma. 🧘`;
-}
-
-async function sendApprovedSmsAndBuildLine(request, studentName) {
-  const firstName = studentName.split(' ')[0];
-  const text = buildApprovedSmsText(firstName, request);
-  if (!request.profiles?.phone) return { line: buildSmsLine(text, false, null), text };
-  const result = await sendSms(request.profiles.phone, text, {
-    userId: request.user_id,
-    eventType: 'pass_approved',
-    recipientName: studentName,
-  });
-  return { line: buildSmsLine(text, true, result), text };
-}
-
-async function sendDeclineSmsAndBuildLine(request, studentName, reason) {
-  const firstName = studentName.split(' ')[0];
-  const text = buildDeclineSmsText(firstName, reason);
-  if (!request.profiles?.phone) return { line: buildSmsLine(text, false, null), text };
-  const result = await sendSms(request.profiles.phone, text, {
-    userId: request.user_id,
-    eventType: 'pass_declined',
-    recipientName: studentName,
-  });
-  return { line: buildSmsLine(text, true, result), text };
 }
 
 async function approveRequest(request, adminUserId) {
@@ -225,7 +172,6 @@ async function approveRequest(request, adminUserId) {
 const REQ_MARKER_RE = /\[#REQ-(\d+)\]/;
 
 async function handleTelegramWebhook(req, res) {
-  // Validate secret header Telegram sends with every webhook request
   const secretHeader = req.headers['x-telegram-bot-api-secret-token'];
   const { data: secretRow } = await supabase
     .from('settings').select('value').eq('key', 'telegram_webhook_secret').single();
@@ -236,7 +182,6 @@ async function handleTelegramWebhook(req, res) {
 
   const update = req.body || {};
 
-  // Plain message — only act when it's a reply to a decline-prompt we sent
   if (update.message && !update.callback_query) {
     return handleDeclineReply(update.message, res);
   }
@@ -264,7 +209,6 @@ async function handleTelegramWebhook(req, res) {
 
   const studentName = request.profiles?.full_name || 'Alumna';
 
-  // Cancel a pending decline draft — clears the stored reason and edits the preview
   if (action === 'decline_cancel') {
     await supabase.from('pass_requests')
       .update({ decline_reason: null }).eq('id', requestId);
@@ -296,7 +240,7 @@ async function handleTelegramWebhook(req, res) {
     return res.json({ ok: true });
   }
 
-  // Step 3 of decline: confirm — finalize status, SMS the student, edit messages
+  // Step 3 of decline: confirm — finalize status, edit messages, WA link shown
   if (action === 'decline_send') {
     const reason = (request.decline_reason || '').trim();
     if (!reason) {
@@ -310,8 +254,9 @@ async function handleTelegramWebhook(req, res) {
       await answerCallbackQuery(cb.id, `Error: ${declineErr.message}`, true);
       return res.json({ ok: true });
     }
-    const { line: smsLine } = await sendDeclineSmsAndBuildLine(request, studentName, reason);
-    const finalMsg = buildDeclinedMessage({ studentName, request, reason, smsLine });
+    const firstName = studentName.split(' ')[0];
+    const waLink = buildWaLink(request.profiles?.phone, buildDeclineWaText(firstName, reason));
+    const finalMsg = buildDeclinedMessage({ studentName, request, reason, waLink });
 
     if (request.telegram_message_id) {
       await editTelegramMessage(request.telegram_message_id, finalMsg,
@@ -321,7 +266,7 @@ async function handleTelegramWebhook(req, res) {
     }
     if (cb.message?.message_id) {
       await editTelegramMessage(cb.message.message_id,
-        `✅ _Rechazo enviado a la alumna._`,
+        `✅ _Rechazo confirmado._`,
         { replyMarkup: { inline_keyboard: [] } });
     }
     await answerCallbackQuery(cb.id, '✅ Rechazada');
@@ -337,8 +282,7 @@ async function handleTelegramWebhook(req, res) {
     }
     const firstName = studentName.split(' ')[0];
     const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
-    const { line: smsLine } = await sendApprovedSmsAndBuildLine(request, studentName);
-    const editedMsg = buildApprovedMessage({ studentName, request, waLink, smsLine });
+    const editedMsg = buildApprovedMessage({ studentName, request, waLink });
 
     if (request.telegram_message_id) {
       await editTelegramMessage(request.telegram_message_id, editedMsg,
@@ -378,8 +322,8 @@ async function handleDeclineReply(message, res) {
 
   const studentName = request.profiles?.full_name || 'Alumna';
   const firstName = studentName.split(' ')[0];
-  const smsText = buildDeclineSmsText(firstName, reason);
-  const previewMsg = buildDeclinePreviewMessage({ studentName, reason, smsText });
+  const waLink = buildWaLink(request.profiles?.phone, buildDeclineWaText(firstName, reason));
+  const previewMsg = buildDeclinePreviewMessage({ studentName, reason, waLink });
   await sendTelegram(previewMsg, { replyMarkup: buildDeclineConfirmKeyboard(requestId) });
   return res.json({ ok: true });
 }
@@ -387,7 +331,6 @@ async function handleDeclineReply(message, res) {
 // ---------- main handler ----------
 
 export default async function handler(req, res) {
-  // Telegram webhook: POST with ?webhook=telegram + secret header (no user auth)
   if (req.method === 'POST' && req.query?.webhook === 'telegram') {
     return handleTelegramWebhook(req, res);
   }
@@ -396,7 +339,6 @@ export default async function handler(req, res) {
   if (!auth) return res.status(401).json({ error: 'Unauthorized' });
   const isAdmin = auth.profile.role === 'admin';
 
-  // GET — list requests
   if (req.method === 'GET') {
     let query = supabase
       .from('pass_requests')
@@ -409,7 +351,6 @@ export default async function handler(req, res) {
     return res.json(data);
   }
 
-  // POST — create a new request (students)
   if (req.method === 'POST') {
     const { pass_type_id, payment_method, notes } = req.body;
     if (!pass_type_id) return res.status(400).json({ error: 'pass_type_id required' });
@@ -439,8 +380,6 @@ export default async function handler(req, res) {
       .single();
     if (error) return res.status(500).json({ error: error.message });
 
-    // Send Telegram notification w/ inline buttons and store message_id so the
-    // webhook can edit the same message when admin taps Approve/Decline.
     const studentName = auth.profile.full_name || auth.user.email;
     const msg = buildRequestMessage({ studentName, request: data });
     const keyboard = buildInlineKeyboard(data.id);
@@ -490,11 +429,9 @@ export default async function handler(req, res) {
     const result = await approveRequest(request, auth.user.id);
     if (!result.ok) return res.status(500).json({ error: result.reason });
 
-    // Send SMS first so we can include the result in the edited Telegram msg
     const firstName = studentName.split(' ')[0];
     const waLink = buildWaLink(request.profiles?.phone, buildApprovedWaText(firstName, request));
-    const { line: smsLine } = await sendApprovedSmsAndBuildLine(request, studentName);
-    const editedMsg = buildApprovedMessage({ studentName, request, waLink, smsLine });
+    const editedMsg = buildApprovedMessage({ studentName, request, waLink });
     if (request.telegram_message_id) {
       editTelegramMessage(request.telegram_message_id, editedMsg, { replyMarkup: { inline_keyboard: [] } }).catch(() => {});
     } else {

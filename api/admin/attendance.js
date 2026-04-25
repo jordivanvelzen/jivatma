@@ -1,6 +1,7 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 import { findActivePass, deductPass, reverseDeduction } from '../../lib/passes.js';
+import { sendTelegram, buildWaLink } from '../../lib/telegram.js';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
@@ -34,6 +35,8 @@ export default async function handler(req, res) {
     let noShows = 0;
     let passesDeducted = 0;
     let noPass = 0;
+    // Track passes that just hit 0 classes (for last-class Telegram alert)
+    const lastClassPassIds = [];
 
     for (const { user_id, attended } of recs) {
       const existingRec = existingMap[user_id];
@@ -48,7 +51,11 @@ export default async function handler(req, res) {
         let passId = null;
         if (pass) {
           const updated = await deductPass(pass.id);
-          if (updated) { passId = pass.id; passesDeducted++; }
+          if (updated) {
+            passId = pass.id;
+            passesDeducted++;
+            if (updated.classes_remaining === 0) lastClassPassIds.push(pass.id);
+          }
         } else {
           noPass++;
         }
@@ -67,6 +74,28 @@ export default async function handler(req, res) {
       if (!(userId in newMap)) {
         if (record.pass_id) await reverseDeduction(record.pass_id);
         await supabase.from('attendance').delete().eq('id', record.id);
+      }
+    }
+
+    // Notify admin for each student who just used their last class (skip single-class passes)
+    if (lastClassPassIds.length > 0) {
+      const { data: passRows } = await supabase
+        .from('user_passes')
+        .select('id, user_id, pass_type_id, pass_types(kind, class_count), profiles(full_name, phone)')
+        .in('id', lastClassPassIds);
+
+      const alerts = (passRows || []).filter(p => p.pass_types?.kind !== 'single');
+      if (alerts.length > 0) {
+        const lines = [`🔔 *Última clase usada*`, ``];
+        for (const p of alerts) {
+          const name = p.profiles?.full_name || 'Alumna';
+          const pt = p.pass_types;
+          const kind = pt?.kind === 'multi' ? `Pase de ${pt.class_count} Clases` : 'Mensual Ilimitado';
+          const waText = `Hola ${name.split(' ')[0]}, acabas de usar tu última clase del ${kind} en Jivatma. ¡Renueva tu pase para seguir reservando! 🧘`;
+          const waLink = buildWaLink(p.profiles?.phone, waText);
+          lines.push(waLink ? `• ${name} — ${kind} [💬 WhatsApp](${waLink})` : `• ${name} — ${kind} _(sin teléfono)_`);
+        }
+        sendTelegram(lines.join('\n'), { eventType: 'low_classes', recipientName: 'Admin' }).catch(() => {});
       }
     }
 
