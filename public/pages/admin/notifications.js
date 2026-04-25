@@ -1,86 +1,145 @@
 import { api } from '../../lib/api.js';
 
-const CHANNEL_LABELS = { sms: '📱 SMS', telegram: '✈️ Telegram' };
+const CHANNEL_META = {
+  sms:      { label: 'SMS',      glyph: '📱' },
+  telegram: { label: 'Telegram', glyph: '✈️' },
+};
+
 const EVENT_LABELS = {
-  pass_request:    'Solicitud de pase',
-  pass_approved:   'Pase aprobado',
-  pass_declined:   'Pase rechazado',
-  expiry_reminder: 'Aviso vencimiento',
-  low_classes:     'Pocas clases',
-  stale_unpaid:    'Cobros pendientes',
-  test:            'Prueba',
-  unknown:         'Desconocido',
-};
-const STATUS_CLASS = {
-  sent:               'badge-active',
-  failed:             'badge-expired',
-  opted_out:          'badge-pending',
-  not_configured:     'badge-pending',
-  test_phone_not_set: 'badge-pending',
-  invalid_phone:      'badge-pending',
-  skipped:            'badge-pending',
+  pass_request:     'Solicitud de pase',
+  pass_approved:    'Pase aprobado',
+  pass_declined:    'Pase rechazado',
+  expiry_reminder:  'Aviso vencimiento',
+  low_classes:      'Pocas clases',
+  stale_unpaid:     'Cobros pendientes',
+  class_cancelled:  'Clase cancelada',
+  new_signup:       'Nuevo registro',
+  test:             'Prueba',
+  unknown:          'Desconocido',
 };
 
-function fmtDate(ts) {
-  if (!ts) return '—';
-  const d = new Date(ts);
-  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-    + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+function eventLabel(t) {
+  if (!t) return 'Desconocido';
+  if (t.startsWith('cc:')) return `CC · ${EVENT_LABELS[t.slice(3)] || t.slice(3)}`;
+  return EVENT_LABELS[t] || t;
 }
 
-function statusLabel(s) {
-  const map = {
-    sent: 'Enviado', failed: 'Error', opted_out: 'No opt-in',
-    not_configured: 'Sin config', test_phone_not_set: 'Sin tel prueba',
-    invalid_phone: 'Tel inválido', skipped: 'Omitido',
-  };
-  return map[s] || s;
-}
+const STATUS_META = {
+  sent:               { label: 'Enviado',         tone: 'ok'      },
+  failed:             { label: 'Error',           tone: 'err'     },
+  opted_out:          { label: 'No opt-in',       tone: 'warn'    },
+  not_configured:     { label: 'Sin config',      tone: 'warn'    },
+  test_phone_not_set: { label: 'Sin tel prueba',  tone: 'warn'    },
+  invalid_phone:      { label: 'Tel inválido',    tone: 'err'     },
+  skipped:            { label: 'Omitido',         tone: 'neutral' },
+};
 
 function escHtml(s) {
-  return String(s)
+  return String(s ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
 
+// Turn raw error_detail (often Twilio JSON) into a short human line + full raw.
+function parseError(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  // Try JSON first.
+  try {
+    const j = JSON.parse(s);
+    const msg = j.message || j.error || j.description || s;
+    const code = j.code ? ` (${j.code})` : '';
+    return { short: `${msg}${code}`.slice(0, 140), raw: s };
+  } catch {
+    return { short: s.slice(0, 140), raw: s };
+  }
+}
+
+function relTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const diffMs = Date.now() - d.getTime();
+  const min = Math.round(diffMs / 60000);
+  if (min < 1) return 'ahora';
+  if (min < 60) return `hace ${min} min`;
+  const hrs = Math.round(min / 60);
+  if (hrs < 24) return `hace ${hrs} h`;
+  const days = Math.round(hrs / 24);
+  if (days === 1) return 'ayer';
+  if (days < 7) return `hace ${days} d`;
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+}
+
+function fullDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+
 function renderCard(r) {
-  const statusBadge = `<span class="badge ${STATUS_CLASS[r.status] || 'badge-pending'}">${statusLabel(r.status)}</span>`;
-  const testBadge   = r.test_mode ? `<span class="badge" style="background:var(--amber-bg);color:var(--orange)">TEST</span>` : '';
-  const errorRow    = r.error_detail
-    ? `<div class="notif-card__error">${escHtml(r.error_detail)}</div>` : '';
-  const preview     = r.message_preview
-    ? `<details class="notif-card__preview"><summary>Ver mensaje</summary><pre>${escHtml(r.message_preview)}</pre></details>` : '';
-  const phone       = r.recipient_phone
-    ? `<span class="notif-card__phone">${escHtml(r.recipient_phone)}</span>` : '';
+  const ch     = CHANNEL_META[r.channel] || { label: r.channel, glyph: '•' };
+  const status = STATUS_META[r.status]   || { label: r.status,  tone: 'neutral' };
+  const err    = parseError(r.error_detail);
+  const isFailed = status.tone === 'err';
+
+  const phoneLine = r.recipient_phone
+    ? `<div class="ncard__phone">${escHtml(r.recipient_phone)}</div>`
+    : '';
+
+  const testBadge = r.test_mode
+    ? `<span class="ncard__test">TEST</span>` : '';
+
+  const errLine = err
+    ? `<div class="ncard__err">⚠ ${escHtml(err.short)}</div>` : '';
+
+  const detailsParts = [];
+  if (r.message_preview) {
+    detailsParts.push(`<div class="ncard__det-label">Mensaje</div><pre class="ncard__pre">${escHtml(r.message_preview)}</pre>`);
+  }
+  if (err && err.raw && err.raw !== err.short) {
+    detailsParts.push(`<div class="ncard__det-label">Error completo</div><pre class="ncard__pre ncard__pre--err">${escHtml(err.raw)}</pre>`);
+  }
+  detailsParts.push(`<div class="ncard__det-label">Fecha exacta</div><div class="ncard__det-text">${escHtml(fullDate(r.created_at))}</div>`);
+
+  const details = detailsParts.length
+    ? `<details class="ncard__details">
+         <summary>Detalles</summary>
+         <div class="ncard__det-body">${detailsParts.join('')}</div>
+       </details>` : '';
 
   return `
-    <div class="notif-card ${r.status === 'failed' ? 'notif-card--failed' : ''}">
-      <div class="notif-card__top">
-        <span class="notif-card__channel">${CHANNEL_LABELS[r.channel] || r.channel}${testBadge}</span>
-        <span class="notif-card__date">${fmtDate(r.created_at)}</span>
+    <article class="ncard ncard--${status.tone}${isFailed ? ' ncard--failed' : ''}">
+      <div class="ncard__icon" aria-hidden="true">${ch.glyph}</div>
+      <div class="ncard__body">
+        <div class="ncard__head">
+          <span class="ncard__event">${escHtml(eventLabel(r.event_type))}</span>
+          <span class="ncard__status ncard__status--${status.tone}">${escHtml(status.label)}</span>
+        </div>
+        <div class="ncard__recipient">${escHtml(r.recipient_name || '—')}</div>
+        ${phoneLine}
+        <div class="ncard__meta">
+          <span class="ncard__time" title="${escHtml(fullDate(r.created_at))}">${escHtml(relTime(r.created_at))}</span>
+          <span class="ncard__sep">·</span>
+          <span class="ncard__channel">${escHtml(ch.label)}</span>
+          ${testBadge ? `<span class="ncard__sep">·</span>${testBadge}` : ''}
+        </div>
+        ${errLine}
+        ${details}
       </div>
-      <div class="notif-card__mid">
-        <span class="notif-card__event">${EVENT_LABELS[r.event_type] || r.event_type}</span>
-        <div class="notif-card__recipient">${escHtml(r.recipient_name || '—')}${phone}</div>
-      </div>
-      <div class="notif-card__bot">
-        ${statusBadge}
-        ${errorRow}
-        ${preview}
-      </div>
-    </div>`;
+    </article>`;
 }
 
 export async function renderAdminNotifications() {
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="page"><h2>Notificaciones enviadas</h2><div class="page-loading"><span class="spinner"></span></div></div>`;
+  app.innerHTML = `<div class="page"><h2>Notificaciones</h2><div class="page-loading"><span class="spinner"></span></div></div>`;
 
   let channel = '';
   let event_type = '';
   let offset = 0;
-  const limit = 50;
+  const limit = 25;
   let total = 0;
 
   async function load() {
@@ -100,12 +159,12 @@ export async function renderAdminNotifications() {
   async function render() {
     const rows = await load();
     if (rows === null) {
-      app.innerHTML = `<div class="page"><h2>Notificaciones enviadas</h2><p class="muted">Error al cargar el historial.</p></div>`;
+      app.innerHTML = `<div class="page"><h2>Notificaciones</h2><p class="muted">Error al cargar el historial.</p></div>`;
       return;
     }
 
     const channelOpts = ['', 'sms', 'telegram'].map(v =>
-      `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? CHANNEL_LABELS[v] : 'Todos los canales'}</option>`
+      `<option value="${v}" ${channel === v ? 'selected' : ''}>${v ? `${CHANNEL_META[v].glyph} ${CHANNEL_META[v].label}` : 'Todos los canales'}</option>`
     ).join('');
     const eventOpts = ['', ...Object.keys(EVENT_LABELS)].map(v =>
       `<option value="${v}" ${event_type === v ? 'selected' : ''}>${v ? EVENT_LABELS[v] : 'Todos los eventos'}</option>`
@@ -117,31 +176,26 @@ export async function renderAdminNotifications() {
     const to      = Math.min(offset + limit, total);
 
     const cardsHtml = rows.length === 0
-      ? `<p class="muted" style="text-align:center;padding:var(--s-8) 0">Sin registros</p>`
+      ? `<div class="ncard-empty">Sin registros</div>`
       : rows.map(renderCard).join('');
 
     app.innerHTML = `
-      <div class="page">
-        <h2>Notificaciones enviadas</h2>
-
-        <div class="notif-filters">
-          <select id="filter-channel" class="input">
-            ${channelOpts}
-          </select>
-          <select id="filter-event" class="input">
-            ${eventOpts}
-          </select>
+      <div class="page nlog-page">
+        <div class="nlog-header">
+          <h2>Notificaciones</h2>
+          <div class="nlog-count">${total === 0 ? 'Sin resultados' : `${from}–${to} de ${total}`}</div>
         </div>
 
-        <p class="muted" style="font-size:0.85rem;margin-bottom:var(--s-3)">
-          ${total === 0 ? 'Sin resultados' : `Mostrando ${from}–${to} de ${total}`}
-        </p>
+        <div class="nlog-filters">
+          <select id="filter-channel" class="input">${channelOpts}</select>
+          <select id="filter-event"   class="input">${eventOpts}</select>
+        </div>
 
-        <div class="notif-list">${cardsHtml}</div>
+        <div class="nlog-list">${cardsHtml}</div>
 
-        <div class="notif-pagination">
-          <button id="btn-prev" class="btn btn-secondary" ${hasPrev ? '' : 'disabled'}>← Anterior</button>
-          <button id="btn-next" class="btn btn-secondary" ${hasNext ? '' : 'disabled'}>Siguiente →</button>
+        <div class="nlog-pagination">
+          <button id="btn-prev" class="btn btn-secondary btn-small" ${hasPrev ? '' : 'disabled'}>← Anterior</button>
+          <button id="btn-next" class="btn btn-secondary btn-small" ${hasNext ? '' : 'disabled'}>Siguiente →</button>
         </div>
       </div>
     `;
