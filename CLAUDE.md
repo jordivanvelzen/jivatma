@@ -284,7 +284,7 @@ Configured in `vercel.json`:
 
 | File | Export | Description |
 |---|---|---|
-| `components/nav.js` | `renderNav()` | Responsive navigation bar. Shows admin nav (dashboard, attendance, users, passes, schedule, settings) or user nav (home, classes, my passes, history). Includes language toggle and logout button. Hamburger menu on mobile |
+| `components/nav.js` | `renderNav()` | Responsive navigation. **Admin:** top nav with all sections (dashboard, attendance, users, passes, schedule, settings) + hamburger on mobile. **Student (mobile):** slim top bar (brand + lang/profile/logout icons) plus a fixed bottom-nav with Classes, My Passes, More — the More button opens a bottom sheet containing Home, History, Profile, Language toggle, Logout. **Student (≥768px):** classic inline top nav. Body gets `has-bottom-nav` class so layout reserves space for the bottom-nav and toast positioning shifts up |
 | `components/class-card.js` | `renderClassCard(session, booking, spotsLeft)` | Card showing class date, time, type, spots remaining, and book/cancel button |
 | `components/pass-card.js` | `renderPassCard(pass, passType)` | Card showing pass kind, classes remaining, expiry date, and status badge (active/expired/used up) |
 | `components/toast.js` | `showToast(message, type)` | Fixed-position toast notification (success/error/info), auto-dismisses after 3s |
@@ -339,7 +339,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 - One serverless function per file in `api/`
 - Frontend is vanilla JS — no framework, no bundler, no build step
 - Pages render into `#app` via `innerHTML` with template literals
-- CSS in `public/style.css` — mobile-first, BEM-lite class naming
+- CSS in `public/style.css` — mobile-first (320px+), BEM-lite class naming. Uses CSS custom properties for design tokens: colors (`--green-700`, `--ink-900`, `--cream-50`, `--amber-bg`, etc.), spacing (`--s-1` through `--s-10`), radii (`--r-sm/md/lg/pill`), elevation (`--sh-1/2/3`), motion (`--ease`, `--t-fast/med`). Legacy aliases (`--green`, `--gray`, `--gray-dark`, etc.) are preserved so older inline styles keep working. Buttons have a 44px min tap target; safe-area insets handled via `env(safe-area-inset-bottom)`
 - All monetary values in MXN (Mexican Peso), displayed as "$X.XX MXN"
 - Dates handled as `YYYY-MM-DD` strings, times as `HH:MM` (from TIME columns)
 - Spanish is the primary language; all user-facing strings go through `t()` for i18n

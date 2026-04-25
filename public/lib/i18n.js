@@ -342,6 +342,8 @@ const translations = {
 
     // Nav — icons
     'nav.menu': 'Menú',
+    'nav.more': 'Más',
+    'nav.close': 'Cerrar',
 
     // Telegram notifications
     'admin.telegramSection': 'Notificaciones de Telegram',
@@ -718,6 +720,8 @@ const translations = {
 
     // Nav — icons
     'nav.menu': 'Menu',
+    'nav.more': 'More',
+    'nav.close': 'Close',
 
     // Telegram notifications
     'admin.telegramSection': 'Telegram Notifications',
