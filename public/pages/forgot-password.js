@@ -7,12 +7,15 @@ export async function renderForgotPassword() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth-page">
-      <h1>${t('auth.resetPassword')}</h1>
-      <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
-      <form id="forgot-form" class="auth-form">
-        <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
-        <button type="submit" class="btn btn-primary">${t('auth.sendResetLink')}</button>
-      </form>
+      <img class="auth-wordmark" src="/brand/wordmark.svg" alt="Jivatma">
+      <p class="auth-subtitle">${t('auth.resetPassword')}</p>
+      <div class="auth-card">
+        <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+        <form id="forgot-form" class="auth-form">
+          <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
+          <button type="submit" class="btn btn-primary btn-block">${t('auth.sendResetLink')}</button>
+        </form>
+      </div>
       <p class="auth-links"><a href="/login">${t('auth.backToLogin')}</a></p>
     </div>
   `;

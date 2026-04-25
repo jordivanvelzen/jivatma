@@ -9,16 +9,18 @@ export async function renderLogin() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth-page">
-      <h1>Jivatma</h1>
-      <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
-      <form id="login-form" class="auth-form">
-        <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
-        <input type="password" id="password" placeholder="${t('auth.password')}" required autocomplete="current-password" />
-        <button type="submit" class="btn btn-primary">${t('auth.login')}</button>
-      </form>
-      <div id="unconfirmed-banner" class="cash-notice hidden" style="margin-top:1rem">
-        <p style="margin:0 0 0.5rem">${t('auth.emailNotConfirmed')}</p>
-        <button type="button" id="resend-confirmation" class="btn btn-small btn-secondary">${t('auth.resendConfirmation')}</button>
+      <img class="auth-wordmark" src="/brand/wordmark.svg" alt="Jivatma">
+      <div class="auth-card">
+        <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+        <form id="login-form" class="auth-form">
+          <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
+          <input type="password" id="password" placeholder="${t('auth.password')}" required autocomplete="current-password" />
+          <button type="submit" class="btn btn-primary btn-block">${t('auth.login')}</button>
+        </form>
+        <div id="unconfirmed-banner" class="cash-notice hidden" style="margin-top:0.5rem">
+          <p style="margin:0 0 0.5rem">${t('auth.emailNotConfirmed')}</p>
+          <button type="button" id="resend-confirmation" class="btn btn-small btn-secondary">${t('auth.resendConfirmation')}</button>
+        </div>
       </div>
       <p class="auth-links">
         <a href="/register">${t('auth.createAccount')}</a> · <a href="/forgot-password">${t('auth.forgotPassword')}</a>

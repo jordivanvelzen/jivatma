@@ -9,24 +9,25 @@ export async function renderRegister() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth-page">
-      <h1>${t('auth.register')}</h1>
-      <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+      <img class="auth-wordmark" src="/brand/wordmark.svg" alt="Jivatma">
+      <p class="auth-subtitle">${t('auth.register')}</p>
+      <div class="auth-card">
+        <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+        <p class="muted" style="font-size:0.875rem; margin:0">
+          ${t('auth.registerIntro')}
+        </p>
+        <form id="register-form" class="auth-form">
+          <input type="text" id="full-name" placeholder="${t('auth.fullName')}" required autocomplete="name" />
+          <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
+          <input type="tel" id="phone" placeholder="${t('auth.phonePlaceholder')}" required autocomplete="tel" pattern="[0-9+\\s\\-\\(\\)]{7,}" />
+          <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
+          <button type="submit" class="btn btn-primary btn-block">${t('auth.createAccount')}</button>
+        </form>
+      </div>
 
-      <p class="muted" style="font-size:0.9rem; margin-bottom:1rem">
-        ${t('auth.registerIntro')}
-      </p>
-
-      <form id="register-form" class="auth-form">
-        <input type="text" id="full-name" placeholder="${t('auth.fullName')}" required autocomplete="name" />
-        <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
-        <input type="tel" id="phone" placeholder="${t('auth.phonePlaceholder')}" required autocomplete="tel" pattern="[0-9+\\s\\-\\(\\)]{7,}" />
-        <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
-        <button type="submit" class="btn btn-primary">${t('auth.createAccount')}</button>
-      </form>
-
-      <div class="info-box" style="margin-top:1rem">
+      <div class="info-box" style="text-align:left">
         <strong>${t('auth.nextSteps')}</strong>
-        <ol style="margin:0.5rem 0 0 1.2rem; padding:0; font-size:0.9rem">
+        <ol style="margin:0.5rem 0 0 1.2rem; padding:0; font-size:0.875rem">
           <li>${t('auth.step1Email')}</li>
           <li>${t('auth.step2Confirm')}</li>
           <li>${t('auth.step3Login')}</li>

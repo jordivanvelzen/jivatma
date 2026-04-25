@@ -437,18 +437,41 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* ---------- Auth pages ---------- */
+/* ---------- Auth pages — brand maroon/gold theme ---------- */
 .auth-page {
-  max-width: 400px;
-  margin: var(--s-10) auto;
-  padding: 0 var(--s-4);
+  min-height: 100vh;
+  background: #852519;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-8) var(--s-4);
   text-align: center;
+  gap: var(--s-4);
 }
-.auth-page h1 {
-  color: var(--green-700);
-  font-size: 2rem;
-  margin-bottom: var(--s-6);
-  letter-spacing: -0.02em;
-  font-weight: 700;
+.auth-wordmark {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+.auth-subtitle {
+  color: rgba(255,251,210,0.7);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: calc(-1 * var(--s-2)) 0 0;
+}
+.auth-card {
+  background: #fffbd2;
+  border-radius: var(--r-lg);
+  padding: var(--s-6) var(--s-5);
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
 }
 .auth-form {
   display: flex;
@@ -457,20 +480,45 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 .auth-form input {
   padding: var(--s-3) var(--s-4);
-  border: 1px solid var(--ink-200);
+  border: 1px solid rgba(133,37,25,0.3);
   border-radius: var(--r-md);
   font-size: 1rem;
   background: var(--white);
   font-family: inherit;
   transition: border-color var(--t-fast) var(--ease);
 }
-.auth-form input:focus { border-color: var(--green-500); }
+.auth-form input:focus { border-color: #852519; outline: none; box-shadow: 0 0 0 3px rgba(133,37,25,0.15); }
+.auth-card .btn-primary { background: #852519; color: #fffbd2; }
+.auth-card .btn-primary:hover { background: #6b1d13; }
+.auth-card .btn-secondary { background: rgba(133,37,25,0.08); border-color: rgba(133,37,25,0.3); color: #852519; }
+.auth-card .btn-secondary:hover { background: rgba(133,37,25,0.14); }
+.auth-card .lang-toggle { align-self: flex-end; color: rgba(133,37,25,0.55); font-size: 0.85rem; }
+.auth-card .lang-toggle:hover { color: #852519; }
 .auth-links {
-  margin-top: var(--s-4);
-  color: var(--ink-500);
+  margin-top: 0;
+  color: rgba(255,251,210,0.65);
   font-size: 0.9rem;
 }
-.auth-links a { color: var(--green-700); }
+.auth-links a { color: #fdb515; }
+.auth-links a:hover { color: #fffbd2; }
+/* info-box and cash-notice on maroon bg */
+.auth-page .info-box {
+  background: rgba(255,251,210,0.1);
+  border-color: rgba(255,251,210,0.25);
+  border-left-color: #fdb515;
+  color: #fffbd2;
+  max-width: 380px;
+  width: 100%;
+}
+.auth-page .info-box strong { color: #fdb515; }
+.auth-page .info-box ol li { color: rgba(255,251,210,0.85); }
+.auth-page .cash-notice {
+  background: rgba(255,251,210,0.1);
+  border-color: rgba(255,251,210,0.3);
+  color: #fffbd2;
+  max-width: 380px;
+  width: 100%;
+}
 
 .opt-in-label {
   display: flex;
@@ -1871,13 +1919,13 @@ body:not(.has-bottom-nav) .toast { bottom: var(--s-6); }
 }
 .view-pill-btn .icon { width: 14px; height: 14px; }
 .view-pill-btn.active {
-  background: var(--white);
-  color: var(--green-800);
+  background: #852519;
+  color: #fffbd2;
   box-shadow: var(--sh-1);
 }
 .view-pill-btn.active.view-pill-btn--student {
-  background: var(--green-800);
-  color: var(--white);
+  background: #fdb515;
+  color: #852519;
 }
 .view-pill-btn:hover:not(.active) { color: var(--ink-700); }
 

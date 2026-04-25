@@ -8,12 +8,15 @@ export async function renderResetPassword() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth-page">
-      <h1>${t('auth.newPassword')}</h1>
-      <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
-      <form id="reset-form" class="auth-form">
-        <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
-        <button type="submit" class="btn btn-primary">${t('auth.updatePassword')}</button>
-      </form>
+      <img class="auth-wordmark" src="/brand/wordmark.svg" alt="Jivatma">
+      <p class="auth-subtitle">${t('auth.newPassword')}</p>
+      <div class="auth-card">
+        <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
+        <form id="reset-form" class="auth-form">
+          <input type="password" id="password" placeholder="${t('auth.passwordMin')}" required minlength="6" autocomplete="new-password" />
+          <button type="submit" class="btn btn-primary btn-block">${t('auth.updatePassword')}</button>
+        </form>
+      </div>
     </div>
   `;
 
