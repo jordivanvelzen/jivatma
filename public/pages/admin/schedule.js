@@ -131,128 +131,229 @@ export async function renderAdminSchedule() {
   };
 
   app.innerHTML = `
-    <div class="page">
+    <style>
+      .sched-page { display:flex; flex-direction:column; gap: var(--s-4); padding-bottom: var(--s-8); overflow-x: hidden; }
+      .sched-page > h2 { margin: 0 0 var(--s-2); }
+
+      .set-section {
+        border:1px solid var(--ink-100);
+        border-radius: var(--r-lg);
+        background:#fff;
+        box-shadow: var(--sh-1);
+        overflow:hidden;
+        transition: box-shadow var(--t-fast) var(--ease);
+      }
+      .set-section[open] { box-shadow: var(--sh-2); }
+      .set-section > summary {
+        list-style:none;
+        cursor:pointer;
+        padding: var(--s-4) var(--s-5);
+        display:flex; align-items:center; gap: var(--s-3);
+        font-weight:600;
+        font-size: 1.05rem;
+        color: var(--ink-900);
+        user-select:none;
+      }
+      .set-section > summary:hover { background: var(--ink-50, #f7f7f4); }
+      .set-section > summary::-webkit-details-marker { display:none; }
+      .set-section > summary .sec-icon {
+        width: 36px; height: 36px;
+        display:inline-flex; align-items:center; justify-content:center;
+        background: var(--green-50, #eef3ee);
+        color: var(--green-700);
+        border-radius: var(--r-md);
+        font-size: 1.1rem;
+        flex-shrink:0;
+      }
+      .set-section > summary .sec-title { flex:1; min-width:0; }
+      .set-section > summary .sec-sub { display:block; font-weight:400; font-size:.8rem; color: var(--ink-500); margin-top:2px; }
+      .set-section > summary .sec-chev {
+        color: var(--ink-500);
+        transition: transform var(--t-fast) var(--ease);
+        flex-shrink:0;
+      }
+      .set-section[open] > summary .sec-chev { transform: rotate(180deg); }
+
+      .set-body {
+        padding: var(--s-4) var(--s-5) var(--s-5);
+        display:flex; flex-direction:column; gap: var(--s-4);
+        border-top:1px solid var(--ink-100);
+      }
+    </style>
+
+    <div class="page sched-page">
       <h2>${t('admin.weeklySchedule')}</h2>
 
-      ${!templates?.length
-        ? `<p class="muted">${t('admin.noTemplates')}</p>`
-        : `<div class="pt-card-list">${templates.map(templateCard).join('')}</div>`
-      }
+      <!-- Weekly templates -->
+      <details class="set-section" open id="sec-templates">
+        <summary>
+          <span class="sec-icon">📅</span>
+          <span class="sec-title">${t('admin.weeklySchedule')}<span class="sec-sub">${t('admin.weeklyScheduleSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          ${!templates?.length
+            ? `<p class="muted">${t('admin.noTemplates')}</p>`
+            : `<div class="pt-card-list">${templates.map(templateCard).join('')}</div>`
+          }
+        </div>
+      </details>
 
-      <h3>${t('admin.addClass')}</h3>
-      <form id="add-template-form" class="form">
-        <div class="form-row">
-          <label>${t('admin.day')}
-            <select id="tmpl-day" required>
-              ${[0,1,2,3,4,5,6].map(i => `<option value="${i}">${t('day.' + i)}</option>`).join('')}
-            </select>
-          </label>
-          <label>${t('attendance.time')}
-            <input type="time" id="tmpl-time" required value="09:00" />
-          </label>
+      <!-- Add recurring class -->
+      <details class="set-section" id="sec-add-tmpl">
+        <summary>
+          <span class="sec-icon">➕</span>
+          <span class="sec-title">${t('admin.addClass')}<span class="sec-sub">${t('admin.addTemplateSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          <form id="add-template-form" class="form">
+            <div class="form-row">
+              <label>${t('admin.day')}
+                <select id="tmpl-day" required>
+                  ${[0,1,2,3,4,5,6].map(i => `<option value="${i}">${t('day.' + i)}</option>`).join('')}
+                </select>
+              </label>
+              <label>${t('attendance.time')}
+                <input type="time" id="tmpl-time" required value="09:00" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>${t('attendance.type')}
+                <select id="tmpl-type" required>
+                  <option value="in_person">${t('type.in_person')}</option>
+                  <option value="online">${t('type.online')}</option>
+                  <option value="hybrid">${t('type.hybrid')}</option>
+                </select>
+              </label>
+              <label class="cap-generic">${t('admin.capacity')}
+                <input type="number" id="tmpl-cap" min="1" placeholder="${defaultCap}" />
+              </label>
+            </div>
+            <div class="form-row cap-permode" style="display:none">
+              <label>${t('admin.capacityInPerson')}
+                <input type="number" id="tmpl-cap-ip" min="1" placeholder="${defaultCap}" />
+              </label>
+              <label>${t('admin.capacityOnline')}
+                <input type="number" id="tmpl-cap-ol" min="1" placeholder="${defaultCap}" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>${t('admin.duration')}
+                <input type="number" id="tmpl-dur" min="15" value="60" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary">${t('admin.addClass')}</button>
+          </form>
         </div>
-        <div class="form-row">
-          <label>${t('attendance.type')}
-            <select id="tmpl-type" required>
-              <option value="in_person">${t('type.in_person')}</option>
-              <option value="online">${t('type.online')}</option>
-              <option value="hybrid">${t('type.hybrid')}</option>
-            </select>
-          </label>
-          <label class="cap-generic">${t('admin.capacity')}
-            <input type="number" id="tmpl-cap" min="1" placeholder="${defaultCap}" />
-          </label>
-        </div>
-        <div class="form-row cap-permode" style="display:none">
-          <label>${t('admin.capacityInPerson')}
-            <input type="number" id="tmpl-cap-ip" min="1" placeholder="${defaultCap}" />
-          </label>
-          <label>${t('admin.capacityOnline')}
-            <input type="number" id="tmpl-cap-ol" min="1" placeholder="${defaultCap}" />
-          </label>
-        </div>
-        <div class="form-row">
-          <label>${t('admin.duration')}
-            <input type="number" id="tmpl-dur" min="15" value="60" required />
-          </label>
-        </div>
-        <button type="submit" class="btn btn-primary">${t('admin.addClass')}</button>
-      </form>
+      </details>
 
-      <hr />
-      <h3>${t('admin.addOneOff')}</h3>
-      <form id="add-oneoff-form" class="form">
-        <div class="form-row">
-          <label>${t('admin.date')}
-            <input type="date" id="oo-date" required min="${today}" />
-          </label>
-          <label>${t('attendance.time')}
-            <input type="time" id="oo-time" required value="09:00" />
-          </label>
+      <!-- Add one-off session -->
+      <details class="set-section" id="sec-add-oneoff">
+        <summary>
+          <span class="sec-icon">📆</span>
+          <span class="sec-title">${t('admin.addOneOff')}<span class="sec-sub">${t('admin.addOneOffSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          <form id="add-oneoff-form" class="form">
+            <div class="form-row">
+              <label>${t('admin.date')}
+                <input type="date" id="oo-date" required min="${today}" />
+              </label>
+              <label>${t('attendance.time')}
+                <input type="time" id="oo-time" required value="09:00" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>${t('attendance.type')}
+                <select id="oo-type" required>
+                  <option value="in_person">${t('type.in_person')}</option>
+                  <option value="online">${t('type.online')}</option>
+                  <option value="hybrid">${t('type.hybrid')}</option>
+                </select>
+              </label>
+              <label class="oo-cap-generic">${t('admin.capacity')}
+                <input type="number" id="oo-cap" min="1" placeholder="${defaultCap}" />
+              </label>
+            </div>
+            <div class="form-row oo-cap-permode" style="display:none">
+              <label>${t('admin.capacityInPerson')}
+                <input type="number" id="oo-cap-ip" min="1" placeholder="${defaultCap}" />
+              </label>
+              <label>${t('admin.capacityOnline')}
+                <input type="number" id="oo-cap-ol" min="1" placeholder="${defaultCap}" />
+              </label>
+            </div>
+            <label>${t('admin.sessionNotes')}
+              <input type="text" id="oo-notes" />
+            </label>
+            <button type="submit" class="btn btn-primary">${t('admin.addOneOff')}</button>
+          </form>
         </div>
-        <div class="form-row">
-          <label>${t('attendance.type')}
-            <select id="oo-type" required>
-              <option value="in_person">${t('type.in_person')}</option>
-              <option value="online">${t('type.online')}</option>
-              <option value="hybrid">${t('type.hybrid')}</option>
-            </select>
-          </label>
-          <label class="oo-cap-generic">${t('admin.capacity')}
-            <input type="number" id="oo-cap" min="1" placeholder="${defaultCap}" />
-          </label>
-        </div>
-        <div class="form-row oo-cap-permode" style="display:none">
-          <label>${t('admin.capacityInPerson')}
-            <input type="number" id="oo-cap-ip" min="1" placeholder="${defaultCap}" />
-          </label>
-          <label>${t('admin.capacityOnline')}
-            <input type="number" id="oo-cap-ol" min="1" placeholder="${defaultCap}" />
-          </label>
-        </div>
-        <label>${t('admin.sessionNotes')}
-          <input type="text" id="oo-notes" />
-        </label>
-        <button type="submit" class="btn btn-primary">${t('admin.addOneOff')}</button>
-      </form>
+      </details>
 
-      <hr />
-      <h3>${t('admin.upcomingSessions')}</h3>
-      ${!upcomingSessions.length
-        ? `<p class="muted">${t('admin.noClassesToday')}</p>`
-        : `<div class="session-list">${upcomingSessions.map(sessionItem).join('')}</div>`
-      }
-
-      <hr />
-      <h3>${t('admin.unavailability')}</h3>
-      <p class="muted">${t('admin.unavailabilityNote')}</p>
-      ${(unavailability || []).length
-        ? `<div class="session-list">${(unavailability || []).map(unavailItem).join('')}</div>`
-        : `<p class="muted">${t('admin.noUnavailability')}</p>`
-      }
-      <form id="add-unavail-form" class="form" style="margin-top: var(--s-3, 0.75rem)">
-        <div class="form-row">
-          <label>${t('admin.unavailFrom')}
-            <input type="date" id="unavail-start" required min="${today}" />
-          </label>
-          <label>${t('admin.unavailTo')}
-            <input type="date" id="unavail-end" required min="${today}" />
-          </label>
+      <!-- Upcoming sessions -->
+      <details class="set-section" open id="sec-sessions">
+        <summary>
+          <span class="sec-icon">📋</span>
+          <span class="sec-title">${t('admin.upcomingSessions')}<span class="sec-sub">${t('admin.upcomingSessionsSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          ${!upcomingSessions.length
+            ? `<p class="muted">${t('admin.noClassesToday')}</p>`
+            : `<div class="session-list">${upcomingSessions.map(sessionItem).join('')}</div>`
+          }
         </div>
-        <label>${t('admin.unavailReason')}
-          <input type="text" id="unavail-reason" placeholder="${t('admin.unavailReasonPlaceholder')}" />
-        </label>
-        <button type="submit" class="btn btn-primary">${t('admin.unavailAdd')}</button>
-      </form>
+      </details>
 
-      <hr />
-      <h3>${t('admin.generateSessions')}</h3>
-      <p class="muted">${t('admin.generateNote')}</p>
-      <div class="form-actions" style="display:flex; gap: var(--s-2, 0.5rem); flex-wrap: wrap">
-        <button id="preview-btn" class="btn btn-secondary">${t('admin.previewGenerate')}</button>
-        <button id="generate-btn" class="btn btn-secondary">${t('admin.generateNext2Weeks')}</button>
-        <button id="resync-btn" class="btn btn-secondary">${t('admin.resyncTemplates')}</button>
-      </div>
+      <!-- Unavailability -->
+      <details class="set-section" id="sec-unavail">
+        <summary>
+          <span class="sec-icon">🚫</span>
+          <span class="sec-title">${t('admin.unavailability')}<span class="sec-sub">${t('admin.unavailSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          <p class="muted">${t('admin.unavailabilityNote')}</p>
+          ${(unavailability || []).length
+            ? `<div class="session-list">${(unavailability || []).map(unavailItem).join('')}</div>`
+            : `<p class="muted">${t('admin.noUnavailability')}</p>`
+          }
+          <form id="add-unavail-form" class="form">
+            <div class="form-row">
+              <label>${t('admin.unavailFrom')}
+                <input type="date" id="unavail-start" required min="${today}" />
+              </label>
+              <label>${t('admin.unavailTo')}
+                <input type="date" id="unavail-end" required min="${today}" />
+              </label>
+            </div>
+            <label>${t('admin.unavailReason')}
+              <input type="text" id="unavail-reason" placeholder="${t('admin.unavailReasonPlaceholder')}" />
+            </label>
+            <button type="submit" class="btn btn-primary">${t('admin.unavailAdd')}</button>
+          </form>
+        </div>
+      </details>
+
+      <!-- Generate & sync -->
+      <details class="set-section" id="sec-generate">
+        <summary>
+          <span class="sec-icon">⚙️</span>
+          <span class="sec-title">${t('admin.generateSessions')}<span class="sec-sub">${t('admin.generateSub')}</span></span>
+          <span class="sec-chev">▾</span>
+        </summary>
+        <div class="set-body">
+          <p class="muted">${t('admin.generateNote')}</p>
+          <div style="display:flex; gap: var(--s-2); flex-wrap: wrap">
+            <button id="preview-btn" class="btn btn-secondary">${t('admin.previewGenerate')}</button>
+            <button id="generate-btn" class="btn btn-secondary">${t('admin.generateNext2Weeks')}</button>
+            <button id="resync-btn" class="btn btn-secondary">${t('admin.resyncTemplates')}</button>
+          </div>
+        </div>
+      </details>
     </div>
   `;
 

@@ -221,6 +221,12 @@ const translations = {
 
     // Admin Schedule
     'admin.weeklySchedule': 'Horario Semanal',
+    'admin.weeklyScheduleSub': 'Clases que se repiten cada semana',
+    'admin.addTemplateSub': 'Nueva clase recurrente',
+    'admin.addOneOffSub': 'Clase especial, sin plantilla',
+    'admin.upcomingSessionsSub': 'Próximas clases generadas',
+    'admin.unavailSub': 'Vacaciones, festivos, retiros',
+    'admin.generateSub': 'Generar y sincronizar sesiones',
     'admin.noTemplates': 'Aún no hay clases configuradas.',
     'admin.day': 'Día',
     'admin.capacity': 'Capacidad',
@@ -713,6 +719,12 @@ const translations = {
 
     // Admin Schedule
     'admin.weeklySchedule': 'Weekly Schedule',
+    'admin.weeklyScheduleSub': 'Classes that repeat every week',
+    'admin.addTemplateSub': 'New recurring class template',
+    'admin.addOneOffSub': 'Special one-time class',
+    'admin.upcomingSessionsSub': 'Upcoming generated classes',
+    'admin.unavailSub': 'Vacations, holidays, retreats',
+    'admin.generateSub': 'Generate and sync sessions',
     'admin.noTemplates': 'No classes set up yet.',
     'admin.day': 'Day',
     'admin.capacity': 'Capacity',
