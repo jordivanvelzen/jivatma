@@ -62,10 +62,10 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
     <div class="nav-inner">
       <a href="/" class="nav-brand">Jivatma</a>
       <div class="nav-links">
-        <a href="/admin" class="${currentPath() === '/admin' ? 'active' : ''}">${t('nav.dashboard')}</a>
-        <a href="/admin/class" class="${isActive('/admin/class') ? 'active' : ''}">${t('nav.attendance')}</a>
-        <a href="/admin/users" class="${isActive('/admin/users') ? 'active' : ''}">${t('nav.users')}</a>
-        <a href="/admin/passes" class="${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
+        <a href="/admin" class="nav-links__desktop ${currentPath() === '/admin' ? 'active' : ''}">${t('nav.dashboard')}</a>
+        <a href="/admin/class" class="nav-links__desktop ${isActive('/admin/class') ? 'active' : ''}">${t('nav.attendance')}</a>
+        <a href="/admin/users" class="nav-links__desktop ${isActive('/admin/users') ? 'active' : ''}">${t('nav.users')}</a>
+        <a href="/admin/passes" class="nav-links__desktop ${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
         <a href="/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
         <a href="/admin/notifications" class="${isActive('/admin/notifications') ? 'active' : ''}">Notificaciones</a>

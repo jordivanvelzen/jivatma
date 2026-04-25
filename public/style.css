@@ -159,6 +159,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: var(--sh-2);
 }
 .nav-links.open { display: flex; }
+/* Admin bottom-nav links are hidden in the hamburger on mobile */
+.nav-links__desktop { display: none; }
 .nav-links a, .nav-links button {
   color: var(--ink-700);
   text-decoration: none;
@@ -249,6 +251,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .nav-toggle { display: none; }
   /* Lang/logout in hamburger dropdown are redundant on desktop */
   .nav-links-mobile-only { display: none !important; }
+  /* Bottom-nav items are desktop-visible in the top bar */
+  .nav-links__desktop { display: block !important; }
   /* Lang/logout in nav-actions are shown on desktop */
   .nav-icon-desktop-only { display: inline-flex; }
 }
