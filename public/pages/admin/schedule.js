@@ -9,10 +9,11 @@ export async function renderAdminSchedule() {
   const app = document.getElementById('app');
   const today = todayStr();
 
-  const [{ data: templates }, { data: capSetting }, { data: sessions }] = await Promise.all([
+  const [{ data: templates }, { data: capSetting }, { data: sessions }, { data: unavailability }] = await Promise.all([
     sb.from('class_templates').select('*').order('day_of_week').order('start_time'),
     sb.from('settings').select('value').eq('key', 'default_capacity').single(),
     sb.from('class_sessions').select('*').gte('date', today).order('date').order('start_time'),
+    sb.from('unavailability').select('*').gte('end_date', today).order('start_date', { ascending: true }),
   ]);
   const defaultCap = capSetting?.value || '15';
   const locale = getLocale();
@@ -85,13 +86,32 @@ export async function renderAdminSchedule() {
       ? `${s.capacity_inperson ?? '—'} ${t('admin.inPersonShort')} / ${s.capacity_online ?? '—'} ${t('admin.onlineShort')}`
       : `${s.capacity || defaultCap} ${t('admin.capacity').toLowerCase()}`;
     const oneOffBadge = s.template_id ? '' : ` <span class="badge badge-pending" style="font-size:0.65rem">${t('admin.oneOff').split('(')[0].trim()}</span>`;
+    const isCancelled = s.status === 'cancelled';
+    const cancelMeta = isCancelled
+      ? `<div class="session-row-meta" style="color:var(--rose-700,#a02c4a)">⊘ ${t('admin.sessionCancelled')}${s.cancellation_reason ? ` · ${s.cancellation_reason}` : ''}</div>`
+      : '';
     return `
-      <div class="session-row ${s.status === 'cancelled' ? 'cancelled' : ''}" data-sid="${s.id}">
+      <div class="session-row ${isCancelled ? 'cancelled' : ''}" data-sid="${s.id}" style="${isCancelled ? 'opacity:0.65' : ''}">
         <div class="session-row-main">
-          <div class="session-row-title">${dateStr} · ${s.start_time.slice(0,5)}</div>
+          <div class="session-row-title" style="${isCancelled ? 'text-decoration:line-through' : ''}">${dateStr} · ${s.start_time.slice(0,5)}</div>
           <div class="session-row-meta">${t('type.' + s.class_type)} · ${capStr}${oneOffBadge}</div>
+          ${cancelMeta}
         </div>
         <button class="btn btn-small btn-danger delete-session" data-id="${s.id}" aria-label="${t('admin.delete')}">${t('admin.delete')}</button>
+      </div>
+    `;
+  };
+
+  const unavailItem = (u) => {
+    const fmt = (d) => new Date(d + 'T00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    const range = u.start_date === u.end_date ? fmt(u.start_date) : `${fmt(u.start_date)} – ${fmt(u.end_date)}`;
+    return `
+      <div class="session-row" data-uid="${u.id}">
+        <div class="session-row-main">
+          <div class="session-row-title">${range}</div>
+          ${u.reason ? `<div class="session-row-meta">${u.reason}</div>` : ''}
+        </div>
+        <button class="btn btn-small btn-danger delete-unavail" data-id="${u.id}">${t('admin.delete')}</button>
       </div>
     `;
   };
@@ -190,9 +210,35 @@ export async function renderAdminSchedule() {
       }
 
       <hr />
+      <h3>${t('admin.unavailability')}</h3>
+      <p class="muted">${t('admin.unavailabilityNote')}</p>
+      ${(unavailability || []).length
+        ? `<div class="session-list">${(unavailability || []).map(unavailItem).join('')}</div>`
+        : `<p class="muted">${t('admin.noUnavailability')}</p>`
+      }
+      <form id="add-unavail-form" class="form" style="margin-top: var(--s-3, 0.75rem)">
+        <div class="form-row">
+          <label>${t('admin.unavailFrom')}
+            <input type="date" id="unavail-start" required min="${today}" />
+          </label>
+          <label>${t('admin.unavailTo')}
+            <input type="date" id="unavail-end" required min="${today}" />
+          </label>
+        </div>
+        <label>${t('admin.unavailReason')}
+          <input type="text" id="unavail-reason" placeholder="${t('admin.unavailReasonPlaceholder')}" />
+        </label>
+        <button type="submit" class="btn btn-primary">${t('admin.unavailAdd')}</button>
+      </form>
+
+      <hr />
       <h3>${t('admin.generateSessions')}</h3>
       <p class="muted">${t('admin.generateNote')}</p>
-      <button id="generate-btn" class="btn btn-secondary">${t('admin.generateNext2Weeks')}</button>
+      <div class="form-actions" style="display:flex; gap: var(--s-2, 0.5rem); flex-wrap: wrap">
+        <button id="preview-btn" class="btn btn-secondary">${t('admin.previewGenerate')}</button>
+        <button id="generate-btn" class="btn btn-secondary">${t('admin.generateNext2Weeks')}</button>
+        <button id="resync-btn" class="btn btn-secondary">${t('admin.resyncTemplates')}</button>
+      </div>
     </div>
   `;
 

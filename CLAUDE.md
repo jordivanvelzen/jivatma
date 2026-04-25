@@ -428,7 +428,7 @@ Database setup: run `scripts/setup-all.sql` in the Supabase SQL Editor. This cre
 | Approval WhatsApp Nudge | Built | When Claudia approves a pass request, she receives a Telegram message with a `wa.me/<phone>?text=...` tap-to-WhatsApp link pre-filled with a "tu pase está aprobado" message for the student. Mexico country code (52) auto-prepended to bare 10-digit phones. |
 | Attendance Undo | Built | Removing attendance reverses pass deduction |
 | Student Dashboard | Built | Active passes, upcoming bookings, recent attendance |
-| Admin Dashboard | Built | Today's classes, expiring pass alerts, low-class alerts, quick actions |
+| Admin Dashboard | Built | Today's + tomorrow's classes as expandable cards. Each card shows time, class type, signed-up vs capacity (hybrid shows in-person/online breakdown). Tap a card to expand inline and mark attendance for booked students (✓ / ✗ / —) with an inline Save button — no navigation needed. Each expanded card also has an "Abrir asistencia completa" link to the full attendance page for walk-ins / extra controls. Plus expiring pass alerts and low-class alerts |
 | User Management | Built | View all users, user detail, toggle admin role, assign passes |
 | Studio Settings | Built | Location, meeting link, sign-up window, default capacity |
 | Bilingual UI (ES/EN) | Built | Full Spanish/English with toggle, persisted via cookie |

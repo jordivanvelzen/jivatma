@@ -1,11 +1,113 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
+import { todayStr } from '../../lib/dates.js';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
   if (!admin) return res.status(403).json({ error: 'Forbidden' });
 
-  const isSessions = req.query.type === 'sessions';
+  const type = req.query.type;
+  const action = req.query.action;
+
+  // ---- Unavailability windows ----
+  if (type === 'unavailability') {
+    if (req.method === 'GET') {
+      const { data, error } = await supabase
+        .from('unavailability')
+        .select('*')
+        .order('start_date', { ascending: true });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
+    }
+    if (req.method === 'POST') {
+      const { start_date, end_date, reason } = req.body;
+      if (!start_date || !end_date) return res.status(400).json({ error: 'start_date and end_date required' });
+      if (end_date < start_date) return res.status(400).json({ error: 'end_date must be >= start_date' });
+      const { data, error } = await supabase
+        .from('unavailability')
+        .insert({ start_date, end_date, reason: reason || null })
+        .select().single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
+    }
+    if (req.method === 'DELETE') {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ error: 'id required' });
+      const { error } = await supabase.from('unavailability').delete().eq('id', id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ ok: true });
+    }
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // ---- Resync future sessions to their template ----
+  // Updates start_time / class_type / capacity / capacity_inperson / capacity_online on every
+  // future scheduled session that still has a template_id, so template edits propagate.
+  // Reports which updated sessions had active bookings so admin can review notification needs.
+  if (action === 'resync' && req.method === 'POST') {
+    const today = todayStr();
+    const { data: templates, error: tplErr } = await supabase
+      .from('class_templates')
+      .select('*');
+    if (tplErr) return res.status(500).json({ error: tplErr.message });
+    const tplById = new Map((templates || []).map(t => [t.id, t]));
+
+    const { data: sessions, error: sErr } = await supabase
+      .from('class_sessions')
+      .select('id, template_id, date, start_time, class_type, capacity, capacity_inperson, capacity_online, status')
+      .gte('date', today)
+      .eq('status', 'scheduled')
+      .not('template_id', 'is', null);
+    if (sErr) return res.status(500).json({ error: sErr.message });
+
+    let updated = 0;
+    const errors = [];
+    const changedIds = [];
+
+    for (const s of sessions || []) {
+      const t = tplById.get(s.template_id);
+      if (!t) continue;
+      const targetCap = t.capacity ?? null;
+      const targetCapIp = t.capacity_inperson ?? null;
+      const targetCapOl = t.capacity_online ?? null;
+      if (
+        s.start_time === t.start_time &&
+        s.class_type === t.class_type &&
+        s.capacity === targetCap &&
+        s.capacity_inperson === targetCapIp &&
+        s.capacity_online === targetCapOl
+      ) continue;
+      const { error } = await supabase
+        .from('class_sessions')
+        .update({
+          start_time: t.start_time,
+          class_type: t.class_type,
+          capacity: targetCap,
+          capacity_inperson: targetCapIp,
+          capacity_online: targetCapOl,
+        })
+        .eq('id', s.id);
+      if (error) { errors.push({ id: s.id, error: error.message }); continue; }
+      updated++;
+      changedIds.push(s.id);
+    }
+
+    let withBookings = [];
+    if (changedIds.length) {
+      const { data: bks } = await supabase
+        .from('bookings')
+        .select('session_id')
+        .in('session_id', changedIds)
+        .is('cancelled_at', null);
+      const counts = {};
+      (bks || []).forEach(b => { counts[b.session_id] = (counts[b.session_id] || 0) + 1; });
+      withBookings = Object.entries(counts).map(([sid, n]) => ({ session_id: parseInt(sid, 10), bookings: n }));
+    }
+
+    return res.json({ updated, withBookings, errors });
+  }
+
+  const isSessions = type === 'sessions';
 
   if (isSessions) {
     if (req.method === 'GET') {

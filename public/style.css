@@ -695,6 +695,79 @@ hr { border: none; border-top: 1px solid var(--ink-100); margin: var(--s-6) 0; }
 .booked-badge { color: var(--green-700); font-weight: 600; font-size: 0.9rem; }
 .class-list { display: flex; flex-direction: column; gap: 0; }
 
+/* Admin dashboard expandable class cards */
+.dash-class-list { display: flex; flex-direction: column; gap: var(--s-3); }
+.dash-class-card {
+  background: var(--white);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+  border: 1px solid var(--ink-100);
+  overflow: hidden;
+  transition: box-shadow var(--t-fast) var(--ease);
+}
+.dash-class-card.expanded { box-shadow: var(--sh-2); }
+.dash-class-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.dash-class-head:hover { background: var(--cream-50); }
+.dash-class-time {
+  color: var(--green-700);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.dash-class-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dash-class-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+.dash-class-type svg { color: var(--green-700); }
+.dash-class-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--ink-500);
+}
+.dash-class-mode-bd { color: var(--ink-500); }
+.dash-class-chev {
+  color: var(--ink-500);
+  transition: transform var(--t-fast) var(--ease);
+  display: flex;
+}
+.dash-class-card.expanded .dash-class-chev { transform: rotate(90deg); }
+.dash-class-body {
+  padding: 0 var(--s-4) var(--s-4);
+  border-top: 1px solid var(--ink-100);
+  background: var(--cream-50);
+}
+.dash-att-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+}
+.dash-class-body .attendance-row { background: var(--white); }
+.dash-class-body .dash-save-att { margin-top: var(--s-2); }
+.dash-class-body .dash-open-full { margin-top: var(--s-2); }
+
+
 /* ---------- Badges ---------- */
 .badge {
   font-size: 0.72rem;
