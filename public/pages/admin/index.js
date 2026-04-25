@@ -75,7 +75,7 @@ export async function renderAdminDashboard() {
     }
 
     const modeBreakdown = isHybrid
-      ? `<span class="dash-class-mode-bd">· ${counts.in_person} 🏠 / ${counts.online} 💻</span>`
+      ? `<span class="dash-class-mode-bd">· ${counts.in_person} ${icon('in_person', { size: 13 })} / ${counts.online} ${icon('online', { size: 13 })}</span>`
       : '';
 
     return `
@@ -83,7 +83,7 @@ export async function renderAdminDashboard() {
         <button type="button" class="dash-class-head" aria-expanded="false">
           <div class="dash-class-time">${s.start_time.slice(0, 5)}</div>
           <div class="dash-class-meta">
-            <div class="dash-class-type">${classTypeIcon(s.class_type)} ${t('type.' + s.class_type)}</div>
+            <div class="dash-class-type">${icon(classTypeIcon(s.class_type), { size: 15 })} ${t('type.' + s.class_type)}</div>
             <div class="dash-class-count">${icon('spots', { size: 14 })} ${capLabel} ${modeBreakdown}</div>
           </div>
           <div class="dash-class-chev">${icon('arrow_right', { size: 18 })}</div>
