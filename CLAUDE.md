@@ -353,7 +353,7 @@ Configured in `vercel.json`:
 | `#/admin/passes` | `pages/admin/pass-types.js` | Manage pass types (collapsed cards, tap to expand and edit inline — fields stack vertically on very narrow screens), Active Passes overview (all issued passes with student name / type / classes-left / expiry countdown, filter chips: all / unpaid / expiring), and pass requests |
 | `#/admin/schedule` | `pages/admin/schedule.js` | Manage weekly templates: list, enable/disable, delete, add new. Manual session generation button |
 | `#/admin/settings` | `pages/admin/settings.js` | Studio settings: location address, meeting link, sign-up window, default capacity |
-| `#/admin/notifications` | `pages/admin/notifications.js` | Notification history: paginated log of all SMS and Telegram sends with channel, event type, recipient, status, message preview. Filterable by channel and event type |
+| `/admin/notifications` | `pages/admin/notifications.js` | Notification history: mobile-first card list of all SMS and Telegram sends. Each card has a channel glyph, event title + status pill (color-toned ok/err/warn/neutral), recipient (+ phone for SMS), relative timestamp ("hace 5 min" / "ayer" / fecha) with full timestamp on hover, and an inline short error line for failures. Twilio JSON errors are parsed so only the human message is shown; the raw JSON, message preview, and exact timestamp live in a "Detalles" expander. Left border + faint pink fill highlight failed cards. Filterable by channel and event (2-col grid, single col under 380px). 25 per page, centered prev/next pagination |
 
 ## Components
 
