@@ -25,7 +25,7 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
   const ipFull = ipLeft != null && ipLeft <= 0;
   const olFull = olLeft != null && olLeft <= 0;
 
-  const showSpots = type !== 'online';
+  const showSpots = true;
   let isFull;
   if (hasPerModeCaps) {
     // Class is unbookable only if every available mode is full.
