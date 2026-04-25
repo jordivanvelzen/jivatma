@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { todayStr, addDays } from '../../lib/dates.js';
+import { notifySessionsCancelled } from '../../lib/telegram.js';
 
 const WINDOW_DAYS = 14;
 const DEFAULT_REASON = 'Teacher unavailable';
@@ -34,7 +35,7 @@ export async function runGenerate({ dryRun = false } = {}) {
     supabase.from('settings').select('value').eq('key', 'default_capacity').single(),
     supabase
       .from('class_sessions')
-      .select('id, template_id, date, status, cancellation_reason')
+      .select('id, template_id, date, status, cancellation_reason, auto_cancelled')
       .gte('date', startDay)
       .lte('date', endDay),
     supabase
@@ -83,6 +84,7 @@ export async function runGenerate({ dryRun = false } = {}) {
         capacity_online: tmpl.capacity_online ?? null,
         status: cancellationReason ? 'cancelled' : 'scheduled',
         cancellation_reason: cancellationReason,
+        auto_cancelled: !!cancellationReason,
       });
     }
   }
@@ -97,11 +99,12 @@ export async function runGenerate({ dryRun = false } = {}) {
     }
   }
 
-  // 3. Plan restores (auto-cancelled sessions no longer in any unavailable window).
+  // 3. Plan restores: auto-cancelled sessions whose unavailability window was removed.
+  // Manually-cancelled sessions (auto_cancelled=false) are never restored by the cron.
   const toRestore = [];
   for (const s of existingSessions || []) {
     if (s.status !== 'cancelled') continue;
-    if (!s.cancellation_reason) continue; // admin-cancelled — leave alone
+    if (!s.auto_cancelled) continue;
     if (!isUnavailable(s.date)) toRestore.push({ id: s.id });
   }
 
@@ -148,20 +151,32 @@ export async function runGenerate({ dryRun = false } = {}) {
   }
 
   let autoCancelled = 0;
+  const cancelledIds = [];
   for (const item of toAutoCancel) {
     const { error } = await supabase
       .from('class_sessions')
-      .update({ status: 'cancelled', cancellation_reason: item.reason })
+      .update({ status: 'cancelled', cancellation_reason: item.reason, auto_cancelled: true })
       .eq('id', item.id);
     if (error) errors.push({ step: 'auto_cancel', id: item.id, error: error.message });
-    else autoCancelled++;
+    else { autoCancelled++; cancelledIds.push(item.id); }
+  }
+
+  // Notify Claudia per cancelled session that has active bookings.
+  let notifiedSessions = 0;
+  if (cancelledIds.length) {
+    try {
+      const r = await notifySessionsCancelled(cancelledIds);
+      notifiedSessions = r?.sent || 0;
+    } catch (err) {
+      errors.push({ step: 'notify_cancelled', error: err.message });
+    }
   }
 
   let restored = 0;
   if (toRestore.length) {
     const { error } = await supabase
       .from('class_sessions')
-      .update({ status: 'scheduled', cancellation_reason: null })
+      .update({ status: 'scheduled', cancellation_reason: null, auto_cancelled: false })
       .in('id', toRestore.map(r => r.id));
     if (error) errors.push({ step: 'restore', error: error.message });
     else restored = toRestore.length;
@@ -179,6 +194,7 @@ export async function runGenerate({ dryRun = false } = {}) {
     window: { from: startDay, to: endDay },
     created,
     autoCancelled,
+    notifiedSessions,
     restored,
     cleanedUp,
     cleanupSkippedWithBookings: cleanupSkipped.length,

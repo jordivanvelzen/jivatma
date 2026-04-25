@@ -12,6 +12,8 @@ const WA_DEFAULTS = {
     'Hola {name}, tu pase de {kind} en Jivatma vence hoy. ¡Renuévalo antes de tu próxima clase! 🧘',
   wa_template_last_class:
     'Hola {name}, acabas de usar tu última clase del {kind} en Jivatma. ¡Renueva tu pase para seguir reservando! 🧘',
+  wa_template_class_cancelled:
+    'Hola {name}, te avisamos que la clase del {date} a las {time} en Jivatma fue cancelada{reason}. Lamentamos las molestias. Avísanos si quieres reagendar. 🙏',
 };
 
 export async function renderAdminSettings() {
@@ -255,6 +257,11 @@ export async function renderAdminSettings() {
             <textarea id="s-tpl-last-class" rows="3">${tplVal('wa_template_last_class')}</textarea>
           </div>
 
+          <div class="tpl-group">
+            <div class="tpl-label">⊘ Clase cancelada <span class="muted" style="font-weight:400">— {name}, {date}, {time}, {reason}</span></div>
+            <textarea id="s-tpl-class-cancelled" rows="3">${tplVal('wa_template_class_cancelled')}</textarea>
+          </div>
+
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" data-restore="wa">Restaurar predeterminados</button>
             <button type="button" class="btn btn-primary" data-save="wa">${t('admin.saveSettings')}</button>
@@ -332,6 +339,7 @@ export async function renderAdminSettings() {
     document.getElementById('s-tpl-declined').value = WA_DEFAULTS.wa_template_declined;
     document.getElementById('s-tpl-expiring').value = WA_DEFAULTS.wa_template_expiring;
     document.getElementById('s-tpl-last-class').value = WA_DEFAULTS.wa_template_last_class;
+    document.getElementById('s-tpl-class-cancelled').value = WA_DEFAULTS.wa_template_class_cancelled;
     showToast('Plantillas restauradas (recuerda Guardar)', 'info');
   });
 }
@@ -361,6 +369,7 @@ function collectSection(section) {
       wa_template_declined: document.getElementById('s-tpl-declined').value,
       wa_template_expiring: document.getElementById('s-tpl-expiring').value,
       wa_template_last_class: document.getElementById('s-tpl-last-class').value,
+      wa_template_class_cancelled: document.getElementById('s-tpl-class-cancelled').value,
     };
   }
   return {};

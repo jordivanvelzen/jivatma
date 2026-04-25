@@ -87,9 +87,22 @@ export async function renderAdminSchedule() {
       : `${s.capacity || defaultCap} ${t('admin.capacity').toLowerCase()}`;
     const oneOffBadge = s.template_id ? '' : ` <span class="badge badge-pending" style="font-size:0.65rem">${t('admin.oneOff').split('(')[0].trim()}</span>`;
     const isCancelled = s.status === 'cancelled';
+    const isAutoCancel = isCancelled && s.auto_cancelled;
     const cancelMeta = isCancelled
-      ? `<div class="session-row-meta" style="color:var(--rose-700,#a02c4a)">⊘ ${t('admin.sessionCancelled')}${s.cancellation_reason ? ` · ${s.cancellation_reason}` : ''}</div>`
+      ? `<div class="session-row-meta" style="color:var(--rose-700,#a02c4a)">⊘ ${t('admin.sessionCancelled')}${s.cancellation_reason ? ` · ${s.cancellation_reason}` : ''}${isAutoCancel ? ` · ${t('admin.cancelByUnavail')}` : ''}</div>`
       : '';
+    let actionBtn;
+    if (isCancelled && !isAutoCancel) {
+      actionBtn = `<button class="btn btn-small btn-secondary uncancel-session" data-id="${s.id}">${t('admin.reopenClass')}</button>`;
+    } else if (isCancelled && isAutoCancel) {
+      // Auto-cancelled: removing the unavailability window restores it. Avoid a per-session "reopen" here.
+      actionBtn = `<button class="btn btn-small btn-danger delete-session" data-id="${s.id}">${t('admin.delete')}</button>`;
+    } else {
+      actionBtn = `
+        <button class="btn btn-small btn-secondary cancel-session" data-id="${s.id}">${t('admin.cancelClass')}</button>
+        <button class="btn btn-small btn-danger delete-session" data-id="${s.id}">${t('admin.delete')}</button>
+      `;
+    }
     return `
       <div class="session-row ${isCancelled ? 'cancelled' : ''}" data-sid="${s.id}" style="${isCancelled ? 'opacity:0.65' : ''}">
         <div class="session-row-main">
@@ -97,7 +110,7 @@ export async function renderAdminSchedule() {
           <div class="session-row-meta">${t('type.' + s.class_type)} · ${capStr}${oneOffBadge}</div>
           ${cancelMeta}
         </div>
-        <button class="btn btn-small btn-danger delete-session" data-id="${s.id}" aria-label="${t('admin.delete')}">${t('admin.delete')}</button>
+        <div class="session-row-actions" style="display:flex; gap:var(--s-2,0.5rem); flex-wrap:wrap; align-items:center">${actionBtn}</div>
       </div>
     `;
   };
@@ -377,6 +390,41 @@ export async function renderAdminSchedule() {
       showToast(t('admin.sessionAdded'), 'success');
       renderAdminSchedule();
     } catch (err) { showToast(err.message, 'error'); }
+  });
+
+  // Cancel session (manual)
+  app.querySelectorAll('.cancel-session').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const reason = prompt(t('admin.cancelClassPrompt'), '');
+      if (reason === null) return; // user dismissed
+      return withLoading(btn, async () => {
+        const id = parseInt(btn.dataset.id, 10);
+        try {
+          const data = await api('/api/admin/schedule?action=cancel-session', {
+            method: 'POST',
+            body: JSON.stringify({ id, reason: reason || null }),
+          });
+          const sent = data?.notify?.sent || 0;
+          showToast(sent > 0 ? t('admin.cancelClassNotified', { n: sent }) : t('admin.cancelClassDone'), 'success');
+          renderAdminSchedule();
+        } catch (err) { showToast(err.message, 'error'); }
+      });
+    });
+  });
+
+  // Reopen a manually-cancelled session
+  app.querySelectorAll('.uncancel-session').forEach(btn => {
+    btn.addEventListener('click', () => withLoading(btn, async () => {
+      const id = parseInt(btn.dataset.id, 10);
+      try {
+        await api('/api/admin/schedule?action=uncancel-session', {
+          method: 'POST',
+          body: JSON.stringify({ id }),
+        });
+        showToast(t('admin.reopenDone'), 'success');
+        renderAdminSchedule();
+      } catch (err) { showToast(err.message, 'error'); }
+    }));
   });
 
   // Delete session

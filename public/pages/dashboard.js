@@ -45,6 +45,24 @@ export async function renderDashboard() {
   }
   const passBanner = buildPassBanner();
 
+  // Cancelled upcoming-class alert: any active booking whose session was cancelled.
+  const cancelledBookings = (bookings || []).filter(b => b.class_sessions?.status === 'cancelled');
+  const cancelledBanner = cancelledBookings.length
+    ? (() => {
+        const lines = cancelledBookings.map(b => {
+          const s = b.class_sessions;
+          const dateStr = formatDbDate(s.date, getLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
+          const time = s.start_time.slice(0, 5);
+          const reason = s.cancellation_reason ? ` — ${s.cancellation_reason}` : '';
+          return `<li>${dateStr} · ${time}${reason}</li>`;
+        }).join('');
+        return `<div class="no-pass-banner no-pass-banner--urgent">
+          <p><strong>${t('dash.cancelledHeading', { n: cancelledBookings.length })}</strong></p>
+          <ul style="margin: var(--s-2,0.5rem) 0 0; padding-left: 1.2em">${lines}</ul>
+        </div>`;
+      })()
+    : '';
+
   function kindLabel(pt) {
     if (!pt) return '';
     if (pt.kind === 'single') return t('passes.singleClass');
@@ -93,6 +111,7 @@ export async function renderDashboard() {
     <div class="page">
       <h2>${t('dash.welcome')}${firstName ? `, ${firstName}` : ''}</h2>
 
+      ${cancelledBanner}
       ${passBanner}
       ${onboardingHtml}
 
@@ -121,7 +140,10 @@ export async function renderDashboard() {
               const modeSuffix = (s.class_type === 'hybrid' && b.attendance_mode)
                 ? ` · ${t('schedule.mode.' + b.attendance_mode)}`
                 : '';
-              return `<li>${dateStr} · ${s.start_time.slice(0, 5)} · ${t('type.' + s.class_type)}${modeSuffix}</li>`;
+              const isCancelled = s.status === 'cancelled';
+              const style = isCancelled ? ' style="text-decoration:line-through; opacity:0.6"' : '';
+              const tag = isCancelled ? ` · <span style="color:var(--rose-700,#a02c4a); text-decoration:none; font-weight:600">${t('schedule.cancelled')}</span>` : '';
+              return `<li${style}>${dateStr} · ${s.start_time.slice(0, 5)} · ${t('type.' + s.class_type)}${modeSuffix}${tag}</li>`;
             }).join('')}</ul>`
         }
       </section>

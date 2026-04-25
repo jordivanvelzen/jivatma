@@ -1,6 +1,7 @@
 import { verifyAdmin } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 import { todayStr } from '../../lib/dates.js';
+import { notifySessionsCancelled } from '../../lib/telegram.js';
 
 export default async function handler(req, res) {
   const admin = await verifyAdmin(req);
@@ -38,6 +39,40 @@ export default async function handler(req, res) {
       return res.json({ ok: true });
     }
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // ---- Manual cancel / re-open of a single session ----
+  // Sets status='cancelled' (or back to 'scheduled'), records the reason, and marks
+  // auto_cancelled=false so the cron's auto-restore rule doesn't re-open it later.
+  // On cancel, fires a Telegram notification per session with WhatsApp deeplinks for each
+  // affected (still-active) booking.
+  if (action === 'cancel-session' && req.method === 'POST') {
+    const { id, reason } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const cancellationReason = (reason && reason.trim()) || 'Cancelada';
+    const { data, error } = await supabase
+      .from('class_sessions')
+      .update({ status: 'cancelled', cancellation_reason: cancellationReason, auto_cancelled: false })
+      .eq('id', id)
+      .select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    let notify = { sent: 0 };
+    try { notify = await notifySessionsCancelled([id]); } catch (err) {
+      return res.json({ session: data, notify: { sent: 0, error: err.message } });
+    }
+    return res.json({ session: data, notify });
+  }
+
+  if (action === 'uncancel-session' && req.method === 'POST') {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const { data, error } = await supabase
+      .from('class_sessions')
+      .update({ status: 'scheduled', cancellation_reason: null, auto_cancelled: false })
+      .eq('id', id)
+      .select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ session: data });
   }
 
   // ---- Resync future sessions to their template ----
