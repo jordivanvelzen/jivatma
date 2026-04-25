@@ -130,6 +130,33 @@ function renderBottomNav(mode) {
     </a>
   `).join('');
   document.body.appendChild(bottomNav);
+  setupVisualViewportSync();
+}
+
+// Some mobile browsers (Fennec/Firefox Android, older iOS Safari) overlay browser
+// chrome on top of the visual viewport. `position: fixed; bottom: 0` anchors to the
+// LAYOUT viewport, so the bar gets covered by the URL bar / toolbar. We use the
+// VisualViewport API to lift the bar by the gap between the layout and visual
+// viewports — the bar tracks the visible bottom edge as the toolbar shows/hides.
+let viewportSyncBound = false;
+function setupVisualViewportSync() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+
+  const sync = () => {
+    const bn = document.querySelector('.bottom-nav');
+    if (!bn) return;
+    const inset = window.innerHeight - (vv.height + vv.offsetTop);
+    bn.style.bottom = inset > 0 ? `${inset}px` : '0px';
+  };
+
+  if (!viewportSyncBound) {
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    window.addEventListener('orientationchange', sync);
+    viewportSyncBound = true;
+  }
+  sync();
 }
 
 function renderViewPill(isStudent) {
