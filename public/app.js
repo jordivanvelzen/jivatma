@@ -106,7 +106,7 @@ route('/', async () => {
 
 setNotFound(() => {
   document.getElementById('app').innerHTML = `
-    <div class="page"><h2>${t('general.notFound')}</h2><a href="#/">${t('general.goHome')}</a></div>
+    <div class="page"><h2>${t('general.notFound')}</h2><a href="/">${t('general.goHome')}</a></div>
   `;
 });
 

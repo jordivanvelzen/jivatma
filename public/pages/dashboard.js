@@ -29,9 +29,9 @@ export async function renderDashboard() {
       const soonest = activePasses[0];
       if (!soonest.expires_at) return '';
       const daysLeft = Math.ceil((new Date(soonest.expires_at) - new Date(today)) / 86400000);
-      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
-      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
-      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
       return '';
     }
     // No active pass — check if they have passes with 0 classes (not expired)
@@ -39,7 +39,7 @@ export async function renderDashboard() {
       p.pass_types?.kind !== 'unlimited' && p.classes_remaining === 0
     );
     if (outOfClasses.length > 0) {
-      return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.outOfClasses')}</p><a href="#/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
+      return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.outOfClasses')}</p><a href="/my-passes" class="btn btn-small btn-primary">${t('banner.renew')}</a></div>`;
     }
     return '';
   }
@@ -101,8 +101,8 @@ export async function renderDashboard() {
         <li><strong>${t('onboarding.step3Title')}</strong> — ${t('onboarding.step3Body')}</li>
       </ol>
       <div class="onboarding-actions">
-        <a href="#/my-passes" class="btn btn-primary">${t('onboarding.goPasses')}</a>
-        <a href="#/schedule" class="btn btn-secondary">${t('onboarding.goSchedule')}</a>
+        <a href="/my-passes" class="btn btn-primary">${t('onboarding.goPasses')}</a>
+        <a href="/schedule" class="btn btn-secondary">${t('onboarding.goSchedule')}</a>
       </div>
     </div>
   ` : '';
@@ -121,7 +121,7 @@ export async function renderDashboard() {
         ${activePasses.length === 0 && pending.length === 0
           ? `<div class="empty-state">
               <p class="muted">${t('dash.noActivePasses')}</p>
-              <a href="#/my-passes" class="btn btn-small btn-primary">${t('onboarding.goPasses')}</a>
+              <a href="/my-passes" class="btn btn-small btn-primary">${t('onboarding.goPasses')}</a>
             </div>`
           : activePasses.map(p => renderPassCard(p, p.pass_types)).join('')
         }
@@ -132,7 +132,7 @@ export async function renderDashboard() {
         ${!bookings?.length
           ? `<div class="empty-state">
               <p class="muted">${t('dash.noBookings')}</p>
-              <a href="#/schedule" class="btn btn-small btn-secondary">${t('dash.browseClasses')}</a>
+              <a href="/schedule" class="btn btn-small btn-secondary">${t('dash.browseClasses')}</a>
             </div>`
           : `<ul class="list">${bookings.filter(b => b.class_sessions).map(b => {
               const s = b.class_sessions;

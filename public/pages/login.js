@@ -21,7 +21,7 @@ export async function renderLogin() {
         <button type="button" id="resend-confirmation" class="btn btn-small btn-secondary">${t('auth.resendConfirmation')}</button>
       </div>
       <p class="auth-links">
-        <a href="#/register">${t('auth.createAccount')}</a> · <a href="#/forgot-password">${t('auth.forgotPassword')}</a>
+        <a href="/register">${t('auth.createAccount')}</a> · <a href="/forgot-password">${t('auth.forgotPassword')}</a>
       </p>
     </div>
   `;

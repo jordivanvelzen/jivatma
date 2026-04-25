@@ -109,16 +109,16 @@ export async function renderSchedule() {
       const urgent = outOfClasses.length > 0;
       return `<div class="no-pass-banner${urgent ? ' no-pass-banner--urgent' : ''}">
         <p>${msg}</p>
-        <a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a>
+        <a href="/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a>
       </div>`;
     }
     // Active pass — check if expiring soon
     const soonest = activePasses[0];
     if (soonest?.expires_at) {
       const daysLeft = Math.ceil((new Date(soonest.expires_at) - new Date(today)) / 86400000);
-      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
-      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
-      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="#/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 0) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringToday')}</p><a href="/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+      if (daysLeft === 1) return `<div class="no-pass-banner no-pass-banner--urgent"><p>${t('banner.expiringTomorrow')}</p><a href="/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
+      if (daysLeft <= 7) return `<div class="no-pass-banner"><p>${t('banner.expiringInDays', { n: daysLeft })}</p><a href="/my-passes" class="btn btn-primary btn-small">${t('banner.renew')}</a></div>`;
     }
     return '';
   }

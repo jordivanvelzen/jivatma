@@ -1,5 +1,6 @@
 /**
- * Simple hash-based SPA router.
+ * History API SPA router.
+ * Clean URLs (no `#`). Vercel rewrites all non-asset / non-/api paths to /index.html.
  */
 
 const routes = {};
@@ -22,17 +23,30 @@ export function setNotFound(handler) {
 }
 
 /**
- * Navigate to a hash route.
+ * Navigate to a route via the History API. Same-route is a no-op (no extra history entry).
+ * Pass an absolute path like '/dashboard' or '/admin/class?date=2026-04-25'.
  */
 export function navigate(path) {
-  window.location.hash = path;
+  const current = window.location.pathname + window.location.search;
+  if (path !== current) {
+    window.history.pushState({}, '', path);
+  }
+  resolve();
 }
 
 /**
- * Get the current hash path.
+ * Replace the current history entry (for redirects) — back button skips it.
+ */
+export function replace(path) {
+  window.history.replaceState({}, '', path);
+  resolve();
+}
+
+/**
+ * Get the current path (without query string).
  */
 export function currentPath() {
-  return window.location.hash.slice(1) || '/';
+  return window.location.pathname || '/';
 }
 
 /**
@@ -57,12 +71,11 @@ function matchRoute(pattern, path) {
 }
 
 /**
- * Resolve the current hash and call the matching handler.
+ * Resolve the current location and call the matching handler.
  */
 async function resolve() {
-  const full = currentPath();
-  const [path, qs] = full.split('?');
-  const query = Object.fromEntries(new URLSearchParams(qs || ''));
+  const path = currentPath();
+  const query = Object.fromEntries(new URLSearchParams(window.location.search));
 
   for (const [pattern, handler] of Object.entries(routes)) {
     const params = matchRoute(pattern, path);
@@ -78,9 +91,47 @@ async function resolve() {
 }
 
 /**
- * Start listening for hash changes.
+ * Re-render the current route without changing the URL (used by language toggle, view-pill).
+ */
+export function rerender() {
+  resolve();
+}
+
+/**
+ * Intercept clicks on internal `<a>` links so they navigate via pushState instead of a full reload.
+ * Skips: external links, target=_blank, modifier-clicks, links flagged with data-external.
+ */
+function interceptClicks() {
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented) return;
+    if (e.button !== 0) return; // left-click only
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+    const a = e.target.closest('a');
+    if (!a) return;
+    if (a.target && a.target !== '_self') return;
+    if (a.hasAttribute('download')) return;
+    if (a.dataset.external !== undefined) return;
+
+    const href = a.getAttribute('href');
+    if (!href) return;
+    // External absolute URLs (http://, https://, mailto:, tel:, wa.me handled via full URLs)
+    if (/^[a-z]+:/i.test(href) && !href.startsWith(window.location.origin)) return;
+    // Same-origin absolute URL — strip origin
+    let path = href;
+    if (href.startsWith(window.location.origin)) path = href.slice(window.location.origin.length);
+    if (!path.startsWith('/')) return; // relative or anchor — let browser handle
+
+    e.preventDefault();
+    navigate(path);
+  });
+}
+
+/**
+ * Start listening for navigation events.
  */
 export function startRouter() {
-  window.addEventListener('hashchange', resolve);
+  window.addEventListener('popstate', resolve);
+  interceptClicks();
   resolve();
 }

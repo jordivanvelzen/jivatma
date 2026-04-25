@@ -41,7 +41,7 @@ export async function renderRegister() {
       </div>
 
       <p class="auth-links">
-        ${t('auth.haveAccount')} <a href="#/login">${t('auth.login')}</a>
+        ${t('auth.haveAccount')} <a href="/login">${t('auth.login')}</a>
       </p>
     </div>
   `;

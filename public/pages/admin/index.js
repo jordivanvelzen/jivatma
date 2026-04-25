@@ -206,7 +206,7 @@ async function loadAndRenderAttendance(card, body) {
         </div>
         <button type="button" class="btn btn-primary btn-block dash-save-att">${t('admin.saveAttendance')}</button>`
     }
-    <a href="#/admin/class?date=${date}&session=${sessionId}" class="btn btn-secondary btn-block dash-open-full">${t('admin.openFullAttendance')}</a>
+    <a href="/admin/class?date=${date}&session=${sessionId}" class="btn btn-secondary btn-block dash-open-full">${t('admin.openFullAttendance')}</a>
   `;
 
   body.querySelectorAll('.att-seg').forEach(seg => {

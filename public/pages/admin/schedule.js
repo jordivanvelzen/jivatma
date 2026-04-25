@@ -1,6 +1,7 @@
 import { sb } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
+import { showConfirm } from '../../components/confirm.js';
 import { t, getLocale } from '../../lib/i18n.js';
 import { todayStr } from '../../lib/dates.js';
 import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
@@ -309,8 +310,14 @@ export async function renderAdminSchedule() {
 
   // Delete template
   app.querySelectorAll('.delete-template').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!confirm(t('admin.deleteConfirm'))) return;
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirm({
+        title: t('confirm.deleteTemplateTitle'),
+        message: t('confirm.deleteTemplateMessage'),
+        confirmText: t('confirm.delete'),
+        variant: 'danger',
+      });
+      if (!ok) return;
       return withLoading(btn, async () => {
         const id = parseInt(btn.dataset.id, 10);
         const { error } = await sb.from('class_templates').delete().eq('id', id);
@@ -429,8 +436,14 @@ export async function renderAdminSchedule() {
 
   // Delete session
   app.querySelectorAll('.delete-session').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!confirm(t('admin.deleteConfirm'))) return;
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirm({
+        title: t('confirm.deleteSessionTitle'),
+        message: t('confirm.deleteSessionMessage'),
+        confirmText: t('confirm.delete'),
+        variant: 'danger',
+      });
+      if (!ok) return;
       return withLoading(btn, async () => {
         const id = parseInt(btn.dataset.id, 10);
         try {
@@ -458,8 +471,14 @@ export async function renderAdminSchedule() {
 
   // Delete unavailability
   app.querySelectorAll('.delete-unavail').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!confirm(t('admin.deleteConfirm'))) return;
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirm({
+        title: t('confirm.deleteUnavailTitle'),
+        message: t('confirm.deleteUnavailMessage'),
+        confirmText: t('confirm.delete'),
+        variant: 'danger',
+      });
+      if (!ok) return;
       return withLoading(btn, async () => {
         const id = parseInt(btn.dataset.id, 10);
         try {
@@ -511,8 +530,15 @@ export async function renderAdminSchedule() {
   }));
 
   // Resync future sessions to their templates
-  document.getElementById('resync-btn').addEventListener('click', (ev) => withLoading(ev.currentTarget, async () => {
-    if (!confirm(t('admin.resyncConfirm'))) return;
+  document.getElementById('resync-btn').addEventListener('click', async (ev) => {
+    const ok = await showConfirm({
+      title: t('confirm.resyncTitle'),
+      message: t('confirm.resyncMessage'),
+      confirmText: t('confirm.apply'),
+      variant: 'warning',
+    });
+    if (!ok) return;
+    return withLoading(ev.currentTarget, async () => {
     try {
       const data = await api('/api/admin/schedule?action=resync', { method: 'POST', body: '{}' });
       let msg = t('admin.resyncDone', { n: data.updated });
@@ -524,5 +550,6 @@ export async function renderAdminSchedule() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  }));
+    });
+  });
 }

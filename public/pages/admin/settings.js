@@ -1,5 +1,6 @@
 import { sb } from '../../lib/supabase.js';
 import { showToast } from '../../components/toast.js';
+import { showConfirm } from '../../components/confirm.js';
 import { t } from '../../lib/i18n.js';
 import { withLoading } from '../../lib/loading.js';
 
@@ -191,11 +192,11 @@ export async function renderAdminSettings() {
 
       <!-- Recipient toggle: most-used control, kept always visible at top -->
       <div class="recipient-card">
-        <h3>📩 Destinatario activo</h3>
-        <p>Quién recibe las notificaciones de Telegram y los SMS ahora mismo.</p>
+        <h3>${t('admin.recipientTitle')}</h3>
+        <p>${t('admin.recipientHelp')}</p>
         <div class="pill-toggle" role="tablist" id="recipient-toggle">
-          <button type="button" data-val="claudia" class="${recipient === 'claudia' ? 'is-active' : ''}">👩‍🦰 Claudia</button>
-          <button type="button" data-val="jordi" class="${recipient === 'jordi' ? 'is-active' : ''}">🧪 Jordi</button>
+          <button type="button" data-val="claudia" class="${recipient === 'claudia' ? 'is-active' : ''}">${t('admin.recipientClaudia')}</button>
+          <button type="button" data-val="jordi" class="${recipient === 'jordi' ? 'is-active' : ''}">${t('admin.recipientJordi')}</button>
         </div>
       </div>
 
@@ -203,7 +204,7 @@ export async function renderAdminSettings() {
       <details class="set-section" id="sec-studio">
         <summary>
           <span class="sec-icon">📍</span>
-          <span class="sec-title">Estudio<span class="sec-sub">Dirección, enlace de Zoom, ventana de reservas</span></span>
+          <span class="sec-title">${t('admin.studioSection')}<span class="sec-sub">${t('admin.studioSectionSub')}</span></span>
           <span class="sec-chev">▾</span>
         </summary>
         <div class="set-body">
@@ -231,39 +232,42 @@ export async function renderAdminSettings() {
       <details class="set-section" id="sec-wa">
         <summary>
           <span class="sec-icon">💬</span>
-          <span class="sec-title">Plantillas de WhatsApp<span class="sec-sub">Mensajes que se envían a los alumnos</span></span>
+          <span class="sec-title">${t('admin.waSection')}<span class="sec-sub">${t('admin.waSectionSub')}</span></span>
           <span class="sec-chev">▾</span>
         </summary>
         <div class="set-body">
-          <p class="tpl-help">Variables disponibles: <code>{name}</code> primer nombre · <code>{kind}</code> tipo de pase · <code>{reason}</code> motivo (solo rechazo).</p>
+          <p class="tpl-help">${t('admin.waVarsHelp')
+            .replace('{nameVar}', '<code>{name}</code>')
+            .replace('{kindVar}', '<code>{kind}</code>')
+            .replace('{reasonVar}', '<code>{reason}</code>')}</p>
 
           <div class="tpl-group">
-            <div class="tpl-label">✅ Pase aprobado</div>
+            <div class="tpl-label">${t('admin.tplApproved')}</div>
             <textarea id="s-tpl-approved" rows="3">${tplVal('wa_template_approved')}</textarea>
           </div>
 
           <div class="tpl-group">
-            <div class="tpl-label">❌ Pase rechazado</div>
+            <div class="tpl-label">${t('admin.tplDeclined')}</div>
             <textarea id="s-tpl-declined" rows="3">${tplVal('wa_template_declined')}</textarea>
           </div>
 
           <div class="tpl-group">
-            <div class="tpl-label">📅 Pase vence hoy</div>
+            <div class="tpl-label">${t('admin.tplExpiring')}</div>
             <textarea id="s-tpl-expiring" rows="3">${tplVal('wa_template_expiring')}</textarea>
           </div>
 
           <div class="tpl-group">
-            <div class="tpl-label">🔔 Última clase usada</div>
+            <div class="tpl-label">${t('admin.tplLastClass')}</div>
             <textarea id="s-tpl-last-class" rows="3">${tplVal('wa_template_last_class')}</textarea>
           </div>
 
           <div class="tpl-group">
-            <div class="tpl-label">⊘ Clase cancelada <span class="muted" style="font-weight:400">— {name}, {date}, {time}, {reason}</span></div>
+            <div class="tpl-label">${t('admin.tplClassCancelled')} <span class="muted" style="font-weight:400">${t('admin.tplClassCancelledVars')}</span></div>
             <textarea id="s-tpl-class-cancelled" rows="3">${tplVal('wa_template_class_cancelled')}</textarea>
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" data-restore="wa">Restaurar predeterminados</button>
+            <button type="button" class="btn btn-secondary" data-restore="wa">${t('admin.restoreDefaults')}</button>
             <button type="button" class="btn btn-primary" data-save="wa">${t('admin.saveSettings')}</button>
           </div>
         </div>
@@ -273,7 +277,7 @@ export async function renderAdminSettings() {
       <details class="set-section" id="sec-bank">
         <summary>
           <span class="sec-icon">💳</span>
-          <span class="sec-title">Datos bancarios<span class="sec-sub">Mostrados a alumnos al solicitar un pase</span></span>
+          <span class="sec-title">${t('admin.bankSection')}<span class="sec-sub">${t('admin.bankSectionSub')}</span></span>
           <span class="sec-chev">▾</span>
         </summary>
         <div class="set-body">
@@ -314,7 +318,7 @@ export async function renderAdminSettings() {
     toggle.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
     const { error } = await sb.from('settings').upsert({ key: 'test_mode', value: val === 'jordi' ? 'true' : 'false' });
     if (error) showToast(error.message, 'error');
-    else showToast(val === 'jordi' ? '🧪 Modo pruebas (Jordi)' : '👩‍🦰 Modo producción (Claudia)', 'success');
+    else showToast(val === 'jordi' ? t('admin.recipientToTest') : t('admin.recipientToProd'), 'success');
   });
 
   // Per-section save handlers
@@ -334,13 +338,20 @@ export async function renderAdminSettings() {
   });
 
   // Restore default WhatsApp templates (just resets the textareas — admin still has to Save)
-  document.querySelector('[data-restore="wa"]').addEventListener('click', () => {
+  document.querySelector('[data-restore="wa"]').addEventListener('click', async () => {
+    const ok = await showConfirm({
+      title: t('confirm.restoreDefaultsTitle'),
+      message: t('confirm.restoreDefaultsMessage'),
+      confirmText: t('confirm.restore'),
+      variant: 'warning',
+    });
+    if (!ok) return;
     document.getElementById('s-tpl-approved').value = WA_DEFAULTS.wa_template_approved;
     document.getElementById('s-tpl-declined').value = WA_DEFAULTS.wa_template_declined;
     document.getElementById('s-tpl-expiring').value = WA_DEFAULTS.wa_template_expiring;
     document.getElementById('s-tpl-last-class').value = WA_DEFAULTS.wa_template_last_class;
     document.getElementById('s-tpl-class-cancelled').value = WA_DEFAULTS.wa_template_class_cancelled;
-    showToast('Plantillas restauradas (recuerda Guardar)', 'info');
+    showToast(t('admin.restoredToast'), 'info');
   });
 }
 

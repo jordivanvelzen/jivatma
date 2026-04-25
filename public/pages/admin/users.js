@@ -54,7 +54,7 @@ export async function renderAdminUsers() {
         ? `<p class="muted">${t('admin.noUsers')}</p>`
         : `<div class="user-list">
             ${users.map(u => `
-              <a href="#/admin/users/${u.id}" class="user-row">
+              <a href="/admin/users/${u.id}" class="user-row">
                 <div class="user-row-main">
                   <div class="user-row-name">${u.full_name || '(no name)'}</div>
                   ${u.role === 'admin' ? `<span class="badge badge-admin">${u.role}</span>` : ''}

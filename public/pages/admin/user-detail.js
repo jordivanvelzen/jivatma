@@ -1,6 +1,7 @@
 import { sb, getSession } from '../../lib/supabase.js';
 import { api } from '../../lib/api.js';
 import { showToast } from '../../components/toast.js';
+import { showConfirm } from '../../components/confirm.js';
 import { t, getLocale } from '../../lib/i18n.js';
 import { todayStr, parseLocalDate, formatDbDate } from '../../lib/dates.js';
 import { withLoading, onSubmitWithLoading } from '../../lib/loading.js';
@@ -241,9 +242,16 @@ export async function renderAdminUserDetail(params) {
       } catch (err) { showToast(err.message, 'error'); }
     }));
 
-    card.querySelector('.delete-pass').addEventListener('click', (ev) => {
-      if (!confirm(t('passes.deleteConfirm'))) return;
-      return withLoading(ev.currentTarget, async () => {
+    card.querySelector('.delete-pass').addEventListener('click', async (ev) => {
+      const ok = await showConfirm({
+        title: t('confirm.deletePassTitle'),
+        message: t('confirm.deletePassMessage'),
+        confirmText: t('confirm.delete'),
+        variant: 'danger',
+      });
+      if (!ok) return;
+      const btn = ev.currentTarget;
+      return withLoading(btn, async () => {
         try {
           await api('/api/admin/passes', { method: 'DELETE', body: JSON.stringify({ id }) });
           showToast(t('passes.passDeleted'), 'info');

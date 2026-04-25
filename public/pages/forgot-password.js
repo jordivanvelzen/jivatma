@@ -13,7 +13,7 @@ export async function renderForgotPassword() {
         <input type="email" id="email" placeholder="${t('auth.email')}" required autocomplete="email" />
         <button type="submit" class="btn btn-primary">${t('auth.sendResetLink')}</button>
       </form>
-      <p class="auth-links"><a href="#/login">${t('auth.backToLogin')}</a></p>
+      <p class="auth-links"><a href="/login">${t('auth.backToLogin')}</a></p>
     </div>
   `;
 
@@ -23,7 +23,7 @@ export async function renderForgotPassword() {
     const email = document.getElementById('email').value;
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/#/reset-password',
+      redirectTo: window.location.origin + '/reset-password',
     });
 
     if (error) {

@@ -5,12 +5,12 @@ import { t } from '../../lib/i18n.js';
 import { todayStr, parseLocalDate } from '../../lib/dates.js';
 import { icon } from '../../lib/icons.js';
 import { withLoading } from '../../lib/loading.js';
+import { navigate } from '../../lib/router.js';
 
 export async function renderAdminClass() {
   const app = document.getElementById('app');
 
-  const hashParts = window.location.hash.split('?');
-  const params = new URLSearchParams(hashParts[1] || '');
+  const params = new URLSearchParams(window.location.search);
   const selectedDate = params.get('date') || todayStr();
   const selectedSessionId = params.get('session') ? parseInt(params.get('session'), 10) : null;
   const today = todayStr();
@@ -158,7 +158,7 @@ export async function renderAdminClass() {
         : !activeSession
           ? `<div class="session-picker">
               ${sessions.map(s => `
-                <a href="#/admin/class?date=${selectedDate}&session=${s.id}" class="class-card clickable">
+                <a href="/admin/class?date=${selectedDate}&session=${s.id}" class="class-card clickable">
                   <div class="class-time">${s.start_time.slice(0, 5)}</div>
                   <div class="class-type">${t('type.' + s.class_type)}</div>
                 </a>
@@ -170,7 +170,7 @@ export async function renderAdminClass() {
   `;
 
   document.getElementById('date-picker')?.addEventListener('change', (e) => {
-    window.location.hash = `/admin/class?date=${e.target.value}`;
+    navigate(`/admin/class?date=${e.target.value}`);
   });
   const shiftDate = (delta) => {
     const d = parseLocalDate(selectedDate);
@@ -181,10 +181,10 @@ export async function renderAdminClass() {
     return `${y}-${m}-${day}`;
   };
   document.getElementById('prev-date')?.addEventListener('click', () => {
-    window.location.hash = `/admin/class?date=${shiftDate(-1)}`;
+    navigate(`/admin/class?date=${shiftDate(-1)}`);
   });
   document.getElementById('next-date')?.addEventListener('click', () => {
-    window.location.hash = `/admin/class?date=${shiftDate(1)}`;
+    navigate(`/admin/class?date=${shiftDate(1)}`);
   });
 
   app.querySelectorAll('.att-seg').forEach(seg => {
