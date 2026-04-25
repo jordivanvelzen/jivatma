@@ -94,7 +94,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
   background: var(--cream-50);
@@ -104,6 +104,8 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Reserve space for bottom nav when present */
@@ -144,6 +146,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   text-decoration: none;
   display: flex;
   align-items: center;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+.nav-brand svg, .nav-brand-svg {
+  display: block;
+  height: 24px;
+  width: auto;
+  max-width: 100%;
+  flex-shrink: 1;
+}
+@media (max-width: 380px) {
+  .nav-brand svg, .nav-brand-svg { height: 20px; }
 }
 .nav-links {
   display: none;
@@ -190,6 +205,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   display: flex;
   align-items: center;
   gap: var(--s-2);
+  flex-shrink: 0;
 }
 .nav-icon-btn {
   background: none;
@@ -1854,6 +1870,15 @@ body:not(.has-bottom-nav) .toast { bottom: var(--s-6); }
   .nav-icon-btn--desk { display: none !important; }
   .nav-actions { gap: var(--s-1); }
   .nav-inner { gap: var(--s-2); padding-left: 0; padding-right: 0; }
+}
+
+/* Tighten nav at very narrow widths so brand + view-pill + 3 icons fit on a 320px screen */
+@media (max-width: 380px) {
+  .nav { padding: 0 var(--s-2); }
+  .nav-icon-btn { min-width: 36px; min-height: 36px; padding: var(--s-1); }
+  .nav-toggle { min-width: 36px; min-height: 36px; padding: var(--s-1); font-size: 1.35rem; }
+  .nav-actions { gap: 2px; }
+  .nav-inner { gap: var(--s-1); }
 }
 
 /* Hide the old emoji label-only spans inside legacy view-toggle (defensive) */
