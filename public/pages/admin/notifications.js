@@ -49,12 +49,12 @@ export async function renderAdminNotifications() {
   let total = 0;
 
   async function load() {
-    const params = new URLSearchParams({ limit, offset });
+    const params = new URLSearchParams({ type: 'notifications', limit, offset });
     if (channel)    params.set('channel',    channel);
     if (event_type) params.set('event_type', event_type);
 
     try {
-      const data = await api(`/api/admin/notifications?${params}`);
+      const data = await api(`/api/admin/settings?${params}`);
       total = data.total ?? 0;
       return data.rows || [];
     } catch (err) {

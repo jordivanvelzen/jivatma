@@ -284,6 +284,7 @@ All endpoints are Vercel serverless functions.
 | POST | `/api/admin/settings` `{ action: 'register-webhook' }` | Admin | Generates a fresh `telegram_webhook_secret`, persists it, and calls Telegram `setWebhook` pointing at `/api/pass-requests?webhook=telegram`. Run once per bot-token change |
 | GET | `/api/admin/notifications` | Admin | List notification_log rows. Accepts `?limit`, `?offset`, `?channel`, `?event_type`, `?status` filters. Returns `{ rows, total }` |
 | POST | `/api/admin/settings` `{ action: 'sms-test', to? }` | Admin | Sends a test SMS via Twilio. In `test_mode='true'`, reroutes to `jordi_test_phone` automatically. In production mode, requires explicit `to` in body (E.164) so we never accidentally text a real student |
+| GET | `/api/admin/settings?type=notifications` | Admin | List rows from `notification_log` (paginated, filterable by `channel`, `event_type`, `status`, `limit`, `offset`). Folded into the settings endpoint to stay under the Vercel Hobby 12-function limit |
 
 ## Cron Jobs
 
