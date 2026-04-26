@@ -70,7 +70,7 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="/admin/passes" class="nav-links__desktop ${isActive('/admin/passes') ? 'active' : ''}">${t('nav.passes')}</a>
         <a href="/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
-        <a href="/admin/notifications" class="${isActive('/admin/notifications') ? 'active' : ''}">Notificaciones</a>
+        <a href="/admin/notifications" class="${isActive('/admin/notifications') ? 'active' : ''}">${t('nav.notifications')}</a>
         <a href="/guide#admin" class="${isActive('/guide') ? 'active' : ''}">${t('nav.guide')}</a>
         <a href="/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
@@ -102,6 +102,7 @@ function renderStudentNav(nav, { masterAdmin, otherLang }) {
         ${masterAdmin ? renderViewPill(true) : ''}
         <button id="lang-btn" class="nav-icon-btn" title="${t('lang.switch')}">${otherLang}</button>
         <button id="logout-btn" class="nav-icon-btn" title="${t('nav.logout')}">${ICON.logout}</button>
+        <button id="nav-toggle" class="nav-toggle" aria-label="${t('nav.menu')}">☰</button>
       </div>
     </div>
   `;
