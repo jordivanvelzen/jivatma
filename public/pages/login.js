@@ -9,7 +9,8 @@ export async function renderLogin() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth-page">
-      <img class="auth-wordmark" src="/brand/wordmark.svg" alt="Jivatma">
+      <a href="/" class="auth-back">${t('auth.backToHome')}</a>
+      <img class="auth-logo-full" src="/brand/logo-full.svg" alt="Jivatma">
       <div class="auth-card">
         <button id="lang-toggle" class="btn-link lang-toggle">${t('lang.switch')}</button>
         <form id="login-form" class="auth-form">
