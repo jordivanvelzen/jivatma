@@ -2475,6 +2475,7 @@ body.has-bottom-nav #pwa-android-nudge {
   min-height: 100dvh;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: calc(60px + env(safe-area-inset-top,0px) + var(--s-8)) var(--s-5) var(--s-10);
   overflow: hidden;
 }
@@ -2492,7 +2493,10 @@ body.has-bottom-nav #pwa-android-nudge {
   position: relative;
   z-index: 3;
   max-width: 500px;
+  width: 100%;
+  text-align: center;
 }
+.landing-full-logo { margin: 0 auto; }
 
 /* Desktop right image panel */
 .landing-hero-image {
@@ -2595,13 +2599,18 @@ body.has-bottom-nav #pwa-android-nudge {
   display: flex;
   gap: var(--s-3);
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 @media (min-width: 860px) {
   .landing-hero {
+    justify-content: flex-start;
     padding-left: max(var(--s-8), calc((100% - 1200px) / 2 + var(--s-8)));
     padding-right: 0;
   }
+  .landing-hero-content { text-align: left; }
+  .landing-full-logo { margin: 0; }
+  .landing-ctas { justify-content: flex-start; }
   .landing-hero-image { display: block; }
   .landing-hero-mobile-img { display: none; }
   .landing-brand-mark { width: 92px; height: 92px; }
