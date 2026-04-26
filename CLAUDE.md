@@ -17,7 +17,7 @@ This applies to every code change unless the user explicitly says "don't deploy 
 
 ## Overview
 
-Yoga studio management web app for Jivatma in Medellin, Colombia. Students can register, view the class schedule, book classes, and track their passes and attendance. Admins manage the schedule, mark attendance (which auto-deducts class passes), assign passes, and configure studio settings.
+Yoga studio management web app for Jivatma. Students can register, view the class schedule, book classes, and track their passes and attendance. Admins manage the schedule, mark attendance (which auto-deducts class passes), assign passes, and configure studio settings.
 
 ## Tech Stack
 

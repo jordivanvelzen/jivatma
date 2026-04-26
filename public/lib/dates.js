@@ -1,9 +1,9 @@
 // Date helpers. All studio dates are stored as YYYY-MM-DD strings in the DB.
 // Parsing them with `new Date(str)` treats them as UTC midnight, which renders
-// as the previous day in any negative-offset timezone (e.g. Medellín UTC-5).
+// as the previous day in any negative-offset timezone (e.g. UTC-5).
 // Use these helpers to keep dates anchored to the studio's local timezone.
 
-const STUDIO_TZ = 'America/Bogota'; // Medellín, Colombia — UTC-5, no DST
+const STUDIO_TZ = 'America/Bogota'; // UTC-5, no DST
 
 /**
  * Parse a YYYY-MM-DD DB date into a Date at LOCAL midnight,
