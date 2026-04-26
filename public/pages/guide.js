@@ -1,4 +1,5 @@
 import { t, getCurrentLang, toggleLang } from '../lib/i18n.js';
+import { getSession, getProfile } from '../lib/supabase.js';
 
 const content = {
   es: {
@@ -395,7 +396,25 @@ export async function renderGuide() {
   const lang = getCurrentLang();
   const c = content[lang] || content.es;
 
-  const tabFromHash = window.location.hash === '#admin' ? 'admin' : 'student';
+  // Determine default tab: hash wins, else derive from user role
+  let tabFromHash = window.location.hash === '#admin' ? 'admin' : null;
+  if (!tabFromHash) {
+    const session = await getSession();
+    if (session) {
+      const profile = await getProfile();
+      tabFromHash = profile?.role === 'admin' ? 'admin' : 'student';
+    } else {
+      tabFromHash = 'student';
+    }
+  }
+
+  // Determine back destination based on session
+  const session = await getSession();
+  let backHref = '/';
+  if (session) {
+    const profile = await getProfile();
+    backHref = profile?.role === 'admin' ? '/admin' : '/dashboard';
+  }
 
   function renderSections(sections) {
     return sections.map(s => `
@@ -411,7 +430,7 @@ export async function renderGuide() {
   app.innerHTML = `
     <div class="guide-page">
       <header class="guide-header">
-        <a href="/" class="guide-back">${t('guide.back')}</a>
+        <a href="${backHref}" class="guide-back">${t('guide.back')}</a>
         <h1 class="guide-title">${t('guide.title')}</h1>
         <button class="guide-lang-btn" id="js-guide-lang">${lang === 'es' ? 'EN' : 'ES'}</button>
       </header>

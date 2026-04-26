@@ -71,6 +71,7 @@ function renderAdminNav(nav, { masterAdmin, otherLang }) {
         <a href="/admin/schedule" class="${isActive('/admin/schedule') ? 'active' : ''}">${t('nav.schedule')}</a>
         <a href="/admin/settings" class="${isActive('/admin/settings') ? 'active' : ''}">${t('nav.settings')}</a>
         <a href="/admin/notifications" class="${isActive('/admin/notifications') ? 'active' : ''}">Notificaciones</a>
+        <a href="/guide#admin" class="${isActive('/guide') ? 'active' : ''}">${t('nav.guide')}</a>
         <a href="/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">
@@ -94,6 +95,7 @@ function renderStudentNav(nav, { masterAdmin, otherLang }) {
         <a href="/schedule" class="${isActive('/schedule') ? 'active' : ''}">${t('nav.classes')}</a>
         <a href="/my-passes" class="${isActive('/my-passes') ? 'active' : ''}">${t('nav.myPasses')}</a>
         <a href="/my-attendance" class="${isActive('/my-attendance') ? 'active' : ''}">${t('nav.history')}</a>
+        <a href="/guide" class="${isActive('/guide') ? 'active' : ''}">${t('nav.guide')}</a>
         <a href="/profile" class="${isActive('/profile') ? 'active' : ''}">${t('nav.profile')}</a>
       </div>
       <div class="nav-actions">

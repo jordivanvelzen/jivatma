@@ -22,6 +22,7 @@ const translations = {
     'nav.viewToggle': 'Cambiar vista',
     'nav.adminShort': 'Admin',
     'nav.studentShort': 'Alumno',
+    'nav.guide': 'Guía',
 
     // Auth
     'auth.login': 'Iniciar sesión',
@@ -601,6 +602,7 @@ const translations = {
     'nav.viewToggle': 'Switch view',
     'nav.adminShort': 'Admin',
     'nav.studentShort': 'Student',
+    'nav.guide': 'Guide',
 
     // Auth
     'auth.login': 'Log in',
