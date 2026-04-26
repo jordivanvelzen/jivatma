@@ -396,25 +396,16 @@ export async function renderGuide() {
   const lang = getCurrentLang();
   const c = content[lang] || content.es;
 
-  // Determine default tab: hash wins, else derive from user role
-  let tabFromHash = window.location.hash === '#admin' ? 'admin' : null;
-  if (!tabFromHash) {
-    const session = await getSession();
-    if (session) {
-      const profile = await getProfile();
-      tabFromHash = profile?.role === 'admin' ? 'admin' : 'student';
-    } else {
-      tabFromHash = 'student';
-    }
-  }
-
-  // Determine back destination based on session
+  // Resolve role and back destination in one pass
   const session = await getSession();
-  let backHref = '/';
-  if (session) {
-    const profile = await getProfile();
-    backHref = profile?.role === 'admin' ? '/admin' : '/dashboard';
-  }
+  const profile = session ? await getProfile() : null;
+  const role = profile?.role ?? null; // 'admin', 'user', or null (unauthenticated)
+  const isStudent = role === 'user' || role === null; // students + visitors only see student guide
+  const backHref = role === 'admin' ? '/admin' : role === 'user' ? '/dashboard' : '/';
+
+  // Active tab: students are locked to 'student'; admins/visitors respect hash
+  const activeTab = isStudent ? 'student'
+    : window.location.hash === '#admin' ? 'admin' : 'student';
 
   function renderSections(sections) {
     return sections.map(s => `
@@ -435,29 +426,36 @@ export async function renderGuide() {
         <button class="guide-lang-btn" id="js-guide-lang">${lang === 'es' ? 'EN' : 'ES'}</button>
       </header>
 
+      ${!isStudent ? `
       <div class="guide-tabs" role="tablist">
-        <button class="guide-tab ${tabFromHash === 'student' ? 'guide-tab--active' : ''}" data-tab="student" role="tab">
+        <button class="guide-tab ${activeTab === 'student' ? 'guide-tab--active' : ''}" data-tab="student" role="tab">
           ${t('guide.tab.student')}
         </button>
-        <button class="guide-tab ${tabFromHash === 'admin' ? 'guide-tab--active' : ''}" data-tab="admin" role="tab">
+        <button class="guide-tab ${activeTab === 'admin' ? 'guide-tab--active' : ''}" data-tab="admin" role="tab">
           ${t('guide.tab.admin')}
         </button>
       </div>
+      ` : ''}
 
-      <div class="guide-content" id="js-guide-content">
-        <div class="guide-pane ${tabFromHash === 'student' ? 'guide-pane--active' : ''}" data-pane="student">
+      <div class="guide-content">
+        ${isStudent ? `
           <p class="guide-intro">${c.student.intro}</p>
           ${renderSections(c.student.sections)}
-        </div>
-        <div class="guide-pane ${tabFromHash === 'admin' ? 'guide-pane--active' : ''}" data-pane="admin">
-          <p class="guide-intro">${c.admin.intro}</p>
-          ${renderSections(c.admin.sections)}
-        </div>
+        ` : `
+          <div class="guide-pane ${activeTab === 'student' ? 'guide-pane--active' : ''}" data-pane="student">
+            <p class="guide-intro">${c.student.intro}</p>
+            ${renderSections(c.student.sections)}
+          </div>
+          <div class="guide-pane ${activeTab === 'admin' ? 'guide-pane--active' : ''}" data-pane="admin">
+            <p class="guide-intro">${c.admin.intro}</p>
+            ${renderSections(c.admin.sections)}
+          </div>
+        `}
       </div>
     </div>
   `;
 
-  // Tab switching
+  // Tab switching (admins/visitors only — students have no tab bar)
   app.querySelectorAll('.guide-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
@@ -467,8 +465,5 @@ export async function renderGuide() {
     });
   });
 
-  // Language toggle
-  app.querySelector('#js-guide-lang').addEventListener('click', () => {
-    toggleLang();
-  });
+  app.querySelector('#js-guide-lang').addEventListener('click', () => toggleLang());
 }
