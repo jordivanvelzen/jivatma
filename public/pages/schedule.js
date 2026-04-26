@@ -82,8 +82,34 @@ export async function renderSchedule() {
   const bookingMap = {};
   (myBookings || []).forEach(b => { bookingMap[b.session_id] = b; });
 
+  // Mexico City "now" as a fake-UTC ms value so we can compare with session datetimes
+  const mxFmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+  const mxParts = Object.fromEntries(mxFmt.formatToParts(new Date()).map(p => [p.type, p.value]));
+  const mxNowFakeUtc = Date.UTC(+mxParts.year, +mxParts.month - 1, +mxParts.day, +mxParts.hour, +mxParts.minute, +mxParts.second);
+  const mxOffset = Date.now() - mxNowFakeUtc; // real UTC offset for Mexico City right now
+
+  function sessionStartUtcMs(s) {
+    const [y, mo, d] = s.date.split('-').map(Number);
+    const [h, m] = s.start_time.split(':').map(Number);
+    return Date.UTC(y, mo - 1, d, h, m, 0) + mxOffset;
+  }
+
   const sessionMap = {};
   const cards = sessions.map(s => {
+    const startMs = sessionStartUtcMs(s);
+    const durationMs = (s.duration_min || 60) * 60 * 1000;
+    const endMs = startMs + durationMs;
+    const nowMs = Date.now();
+
+    // Hide session 1 hour after it ends
+    if (nowMs >= endMs + 60 * 60 * 1000) return '';
+
+    const isStarted = nowMs >= startMs;
+
     const cap = s.capacity || defaultCapacity;
     const booked = bookingCounts[s.id] || 0;
     const spotsLeft = cap - booked;
@@ -95,10 +121,11 @@ export async function renderSchedule() {
       capacity: cap,
       _spotsLeftInPerson: spotsLeftInPerson,
       _spotsLeftOnline: spotsLeftOnline,
+      _isStarted: isStarted,
     };
     sessionMap[s.id] = sessionWithCap;
     return renderClassCard(sessionWithCap, bookingMap[s.id], spotsLeft, hasActivePass);
-  }).join('');
+  }).filter(Boolean).join('');
 
   function buildScheduleBanner() {
     if (!hasActivePass) {

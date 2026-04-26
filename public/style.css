@@ -1820,6 +1820,7 @@ body:not(.has-bottom-nav) .toast { bottom: var(--s-6); }
   font-weight: 600;
 }
 .cc-booked-pill .icon { width: 14px; height: 14px; }
+.cc.cc--started { opacity: 0.45; filter: grayscale(40%); pointer-events: none; }
 .cc.cc--cancelled { opacity: 0.6; background: var(--cream-50, #faf6ef); }
 .cc.cc--cancelled .cc-time,
 .cc.cc--cancelled .cc-date-day,

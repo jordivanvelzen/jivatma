@@ -67,7 +67,7 @@ export function renderClassCard(session, booking, spotsLeft, hasActivePass = tru
   }
 
   return `
-    <article class="cc ${isBooked ? 'cc--booked' : ''} ${isFull ? 'cc--full' : ''} ${isCancelled ? 'cc--cancelled' : ''}" data-session-id="${session.id}">
+    <article class="cc ${isBooked ? 'cc--booked' : ''} ${isFull ? 'cc--full' : ''} ${isCancelled ? 'cc--cancelled' : ''} ${session._isStarted && !isCancelled ? 'cc--started' : ''}" data-session-id="${session.id}">
       <div class="cc-date" aria-hidden="true">
         <div class="cc-date-dow">${dow.replace('.', '')}</div>
         <div class="cc-date-day">${day}</div>
