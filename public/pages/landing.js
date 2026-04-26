@@ -150,6 +150,7 @@ export async function renderLanding() {
       <footer class="landing-footer">
         <img src="/brand/logo.svg" alt="Jivatma" width="28" height="28" style="border-radius:6px;opacity:.6" />
         <span>&copy; ${new Date().getFullYear()} Jivatma &middot; Yoga Iyengar</span>
+        <a href="/guide" class="landing-footer-guide">${t('landing.guide')}</a>
         <button class="landing-lang-btn" id="landing-lang-footer">${t('lang.switch')}</button>
       </footer>
 

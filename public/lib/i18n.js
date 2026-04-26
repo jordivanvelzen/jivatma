@@ -567,6 +567,13 @@ const translations = {
     'landing.location.eyebrow': 'Ubicación',
     'landing.location.cities': 'Xico · Coatepec · Xalapa',
     'landing.location.contact': 'Informes',
+    'landing.guide': 'Guía de uso',
+
+    // Guide page
+    'guide.title': 'Guía de uso',
+    'guide.back': '← Inicio',
+    'guide.tab.student': 'Para Alumnos',
+    'guide.tab.admin': 'Para Administradores',
 
     // PWA Android install
     'pwa.androidInstall': 'Instala Jivatma en tu dispositivo',
@@ -1139,6 +1146,13 @@ const translations = {
     'landing.location.eyebrow': 'Location',
     'landing.location.cities': 'Xico · Coatepec · Xalapa',
     'landing.location.contact': 'Contact',
+    'landing.guide': 'User Guide',
+
+    // Guide page
+    'guide.title': 'User Guide',
+    'guide.back': '← Home',
+    'guide.tab.student': 'For Students',
+    'guide.tab.admin': 'For Admins',
 
     // PWA Android install
     'pwa.androidInstall': 'Install Jivatma on your device',

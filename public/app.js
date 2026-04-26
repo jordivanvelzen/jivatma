@@ -22,6 +22,7 @@ import { renderAdminSettings } from './pages/admin/settings.js';
 import { renderAdminNotifications } from './pages/admin/notifications.js';
 import { maybeShowIosInstallNudge, maybeShowAndroidInstallPrompt } from './lib/pwa-update.js';
 import { renderLanding } from './pages/landing.js';
+import { renderGuide } from './pages/guide.js';
 
 // Show a centered spinner in #app while the next page is loading.
 // The renderFn overwrites #app via innerHTML, so this clears on render.
@@ -80,6 +81,11 @@ route('/forgot-password', async () => {
 route('/reset-password', async () => {
   document.getElementById('nav').classList.add('hidden');
   await renderResetPassword();
+});
+
+route('/guide', async () => {
+  document.getElementById('nav').classList.add('hidden');
+  await renderGuide();
 });
 
 // User pages
